@@ -19,7 +19,7 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Textdomain-Support: yes"
 
-#: obenland-wp-plugins.php:121
+#: obenland-wp-plugins.php:113
 #@ wp-approve-user
 msgid "Donate"
 msgstr "Spenden"
@@ -54,39 +54,35 @@ msgstr ""
 msgid "http://en.wp.obenland.it/?utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
 msgstr "http://wp.obenland.it/?utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
 
-#. translators: plugin header field 'Version'
-#: wp-approve-user.php:0
-#@ wp-approve-user
-msgid "1.0"
-msgstr ""
-
-#: wp-approve-user.php:134
+#: wp-approve-user.php:156
+#: wp-approve-user.php:186
 #@ wp-approve-user
 msgid "Unapprove"
 msgstr "Zur&uuml;ckweisen"
 
-#: wp-approve-user.php:142
+#: wp-approve-user.php:155
+#: wp-approve-user.php:194
 #@ wp-approve-user
 msgid "Approve"
 msgstr "Genehmigen"
 
-#: wp-approve-user.php:169
+#: wp-approve-user.php:221
 #@ wp-approve-user
 msgid "<strong>ERROR:</strong> Your account has to be confirmed by an administrator before you can login."
 msgstr "<strong>FEHLER:</strong> Dein Konto muss erst von einem Administrator genehmigt werden, bevor du dich anmelden kannst."
 
-#: wp-approve-user.php:201
+#: wp-approve-user.php:406
 #@ wp-approve-user
 msgid "You can&#8217;t approve users."
 msgstr "Du kannst keine Benutzer genehmigen."
 
-#: wp-approve-user.php:215
-#: wp-approve-user.php:255
+#: wp-approve-user.php:420
+#: wp-approve-user.php:459
 #@ default
 msgid "You can&#8217;t edit that user."
 msgstr ""
 
-#: wp-approve-user.php:224
+#: wp-approve-user.php:318
 #, php-format
 #@ wp-approve-user
 msgid "User approved."
@@ -94,16 +90,27 @@ msgid_plural "%d users approved."
 msgstr[0] "Benutzer genehmigt."
 msgstr[1] "%d Benutzer genehmigt."
 
-#: wp-approve-user.php:241
-#@ wp-approve-user
-msgid "You can&#8217;t reject users."
-msgstr "Du kannst keine Benutzer zur&uuml;ckweisen."
-
-#: wp-approve-user.php:264
+#: wp-approve-user.php:322
 #, php-format
 #@ wp-approve-user
 msgid "User unapproved."
 msgid_plural "%d users unapproved."
 msgstr[0] "Benutzer zur&uuml;ckgewiesen."
 msgstr[1] "%d Benutzer zur&uuml;ckgewiesen."
+
+#. translators: plugin header field 'Version'
+#: wp-approve-user.php:0
+#@ wp-approve-user
+msgid "1.1.0"
+msgstr ""
+
+#: wp-approve-user.php:380
+#@ default
+msgid "Users"
+msgstr ""
+
+#: wp-approve-user.php:445
+#@ wp-approve-user
+msgid "You can&#8217;t unapprove users."
+msgstr "Du kannst Benutzer nicht zur&uuml;ckweisen."
 
