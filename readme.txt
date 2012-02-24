@@ -11,7 +11,7 @@ Adds action links to user table to approve or unapprove user registrations.
 == Description ==
 
 This plugin lets you approve or reject user registrations.
-While a user is unapproved, he/she can’t access the WordPress Admin.
+While a user is unapproved, he/she can't access the WordPress Admin.
 
 On activation of the plugin, all existing users will automatically be flagged Approved. The blog admin will never experience restricted access and does not need approval.
 
