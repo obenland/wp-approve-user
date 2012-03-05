@@ -4,7 +4,7 @@ Tags: admin, user, login, approve, user management, plugin
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
 Requires at least: 3.1
 Tested up to: 3.3.1
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 
 Adds action links to user table to approve or unapprove user registrations.
 
@@ -57,6 +57,9 @@ No. (At least not yet.) But with Version 1.1.0 developers can hook into the `wpa
 
 
 == Changelog ==
+
+= 1.1.1 =
+* Fixed a bug, where the call to action bubble didn't account for newly registered
 
 = 1.1.0 =
 * Added bulk action for approving and unapproving users
