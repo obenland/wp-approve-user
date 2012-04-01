@@ -58,6 +58,10 @@ No. (At least not yet.) But with Version 1.1.0 developers can hook into the `wpa
 
 == Changelog ==
 
+= 2.0.0 =
+
+* Optimized alteration of Users menu item. Props Rd
+
 = 1.1.1 =
 * Fixed a bug, where the call to action bubble didn't account for newly registered
 
