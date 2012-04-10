@@ -139,8 +139,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
 		$this->hook( 'admin_init' );
-		$this->hook( 'wpau_side_info_column', 'donate_box', 1 );
-		$this->hook( 'wpau_side_info_column', 'feed_box' );
+		$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
+		$this->hook( 'obenland_side_info_column', 'feed_box' );
 		
 		add_action( 'all_admin_notices', 'settings_errors' );
 	}
@@ -193,7 +193,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 		
 		wp_enqueue_style(
 			$this->textdomain,
-			plugins_url("/js/settings-page{$suffix}.css", __FILE__),
+			plugins_url("/css/settings-page{$suffix}.css", __FILE__),
 			array(),
 			$plugin_data['Version']
 		);
@@ -508,18 +508,23 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
 			<?php settings_errors(); ?>
-			<div id="poststuff" class="metabox-holder has-right-sidebar wp-approve-user">
-				<div id="side-info-column" class="inner-sidebar">
-					<?php do_action( 'wpau_side_info_column' ); ?>
-				</div>
-				<div id="post-body-content">
-					<form method="post" action="options.php">
-						<?php
-						settings_fields( $this->textdomain );
-						do_settings_sections( $this->textdomain );
-						submit_button();
-						?>
-					</form>
+	
+			<div id="poststuff">
+				<div id="post-body" class="obenland-wp columns-2">
+					<div id="post-body-content">
+						<form method="post" action="options.php">
+							<?php
+								settings_fields( $this->textdomain );
+								do_settings_sections( $this->textdomain );
+								submit_button();
+							?>
+						</form>
+					</div>
+					<div id="postbox-container-1">
+						<div id="side-info-column" class="inner-sidebar">
+							<?php do_action( 'obenland_side_info_column' ); ?>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
