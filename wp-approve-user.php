@@ -24,7 +24,7 @@ if ( ! class_exists( 'Obenland_Wp_Plugins_v300' ) ) {
 
 
 class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
-	
+
 	
 	///////////////////////////////////////////////////////////////////////////
 	// PROPERTIES, PUBLIC
@@ -138,7 +138,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		$this->hook( 'admin_action_wpau_unapprove' );
 		$this->hook( 'admin_action_wpau_bulk_unapprove' );
 		$this->hook( 'admin_action_wpau_update' );
-		
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
 		$this->hook( 'admin_init' );
@@ -515,7 +514,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		<div class="wrap">
 			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
-
+			
 			<div id="poststuff">
 				<div id="post-body" class="obenland-wp columns-2">
 					<div id="post-body-content">
@@ -540,11 +539,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 	
 	
 	/**
-<<<<<<< HEAD
 	 * Prints the section description
-=======
-	 * TODO
->>>>>>> Move meta boxes to Utility Class
 	 *
 	 * @author	Konstantin Obenland
 	 * @since	2.0.0 - 31.03.2012
@@ -845,7 +840,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 Your registration for BLOG_TITLE has now been approved.
 
 You can log in, using your username and password that you created when registering for our website, at the following URL: LOGINLINK
-
+				
 If you have any questions, or problems, then please do not hesitate to contact us.
  
 Name,
