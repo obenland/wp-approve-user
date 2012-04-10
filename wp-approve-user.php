@@ -178,32 +178,25 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 	}
 	
 	
+	/**
+	 * Enqueues the style on the settings page
+	 * 
+	 * @author	Konstantin Obenland
+	 * @since	2.0.0 - 10.04.2012
+	 * @access	public
+	 *
+	 * @return	void
+	 */
 	public function admin_print_styles_settings_page_wp_approve_user() {
-		?>
-		<style type="text/css">
-			.wp-approve-user .form-table {
-				clear:left;
-			}
-			
-			.wp-approve-user div.inside li {
-				list-style: square outside none;
-				margin-left: 20px;
-			}
-			.wp-approve-user div.inside li.rss,
-			.wp-approve-user div.inside li.twitter {
-				background: none no-repeat scroll 0 0 transparent;
-				list-style-type: none;
-			    margin-left: 0;
-			    padding-left: 20px;
-			}
-			.wp-approve-user div.inside li.rss {
-				background-image: url("<?php echo plugins_url( '/images/rss.png', __FILE__ ); ?>");
-			}
-			.wp-approve-user div.inside li.twitter {
-				background-image: url("<?php echo plugins_url( '/images/twitter.png', __FILE__ ); ?>");
-			}
-		</style>
-		<?php
+		$plugin_data = get_plugin_data( __FILE__, false, false );
+		$suffix = ( defined('SCRIPT_DEBUG') AND SCRIPT_DEBUG ) ? '.dev' : '';
+		
+		wp_enqueue_style(
+			$this->textdomain,
+			plugins_url("/js/settings-page{$suffix}.css", __FILE__),
+			array(),
+			$plugin_data['Version']
+		);
 	}
 	
 	

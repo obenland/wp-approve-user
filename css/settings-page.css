@@ -1,0 +1,21 @@
+.wp-approve-user .form-table {
+	clear:left;
+}
+
+.wp-approve-user div.inside li {
+	list-style: square outside none;
+	margin-left: 20px;
+}
+.wp-approve-user div.inside li.rss,
+.wp-approve-user div.inside li.twitter {
+	background: none no-repeat scroll 0 0 transparent;
+	list-style-type: none;
+    margin-left: 0;
+    padding-left: 20px;
+}
+.wp-approve-user div.inside li.rss {
+	background-image: url("../images/rss.png");
+}
+.wp-approve-user div.inside li.twitter {
+	background-image: url("../images/twitter.png");
+}
