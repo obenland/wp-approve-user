@@ -754,7 +754,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 			// send mail
 			$sent	=	@wp_mail(
 				$user->user_email,
-				sprintf(__('[%s] Registration approved', 'wp-approve-user'), $blogname),
+				sprintf( _x('[%s] Registration approved', 'Blogname', 'wp-approve-user'), $blogname ),
 				$this->populate_message( $this->options['approve-email'], $user )
 			);
 			
@@ -785,7 +785,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 			// send mail
 			@wp_mail(
 				$user->user_email,
-				sprintf( __('[%s] Registration unapproved', 'wp-approve-user'), $blogname ),
+				sprintf( _x('[%s] Registration unapproved', 'Blogname', 'wp-approve-user'), $blogname ),
 				$this->populate_message( $this->options['unapprove-email'], $user )
 			);
 			
@@ -937,7 +937,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 			'approve-email'			=>	'Hi {{USERNAME}},
 Your registration for {{BLOGNAME}} has now been approved.
  
-You can log in, using your username and password that you created when registering for our website at the following URL: {{LOGINURL}}
+You can log in, using your username and password that you created when registering for our website, at the following URL: {{LOGINURL}}
  
 If you have any questions, or problems, then please do not hesitate to contact us.
  
