@@ -533,9 +533,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 	
 	
 	/**
-	 * TODO
+	 * Displays a box with a donate button and call to action links
+	 * 
+	 * Props Joost de Valk, as this is almost entirely from his awesome WordPress
+	 * SEO Plugin
+	 * @see		http://plugins.svn.wordpress.org/wordpress-seo/tags/1.1.5/admin/class-config.php
 	 *
-	 * @author	Konstantin Obenland
+	 * @author	Joost de Valk, Konstantin Obenland
 	 * @since	2.0.0 - 31.03.2012
 	 * @access	public
 	 *
@@ -566,9 +570,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 	
 	
 	/**
-	 * TODO
+	 * Displays a box with feed items and social media links
+	 * 
+	 * Props Joost de Valk, as this is almost entirely from his awesome WordPress
+	 * SEO Plugin
+	 * @see		http://plugins.svn.wordpress.org/wordpress-seo/tags/1.1.5/admin/yst_plugin_tools.php
 	 *
-	 * @author	Konstantin Obenland
+	 * @author	Joost de Valk, Konstantin Obenland
 	 * @since	2.0.0 - 31.03.2012
 	 * @access	public
 	 *
@@ -577,7 +585,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 	public function feed_box() {
 		
 		include_once( ABSPATH . WPINC . '/feed.php' );
-		$rss = fetch_feed( 'http://en.wp.obenland.it/feed/' );
+		$feed_url = 'http://en.wp.obenland.it/feed/';
+		$rss = fetch_feed( $feed_url );
 		
 		// Bail if feed doesn't work
 		if ( is_wp_error($rss) )
@@ -587,7 +596,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 		
 		// If the feed was erroneously
 		if ( ! $rss_items ) {
-			$md5 = md5( $this->feed );
+			$md5 = md5( $feed_url );
 			delete_transient( 'feed_' . $md5 );
 			delete_transient( 'feed_mod_' . $md5 );
 			$rss = fetch_feed( 'http://en.wp.obenland.it/feed/' );
@@ -598,15 +607,15 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 			<h3 class="hndle"><span><?php esc_html_e( 'News from Konstantin', 'wp-approve-user' ); ?></span></h3>
 			<div class="inside">
 				<ul>
-				<?php if ( ! $rss_items ) : ?>
-				<li><?php _e( 'No news items, feed might be broken...', 'wp-approve-user' ); ?></li>
-				<?php else :
-				foreach ( $rss_items as $item ) :
-					$url = preg_replace( '/#.*/', '#utm_source=wordpress&utm_medium=sidebannerpostbox&utm_term=rssitem&utm_campaign=wp-approve-user',  $item->get_permalink() ); ?>
-				<li><a class="rsswidget" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $item->get_title() ); ?></a></li>
-				<?php endforeach; endif; ?>
+					<?php if ( ! $rss_items ) : ?>
+					<li><?php _e( 'No news items, feed might be broken...', 'wp-approve-user' ); ?></li>
+					<?php else :
+					foreach ( $rss_items as $item ) :
+						$url = preg_replace( '/#.*/', '#utm_source=wordpress&utm_medium=sidebannerpostbox&utm_term=rssitem&utm_campaign=wp-approve-user',  $item->get_permalink() ); ?>
+					<li><a class="rsswidget" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $item->get_title() ); ?></a></li>
+					<?php endforeach; endif; ?>
 					<li class="twitter"><a href="http://twitter.com/obenland"><?php _e( 'Follow Konstantin on Twitter', 'wp-approve-user' ); ?></a></li>
-					<li class="rss"><a href="http://en.wp.obenland.it/feed/"><?php _e( 'Subscribe via RSS', 'wp-approve-user' ); ?></a></li>
+					<li class="rss"><a href="<?php echo esc_url( $feed_url ); ?>"><?php _e( 'Subscribe via RSS', 'wp-approve-user' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
