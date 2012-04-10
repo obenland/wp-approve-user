@@ -142,9 +142,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
 		$this->hook( 'admin_init' );
-
-		$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
-		$this->hook( 'obenland_side_info_column', 'feed_box' );
 	}
 	
 	
