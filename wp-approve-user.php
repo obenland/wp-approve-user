@@ -18,12 +18,12 @@ if ( ! get_option( 'users_can_register' ) ) {
 }
 
 
-if ( ! class_exists('Obenland_Wp_Plugins_v15') ) {
+if ( ! class_exists('Obenland_Wp_Plugins_v200') ) {
 	require_once( 'obenland-wp-plugins.php' );
 }
 
 
-class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
+class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 	
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -98,16 +98,14 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 	 * @return	void
 	 */
 	public function activation() {
-		$user_ids = get_users(array(
+		$user_ids = get_users( array(
 			'blog_id'	=>	'',
 			'fields'	=>	'ID'
-		));
+		) );
 		
 		foreach ( $user_ids as $user_id ) {
 			update_user_meta( $user_id, 'wp-approve-user', true );
 		}
-		
-		wp_redirect( admin_url( 'options-general.php?page=wp-approve-user' ) );
 	}
 	
 	
@@ -139,10 +137,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
 		$this->hook( 'admin_init' );
-		$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
-		$this->hook( 'obenland_side_info_column', 'feed_box' );
-		
-		add_action( 'all_admin_notices', 'settings_errors' );
 	}
 	
 	
@@ -526,97 +520,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v15 {
 						</div>
 					</div>
 				</div>
-			</div>
-		</div>
-		<?php
-	}
-	
-	
-	/**
-	 * Displays a box with a donate button and call to action links
-	 * 
-	 * Props Joost de Valk, as this is almost entirely from his awesome WordPress
-	 * SEO Plugin
-	 * @see		http://plugins.svn.wordpress.org/wordpress-seo/tags/1.1.5/admin/class-config.php
-	 *
-	 * @author	Joost de Valk, Konstantin Obenland
-	 * @since	2.0.0 - 31.03.2012
-	 * @access	public
-	 *
-	 * @return	void
-	 */
-	public function donate_box() {
-		$plugin_data = get_plugin_data( __FILE__ );
-		?>
-		<div id="formatdiv" class="postbox">
-			<h3 class="hndle"><span><?php esc_html_e( 'Help spread the word!', 'wp-approve-user' ); ?></span></h3>
-			<div class="inside">
-				<p><strong><?php printf( _x( 'Want to help make this plugin even better? All donations are used to improve %1$s, so donate $20, $50 or $100 now!', 'Plugin Name', 'wp-approve-user' ), esc_html($plugin_data['Name']) ); ?></strong></p>
-				<form action="https://www.paypal.com/cgi-bin/webscr" method="post">
-					<input type="hidden" name="cmd" value="_s-xclick">
-					<input type="hidden" name="hosted_button_id" value="G65Y5CM3HVRNY">
-					<input type="image" src="https://www.paypalobjects.com/<?php echo get_locale(); ?>/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="PayPal Ñ The safer, easier way to pay online.">
-					<img alt="" border="0" src="https://www.paypalobjects.com/de_DE/i/scr/pixel.gif" width="1" height="1">
-				</form>
-				<p><?php _e( 'Or you could:', 'wp-approve-user' ); ?></p>
-				<ul>
-					<li><a href="http://wordpress.org/extend/plugins/wp-approve-user/"><?php _e( 'Rate the plugin 5&#9733; on WordPress.org', 'wp-approve-user' ); ?></a></li>
-					<li><a href="<?php echo esc_url( $plugin_data['PluginURI'] ); ?>"><?php _e( 'Blog about it &amp; link to the plugin page', 'wp-approve-user' ); ?></a></li>
-				</ul>
-			</div>
-		</div>
-		<?php
-	}
-	
-	
-	/**
-	 * Displays a box with feed items and social media links
-	 * 
-	 * Props Joost de Valk, as this is almost entirely from his awesome WordPress
-	 * SEO Plugin
-	 * @see		http://plugins.svn.wordpress.org/wordpress-seo/tags/1.1.5/admin/yst_plugin_tools.php
-	 *
-	 * @author	Joost de Valk, Konstantin Obenland
-	 * @since	2.0.0 - 31.03.2012
-	 * @access	public
-	 *
-	 * @return	void
-	 */
-	public function feed_box() {
-		
-		include_once( ABSPATH . WPINC . '/feed.php' );
-		$feed_url = 'http://en.wp.obenland.it/feed/';
-		$rss = fetch_feed( $feed_url );
-		
-		// Bail if feed doesn't work
-		if ( is_wp_error($rss) )
-			return false;
-		
-		$rss_items = $rss->get_items( 0, $rss->get_item_quantity( 5 ) );
-		
-		// If the feed was erroneously
-		if ( ! $rss_items ) {
-			$md5 = md5( $feed_url );
-			delete_transient( 'feed_' . $md5 );
-			delete_transient( 'feed_mod_' . $md5 );
-			$rss = fetch_feed( 'http://en.wp.obenland.it/feed/' );
-			$rss_items = $rss->get_items( 0, $rss->get_item_quantity( 5 ) );
-		}
-		?>
-		<div id="formatdiv" class="postbox">
-			<h3 class="hndle"><span><?php esc_html_e( 'News from Konstantin', 'wp-approve-user' ); ?></span></h3>
-			<div class="inside">
-				<ul>
-					<?php if ( ! $rss_items ) : ?>
-					<li><?php _e( 'No news items, feed might be broken...', 'wp-approve-user' ); ?></li>
-					<?php else :
-					foreach ( $rss_items as $item ) :
-						$url = preg_replace( '/#.*/', '#utm_source=wordpress&utm_medium=sidebannerpostbox&utm_term=rssitem&utm_campaign=wp-approve-user',  $item->get_permalink() ); ?>
-					<li><a class="rsswidget" href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $item->get_title() ); ?></a></li>
-					<?php endforeach; endif; ?>
-					<li class="twitter"><a href="http://twitter.com/obenland"><?php _e( 'Follow Konstantin on Twitter', 'wp-approve-user' ); ?></a></li>
-					<li class="rss"><a href="<?php echo esc_url( $feed_url ); ?>"><?php _e( 'Subscribe via RSS', 'wp-approve-user' ); ?></a></li>
-				</ul>
 			</div>
 		</div>
 		<?php
