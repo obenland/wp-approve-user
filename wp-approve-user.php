@@ -540,7 +540,11 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 	
 	
 	/**
+<<<<<<< HEAD
 	 * Prints the section description
+=======
+	 * TODO
+>>>>>>> Move meta boxes to Utility Class
 	 *
 	 * @author	Konstantin Obenland
 	 * @since	2.0.0 - 31.03.2012
