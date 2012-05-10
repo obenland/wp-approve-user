@@ -135,6 +135,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 		$this->hook( 'admin_action_wpau_update' );
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
+		$this->hook( 'send_unapproved_mail' );
 		$this->hook( 'admin_init' );
 		add_action( 'all_admin_notices', 'settings_errors' );
 	}
@@ -487,6 +488,25 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 				'label_for'	=>	'wpau-unapprove-email'
 			)
 		);
+# -- a.c. 10.05.02
+		add_settings_section(
+			$this->textdomain,
+			__('Default Functionality', 'awd-user-functionality'),
+			array(&$this, 'section_description_cb'),
+			$this->textdomain
+		);
+		
+		add_settings_field(
+			'wpau-check-functionallity[Default Functionality]',
+			__('Toggle WPAU functionality', 'wp-approve-user'),
+			array(&$this, 'wpau_check_functionality_cb'),
+			$this->textdomain,
+			$this->textdomain,
+			array(
+				'label_for'	=>	'wpau-check-functionality'
+			)
+		);
+# end - a.c.
 	}
 	
 	
@@ -625,7 +645,27 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 		<?php
 	}
 	
-	
+# --- a.c. 10.05.02
+
+/**
+	 * Populates the setting field
+	 *
+	 * @author	Asaf Chertkoff
+	 * @since	2.0.0 - 10.05.2012
+	 * @access	public
+	 *
+	 * @return	void
+	 */
+	public function wpau_check_functionality_cb() {
+		?>
+		<label for="wpau-check-functionality">
+			<input type="checkbox" id="wpau-check-functionality" name="wp-approve-user[wpau-check-functionality]" value="1" <?php checked(  $this->options['wpau-check-functionality'] ); ?> />
+			<?php _e( 'Change the default functionality of WPAU. If checked the default will be set to <strong>unapprove</strong> new users. if not it will stay as it is.', 'wp-approve-user' ); ?>
+		</label>
+		<?php
+	}
+	# end a.c.
+
 	/**
 	 * Sanitizes the settings input
 	 *
@@ -640,6 +680,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 	public function sanitize( $settings ) {
 		$settings['send-approve-email']		=	isset( $settings['send-approve-email'] ) ? true : false;
 		$settings['send-unapprove-email']	=	isset( $settings['send-unapprove-email'] ) ? true : false;
+		$settings['wpau-check-functionality']	=	isset( $settings['wpau-check-functionality'] ) ? true : false; # -- a.c. 10.05.12
 		$settings['approve-email']			=	isset( $settings['approve-email'] ) ? trim( $settings['approve-email'] ) : '';
 		$settings['unapprove-email']		=	isset( $settings['unapprove-email'] ) ? trim( $settings['unapprove-email'] ) : '';
 		
@@ -660,8 +701,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 	 */
 	public function wpau_approve( $user_id ) {
 		
-		// check user meta if mail has been sent already
-		if ( ! get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) AND $this->options['send-approve-email'] ) {
+		// check user meta if mail has been sent already + first time of wpau_approve on registration - don't send mail --- a.c. 10.05.02
+		if ( ! get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) AND $this->options['send-approve-email']  || (get_user_meta( $user_id, 'wp-approve-new-user') == 'false')) { #  --- a.c. 10.05.02
 			
 			$user		=	new WP_User( $user_id );
 			$blogname	=	wp_specialchars_decode( get_option('blogname'), ENT_QUOTES );
@@ -674,14 +715,15 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 			);
 			
 			if ( $sent ) {
-				update_user_meta( $user_id, 'wp-approve-user-mail-sent', true );
+				update_user_meta( $user_id, 'wp-approve-user-mail-sent', false );
 			}
 		}
+		update_user_meta( $user_id, 'wp-approve-new-user', false ); # update after first check to send mails from now and on... --- a.c. 10.05.02
 	}
 	
 	
 	/**
-	 * Sends the rejection email
+	 * Sends the rejection email               # - WE SHOULD CHANGE THE NAME OF THIS FUNCTION CAUSE THE USAGE IS NOT ONLY FOR DELETION a.c - 10.05.02
 	 *
 	 * @author	Konstantin Obenland
 	 * @since	2.0.0 - 31.03.2012
@@ -707,8 +749,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 			// No need to delete user_meta, since this user will be GONE
 		}
 	}
-	
-	
+
 	///////////////////////////////////////////////////////////////////////////
 	// METHODS, PROTECTED
 	///////////////////////////////////////////////////////////////////////////
@@ -766,6 +807,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 	
 			update_user_meta( $id, 'wp-approve-user', false );
 			do_action( 'wpau_unapprove', $id );
+			$this->delete_user( $id ); # -- a.c. 10.05.02
 		}
 		
 		wp_redirect(add_query_arg( array(
@@ -864,12 +906,31 @@ Name,
 Company,
 Contact details',
 			'send-unapprove-email'	=>	false,
-			'unapprove-email'		=>	''
+			'unapprove-email'		=>	'',
+			'wpau-check-functionality' =>	'false'   # --- a.c. 10.05.02
 		);
 		
 		return apply_filters( 'wpau_default_options', $options );
 	}
 }  // End of class Obenland_Wp_Approve_User
+
+/**
+	 * Returns the default options
+	 *
+	 * @author	Asaf Chertkoff
+	 * @since	2.0.0 - 10.05.2012
+	 * @access	public
+	 *
+	 * @return	void
+	 */
+function check_if_change_defualt($user_id){
+	if ($settings['wpau-check-functionality'] !='false') {
+		add_user_meta( $user_id, 'wp-approve-new-user', true);
+		update_user_meta( $user_id, 'wp-approve-user', false );
+	}
+}
+
+add_action( 'user_register', 'check_if_change_defualt', 999, 1 );
 
 
 new Obenland_Wp_Approve_User;
