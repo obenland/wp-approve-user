@@ -50,17 +50,6 @@ label.image-radio-option input {
 	display: block;
 	width: 136px;
 }
-<<<<<<< HEAD
-#link-color-example {
-	-moz-border-radius: 4px;
-	-webkit-border-radius: 4px;
-	border-radius: 4px;
-	border: 1px solid #dfdfdf;
-	margin: 0 7px 0 3px;
-	padding: 4px 14px;
-}
-=======
->>>>>>> 687904a... Move settings page css to its own file
 @media (max-width: 939px) {
 	#postbox-container-1 {
 		float: none !important;
