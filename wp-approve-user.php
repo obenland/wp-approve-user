@@ -504,36 +504,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 		<div class="wrap">
 			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
-<<<<<<< HEAD
-			<?php settings_errors(); ?>
-	
-			<div id="poststuff">
-				<div id="post-body" class="obenland-wp columns-2">
-					<div id="post-body-content">
-						<form method="post" action="options.php">
-							<?php
-								settings_fields( $this->textdomain );
-								do_settings_sections( $this->textdomain );
-								submit_button();
-							?>
-						</form>
-					</div>
-					<div id="postbox-container-1">
-						<div id="side-info-column" class="inner-sidebar">
-							<?php do_action( 'obenland_side_info_column' ); ?>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<?php
-	}
-	
-	
-	/**
-	 * TODO
-=======
-	
+			
 			<div id="poststuff">
 				<div id="post-body" class="obenland-wp columns-2">
 					<div id="post-body-content">
@@ -559,7 +530,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 	
 	/**
 	 * Prints the section description
->>>>>>> refs/remotes/origin/master
 	 *
 	 * @author	Konstantin Obenland
 	 * @since	2.0.0 - 31.03.2012
@@ -885,13 +855,9 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 			'send-approve-email'		=>	false,
 			'approve-email'			=>	'Hi USERNAME,
 Your registration for BLOG_TITLE has now been approved.
- 
-<<<<<<< HEAD
-You can log in, using your username and password that you created when registering for our website, at the following URL: {{LOGINURL}}
-=======
+
 You can log in, using your username and password that you created when registering for our website, at the following URL: LOGINLINK
->>>>>>> refs/remotes/origin/master
- 
+
 If you have any questions, or problems, then please do not hesitate to contact us.
  
 Name,
