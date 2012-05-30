@@ -19,7 +19,7 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Textdomain-Support: yes"
 
-#: obenland-wp-plugins.php:113
+#: obenland-wp-plugins.php:130
 #@ wp-approve-user
 msgid "Donate"
 msgstr "Spenden"
@@ -29,12 +29,6 @@ msgstr "Spenden"
 #@ wp-approve-user
 msgid "WP Approve User"
 msgstr ""
-
-#. translators: plugin header field 'PluginURI'
-#: wp-approve-user.php:0
-#@ wp-approve-user
-msgid "http://en.wp.obenland.it/wp-approve-user/?utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
-msgstr "http://wp.obenland.it/wp-approve-user/?utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
 
 #. translators: plugin header field 'Description'
 #: wp-approve-user.php:0
@@ -48,41 +42,30 @@ msgstr "F&uuml;gt Bearbeitungslinks in der Benutzer&uuml;bersicht hinzu, um Benu
 msgid "Konstantin Obenland"
 msgstr ""
 
-#. translators: plugin header field 'AuthorURI'
-#: wp-approve-user.php:0
-#@ wp-approve-user
-msgid "http://en.wp.obenland.it/?utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
-msgstr "http://wp.obenland.it/?utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
-
-#: wp-approve-user.php:156
-#: wp-approve-user.php:186
+#: wp-approve-user.php:173
+#: wp-approve-user.php:226
 #@ wp-approve-user
 msgid "Unapprove"
 msgstr "Zur&uuml;ckweisen"
 
-#: wp-approve-user.php:155
-#: wp-approve-user.php:194
+#: wp-approve-user.php:172
+#: wp-approve-user.php:234
 #@ wp-approve-user
 msgid "Approve"
 msgstr "Genehmigen"
 
-#: wp-approve-user.php:221
+#: wp-approve-user.php:258
 #@ wp-approve-user
 msgid "<strong>ERROR:</strong> Your account has to be confirmed by an administrator before you can login."
 msgstr "<strong>FEHLER:</strong> Dein Konto muss erst von einem Administrator genehmigt werden, bevor du dich anmelden kannst."
 
-#: wp-approve-user.php:406
-#@ wp-approve-user
-msgid "You can&#8217;t approve users."
-msgstr "Du kannst keine Benutzer genehmigen."
-
-#: wp-approve-user.php:420
-#: wp-approve-user.php:459
+#: wp-approve-user.php:707
+#: wp-approve-user.php:739
 #@ default
 msgid "You can&#8217;t edit that user."
 msgstr ""
 
-#: wp-approve-user.php:318
+#: wp-approve-user.php:353
 #, php-format
 #@ wp-approve-user
 msgid "User approved."
@@ -90,7 +73,7 @@ msgid_plural "%d users approved."
 msgstr[0] "Benutzer genehmigt."
 msgstr[1] "%d Benutzer genehmigt."
 
-#: wp-approve-user.php:322
+#: wp-approve-user.php:357
 #, php-format
 #@ wp-approve-user
 msgid "User unapproved."
@@ -98,19 +81,140 @@ msgid_plural "%d users unapproved."
 msgstr[0] "Benutzer zur&uuml;ckgewiesen."
 msgstr[1] "%d Benutzer zur&uuml;ckgewiesen."
 
-#. translators: plugin header field 'Version'
-#: wp-approve-user.php:0
-#@ wp-approve-user
-msgid "1.1.0"
-msgstr ""
-
-#: wp-approve-user.php:380
-#@ default
-msgid "Users"
-msgstr ""
-
-#: wp-approve-user.php:445
+#: wp-approve-user.php:774
 #@ wp-approve-user
 msgid "You can&#8217;t unapprove users."
 msgstr "Du kannst Benutzer nicht zur&uuml;ckweisen."
+
+#: obenland-wp-plugins.php:154
+#@ obenland-wp
+msgid "Help spread the word!"
+msgstr "Erz&auml;hl es weiter!"
+
+#: obenland-wp-plugins.php:156
+#, php-format
+#@ obenland-wp
+msgctxt "Plugin Name"
+msgid "Want to help make this plugin even better? All donations are used to improve %1$s, so donate $20, $50 or $100 now!"
+msgstr "M&ouml;chtest du helfen das Plugin noch besser zu machen? Alle Spenden werden dazu verwendet %1$s zu verbessern. Spende jetzt $20, $50 oder $100!"
+
+#: obenland-wp-plugins.php:163
+#@ obenland-wp
+msgid "Or you could:"
+msgstr "Du k&ouml;nntest auch:"
+
+#: obenland-wp-plugins.php:165
+#@ obenland-wp
+msgid "Rate the plugin 5&#9733; on WordPress.org"
+msgstr "Das Plugin auf WordPress.org mit 5&#9733; bewerten"
+
+#: obenland-wp-plugins.php:166
+#@ obenland-wp
+msgid "Blog about it &amp; link to the plugin page"
+msgstr "Dar&uuml;ber schreiben &amp; zur Plugin Seite verlinken"
+
+#: obenland-wp-plugins.php:209
+#@ obenland-wp
+msgid "News from Konstantin"
+msgstr "Neuigkeiten von Konstantin"
+
+#: obenland-wp-plugins.php:213
+#@ obenland-wp
+msgid "No news items, feed might be broken..."
+msgstr "Keine Neuigkeiten, Feed k&ouml;nnte nicht funktionieren&ellipsis;"
+
+#: obenland-wp-plugins.php:219
+#@ obenland-wp
+msgid "Follow Konstantin on Twitter"
+msgstr "Folge Konstantin auf Twitter"
+
+#: obenland-wp-plugins.php:220
+#@ obenland-wp
+msgid "Subscribe via RSS"
+msgstr "Abonniere den RSS Feed"
+
+#. translators: plugin header field 'PluginURI'
+#: wp-approve-user.php:0
+#@ wp-approve-user
+msgid "http://en.wp.obenland.it/wp-approve-user/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
+msgstr ""
+
+#. translators: plugin header field 'AuthorURI'
+#: wp-approve-user.php:0
+#@ wp-approve-user
+msgid "http://en.wp.obenland.it/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
+msgstr ""
+
+#. translators: plugin header field 'Version'
+#: wp-approve-user.php:0
+#@ wp-approve-user
+msgid "2.0.0"
+msgstr ""
+
+#: wp-approve-user.php:420
+#: wp-approve-user.php:421
+#@ wp-approve-user
+msgid "Approve User"
+msgstr "Benutzer genehmigen"
+
+#: wp-approve-user.php:448
+#@ wp-approve-user
+msgid "Email contents"
+msgstr "E-Mail Inhalte"
+
+#: wp-approve-user.php:455
+#@ wp-approve-user
+msgid "Send Approve Email"
+msgstr "Genehmigungs-Mail senden"
+
+#: wp-approve-user.php:461
+#@ wp-approve-user
+msgid "Send email on approval."
+msgstr "Bei Genehmigung eine E-Mail senden."
+
+#: wp-approve-user.php:466
+#@ wp-approve-user
+msgid "Approve Email"
+msgstr "Genehmigungs-Mail"
+
+#: wp-approve-user.php:479
+#@ wp-approve-user
+msgid "Send Unapprove Email"
+msgstr "Zur&uuml;ckweisungs-Mail senden"
+
+#: wp-approve-user.php:485
+#@ wp-approve-user
+msgid "Send email on unapproval."
+msgstr "ei Zur&uuml;ckweisung eine E-Mail senden."
+
+#: wp-approve-user.php:490
+#@ wp-approve-user
+msgid "Unapprove Email"
+msgstr "Zur&uuml;ckweisungs-Mail"
+
+#: wp-approve-user.php:516
+#@ wp-approve-user
+msgid "Approve User Settings"
+msgstr "Einstellungen f&uuml; WP Approve User"
+
+#: wp-approve-user.php:558
+#, php-format
+#@ wp-approve-user
+msgctxt "Placeholders"
+msgid "To take advantage of dynamic data, you can use the following placeholders: %s. Username will be the user login in most cases."
+msgstr "Um dynamische Daten zu nutzen, kannst du folgende Platzhalter verwenden: %s. Benutzername wird in den mei&szlig;ten F&auml;llen der Login Name sein"
+
+#: wp-approve-user.php:646
+#, php-format
+#@ wp-approve-user
+msgctxt "Blogname"
+msgid "[%s] Registration approved"
+msgstr "[%s] Anmeldung genehmigt"
+
+#: wp-approve-user.php:677
+#, php-format
+#@ wp-approve-user
+msgctxt "Blogname"
+msgid "[%s] Registration unapproved"
+msgstr "[%s] Anmeldung zur&uuml;ckgewiesen"
 
