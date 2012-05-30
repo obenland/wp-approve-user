@@ -89,7 +89,7 @@ class Obenland_Wp_Plugins_v200 {
 		load_plugin_textdomain( 'obenland-wp' , false, $this->textdomain . '/lang' );
 		
 		$this->set_donate_link( $args['donate_link_id'] );
-		$this->hook( 'plugins_loaded' );
+		$this->hook( 'plugins_loaded', 'parent_plugins_loaded' );
 	}
 	
 	
@@ -102,7 +102,7 @@ class Obenland_Wp_Plugins_v200 {
 	 *
 	 * @return	void
 	 */
-	public function plugins_loaded() {
+	public function parent_plugins_loaded() {
 		$this->hook( 'plugin_row_meta' );
 		$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
 		$this->hook( 'obenland_side_info_column', 'feed_box' );
