@@ -22,6 +22,7 @@ Currently available in:
 
 * Deutsch
 * English
+* Hebrew
 
 
 == Installation ==
@@ -61,6 +62,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 = 2.0.0 =
 * Added the ability to send an email on approval/unapproval. Email text can be customized.
 * Optimized alteration of Users menu item. Props Rd
+* Added Hebrew translation. Props asafche
 
 = 1.1.1 =
 * Fixed a bug, where the call to action bubble didn't account for newly registered

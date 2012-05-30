@@ -108,6 +108,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		
 		foreach ( $user_ids as $user_id ) {
 			update_user_meta( $user_id, 'wp-approve-user', true );
+			update_user_meta( $user_id, 'wp-approve-user-mail-sent', true );
 		}
 	}
 	
@@ -635,7 +636,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 	public function wpau_approve( $user_id ) {
 		
 		// check user meta if mail has been sent already
-		if ( ! get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) AND $this->options['send-approve-email'] ) {
+		if ( ! get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) AND $this->options['wpau-send-approve-email'] ) {
 			
 			$user		=	new WP_User( $user_id );
 			$blogname	=	wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
@@ -644,7 +645,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 			$sent	=	@wp_mail(
 				$user->user_email,
 				sprintf( _x( '[%s] Registration approved', 'Blogname', 'wp-approve-user' ), $blogname ),
-				$this->populate_message( $this->options['approve-email'], $user )
+				$this->populate_message( $this->options['wpau-approve-email'], $user )
 			);
 			
 			if ( $sent ) {
@@ -667,7 +668,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 	 */
 	public function delete_user( $user_id ) {
 		
-		if ( $this->options['send-unapprove-email'] ) {
+		if ( $this->options['wpau-send-unapprove-email'] ) {
 			$user		=	new WP_User( $user_id );
 			$blogname	=	wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
 				
@@ -675,7 +676,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 			@wp_mail(
 				$user->user_email,
 				sprintf( _x( '[%s] Registration unapproved', 'Blogname', 'wp-approve-user' ), $blogname ),
-				$this->populate_message( $this->options['unapprove-email'], $user )
+				$this->populate_message( $this->options['wpau-unapprove-email'], $user )
 			);
 			
 			// No need to delete user_meta, since this user will be GONE
@@ -788,12 +789,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 			wp_die( __( 'You can&#8217;t unapprove users.', 'wp-approve-user' ) );
 		}
 		
-		if ( empty( $_REQUEST['users'] ) ) {
-			$userids = array( intval( $_REQUEST['user'] ) );
-		}
-		else {
-			$userids = (array) $_REQUEST['users'];
-		}
+		$userids = ( empty( $_REQUEST['users'] ) ) ? array( intval( $_REQUEST['user'] ) ) : (array) $_REQUEST['users'];
+		$userids = array_diff( $userids, array( get_user_by( 'email', get_bloginfo( 'admin_email' ) )->ID ) );
 		
 		return array( $userids, $url );
 	}
