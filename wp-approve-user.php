@@ -138,6 +138,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		$this->hook( 'admin_action_wpau_unapprove' );
 		$this->hook( 'admin_action_wpau_bulk_unapprove' );
 		$this->hook( 'admin_action_wpau_update' );
+		
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
 		$this->hook( 'admin_init' );
@@ -514,7 +515,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		<div class="wrap">
 			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
-			
+			<?php settings_errors(); ?>
+
 			<div id="poststuff">
 				<div id="post-body" class="obenland-wp columns-2">
 					<div id="post-body-content">
