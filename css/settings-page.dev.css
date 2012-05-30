@@ -2,7 +2,7 @@
     margin-right: 300px;
 }
 #post-body.columns-2 #postbox-container-1 {
-    float: right;
+    float: right !important;
     margin-right: -300px;
     width: 280px;
 }

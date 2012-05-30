@@ -16,6 +16,7 @@ foreach ( $user_ids as $user_id ) {
 
 delete_option( 'wp-approve-user' );
 
+
 /* Goodbye! Thank you for having me! */
 
 

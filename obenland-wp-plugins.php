@@ -104,8 +104,10 @@ class Obenland_Wp_Plugins_v200 {
 	 */
 	public function parent_plugins_loaded() {
 		$this->hook( 'plugin_row_meta' );
-		$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
-		$this->hook( 'obenland_side_info_column', 'feed_box' );
+		if ( ! has_action( 'obenland_side_info_column' ) ) {
+			$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
+			$this->hook( 'obenland_side_info_column', 'feed_box' );
+		}
 	}
 
 
