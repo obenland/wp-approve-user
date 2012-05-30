@@ -2,11 +2,11 @@
 /** obenland-wp-plugins.php
  *
  * @author		Konstantin Obenland
- * @version		2.0.0
+ * @version		3.0.0
  */
 
 
-class Obenland_Wp_Plugins_v200 {
+class Obenland_Wp_Plugins_v300 {
 
 
 	/////////////////////////////////////////////////////////////////////////////
@@ -48,9 +48,23 @@ class Obenland_Wp_Plugins_v200 {
 	 */
 	protected $donate_link;
 
-
+	
 	/**
-	 * The path to the plugin folder
+	 * The path to the plugin file
+	 *
+	 * /path/to/wp-content/plugins/{plugin-name}/{plugin-name}.php
+	 *
+	 * @author	Konstantin Obenland
+	 * @since	2.0.0 - 30.05.2012
+	 * @access	protected
+	 *
+	 * @var		string
+	 */
+	protected $plugin_path;
+	
+	
+	/**
+	 * The path to the plugin directory
 	 *
 	 * /path/to/wp-content/plugins/{plugin-name}/
 	 *
@@ -60,7 +74,7 @@ class Obenland_Wp_Plugins_v200 {
 	 *
 	 * @var		string
 	 */
-	protected $plugin_path;
+	protected $plugin_dir_path;
 
 
 	///////////////////////////////////////////////////////////////////////////
@@ -82,9 +96,10 @@ class Obenland_Wp_Plugins_v200 {
 	public function __construct( $args = array() ) {
 
 		// Set class properties
-		$this->textdomain	=	$args['textdomain'];
-		$this->plugin_path	=	plugin_dir_path( $args['plugin_path'] );
-		$this->plugin_name	=	plugin_basename( $args['plugin_path'] );
+		$this->textdomain		=	$args['textdomain'];
+		$this->plugin_path		=	$args['plugin_path'];
+		$this->plugin_dir_path	=	plugin_dir_path( $args['plugin_path'] );
+		$this->plugin_name		=	plugin_basename( $args['plugin_path'] );
 
 		load_plugin_textdomain( 'obenland-wp' , false, $this->textdomain . '/lang' );
 		
@@ -127,7 +142,7 @@ class Obenland_Wp_Plugins_v200 {
 			$plugin_meta[]	=	sprintf('
 				<a href="%1$s" target="_blank" title="%2$s">%2$s</a>',
 				$this->donate_link,
-				__('Donate', $this->textdomain)
+				__( 'Donate', 'obenland-wp' )
 			);
 		}
 		return $plugin_meta;
@@ -148,7 +163,7 @@ class Obenland_Wp_Plugins_v200 {
 	 * @return	void
 	 */
 	public function donate_box() {
-		$plugin_data = get_plugin_data( __FILE__ );
+		$plugin_data = get_plugin_data( $this->plugin_path );
 		?>
 		<div id="formatdiv" class="postbox">
 			<h3 class="hndle"><span><?php esc_html_e( 'Help spread the word!', 'obenland-wp' ); ?></span></h3>

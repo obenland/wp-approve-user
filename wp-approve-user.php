@@ -18,12 +18,12 @@ if ( ! get_option( 'users_can_register' ) ) {
 }
 
 
-if ( ! class_exists('Obenland_Wp_Plugins_v200') ) {
+if ( ! class_exists( 'Obenland_Wp_Plugins_v300' ) ) {
 	require_once( 'obenland-wp-plugins.php' );
 }
 
 
-class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
+class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 	
 	
 	///////////////////////////////////////////////////////////////////////////
@@ -141,6 +141,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
 		$this->hook( 'admin_init' );
+		$this->hook( 'all_admin_notices' );
 	}
 	
 	
@@ -252,7 +253,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 	 */
 	public function wp_authenticate_user( $userdata ) {
 		
-		if ( ! is_wp_error($userdata) AND ! get_user_meta( $userdata->ID, 'wp-approve-user', true ) AND $userdata->user_email != get_bloginfo('admin_email') ) {
+		if ( ! is_wp_error( $userdata ) AND ! get_user_meta( $userdata->ID, 'wp-approve-user', true ) AND $userdata->user_email != get_bloginfo( 'admin_email' ) ) {
 			$userdata	=	new WP_Error(
 				'wpau_confirmation_error',
 				__('<strong>ERROR:</strong> Your account has to be confirmed by an administrator before you can login.', 'wp-approve-user')
@@ -445,7 +446,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 		
 		add_settings_section(
 			$this->textdomain,
-			__( 'Email contents', 'awd-approve-user-email' ),
+			__( 'Email contents', 'wp-approve-user' ),
 			array( &$this, 'section_description_cb' ),
 			$this->textdomain
 		);
@@ -514,7 +515,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 		<div class="wrap">
 			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
-			<?php settings_errors(); ?>
 
 			<div id="poststuff">
 				<div id="post-body" class="obenland-wp columns-2">
@@ -680,6 +680,20 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v200 {
 			
 			// No need to delete user_meta, since this user will be GONE
 		}
+	}
+	
+	
+	/**
+	 * Display all messages registered to this Plugin
+	 *
+	 * @author	Konstantin Obenland
+	 * @since	2.0.0 - 30.00.2012
+	 * @access	public
+	 *
+	 * @return	void
+	 */
+	public function all_admin_notices() {
+		settings_errors( $this->textdomain );
 	}
 	
 	
