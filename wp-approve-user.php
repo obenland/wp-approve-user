@@ -840,7 +840,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 Your registration for BLOG_TITLE has now been approved.
 
 You can log in, using your username and password that you created when registering for our website, at the following URL: LOGINLINK
-				
+
 If you have any questions, or problems, then please do not hesitate to contact us.
  
 Name,
