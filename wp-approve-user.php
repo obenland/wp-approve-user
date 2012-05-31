@@ -131,9 +131,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		$this->hook( 'admin_menu' );
 		
 		$this->hook( 'admin_print_scripts-users.php' );
-
 		$this->hook( 'admin_print_scripts-site-users.php', 'admin_print_scripts_users_php' );
-
 		$this->hook( 'admin_print_styles-settings_page_wp-approve-user' );
 		$this->hook( 'admin_action_wpau_approve' );
 		$this->hook( 'admin_action_wpau_bulk_approve' );
@@ -823,11 +821,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 
 		
 		if ( is_multisite() ) {
-
 			global $current_site;
-
 			$message	=	str_replace( 'SITE_NAME', $current_site->site_name, $message );
-
 		}
 		
 		return $message;
