@@ -3,8 +3,8 @@ Contributors: kobenland
 Tags: admin, user, login, approve, user management, plugin
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
 Requires at least: 3.1
-Tested up to: 3.4-RC1
-Stable tag: 2.0.0
+Tested up to: 3.4-RC2
+Stable tag: 2.1.0
 
 Adds action links to user table to approve or unapprove user registrations.
 
@@ -23,6 +23,7 @@ Currently available in:
 * Deutsch
 * English
 * Hebrew
+* Russian
 
 
 == Installation ==
@@ -58,6 +59,11 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 
 == Changelog ==
+
+= 2.1.0 =
+* Added Russian translatation. Props Mick Levin
+
+= 2.0.1 =
 
 = 2.0.0 =
 * Added the ability to send an email on approval/unapproval. Email text can be customized.
