@@ -594,11 +594,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 	 */
 	public function textarea_cb( $option ) {
 		$option	=	(object) $option;
-		if ( ! $this->options[$option->setting] ) {
-			?><input type="hidden" name="wp-approve-user[<?php echo esc_attr( $option->name ); ?>]" value="<?php echo esc_attr( $this->options[$option->name] ); ?>"/><?php
-		}
 		?>
-		<textarea id="<?php echo sanitize_title_with_dashes( $option->name ); ?>" class="large-text code" name="wp-approve-user[<?php echo esc_attr( $option->name ); ?>]" rows="10" cols="50" <?php disabled( $this->options[$option->setting], false ); ?>><?php echo esc_textarea( $this->options[$option->name] ); ?></textarea>
+		<textarea id="<?php echo sanitize_title_with_dashes( $option->name ); ?>" class="large-text code" name="wp-approve-user[<?php echo esc_attr( $option->name ); ?>]" rows="10" cols="50" ><?php echo esc_textarea( $this->options[$option->name] ); ?></textarea>
 		<?php
 	}
 	
