@@ -114,7 +114,7 @@ class Obenland_Wp_Plugins_v300 {
 	 * @author	Konstantin Obenland
 	 * @since	2.0.0 - 12.04.2012
 	 * @access	public
-	 *
+	 * 
 	 * @return	void
 	 */
 	public function parent_plugins_loaded() {
