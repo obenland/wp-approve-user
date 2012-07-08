@@ -24,7 +24,7 @@ if ( ! class_exists( 'Obenland_Wp_Plugins_v300' ) ) {
 
 
 class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
-
+	
 	
 	///////////////////////////////////////////////////////////////////////////
 	// PROPERTIES, PUBLIC
