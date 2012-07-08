@@ -142,7 +142,9 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
 		$this->hook( 'admin_init' );
-		$this->hook( 'all_admin_notices' );
+
+		$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
+		$this->hook( 'obenland_side_info_column', 'feed_box' );
 	}
 	
 	
@@ -516,7 +518,12 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		<div class="wrap">
 			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
+<<<<<<< HEAD
 
+=======
+			<?php settings_errors(); ?>
+	
+>>>>>>> Add dev vesion and make selectors work
 			<div id="poststuff">
 				<div id="post-body" class="obenland-wp columns-2">
 					<div id="post-body-content">
@@ -529,7 +536,11 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 						</form>
 					</div>
 					<div id="postbox-container-1">
+<<<<<<< HEAD
 						<div id="side-info-column">
+=======
+						<div id="side-info-column" class="inner-sidebar">
+>>>>>>> Add dev vesion and make selectors work
 							<?php do_action( 'obenland_side_info_column' ); ?>
 						</div>
 					</div>
