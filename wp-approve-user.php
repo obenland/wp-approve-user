@@ -5,10 +5,14 @@
  * Plugin URI:	http://en.wp.obenland.it/wp-approve-user/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user
  * Description:	Adds action links to user table to approve or unapprove user registrations.
 <<<<<<< HEAD
+<<<<<<< HEAD
  * Version:		2.1.1
 =======
  * Version:		2.1.0
 >>>>>>> Added Russian translation. Props Mick Levin
+=======
+ * Version:		2.1.1
+>>>>>>> Add dev vesion and make selectors work
  * Author:		Konstantin Obenland
  * Author URI:	http://en.wp.obenland.it/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user
  * Text Domain: wp-approve-user
@@ -28,7 +32,7 @@ if ( ! class_exists( 'Obenland_Wp_Plugins_v300' ) ) {
 
 
 class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
-	
+
 	
 	///////////////////////////////////////////////////////////////////////////
 	// PROPERTIES, PUBLIC
@@ -221,7 +225,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 			
 			$site_id	=	isset( $_REQUEST['id'] ) ? intval( $_REQUEST['id'] ) : 0;
 			$url		=	( 'site-users-network' == get_current_screen()->id ) ? add_query_arg( array( 'id' => $site_id ), 'site-users.php' ) : 'users.php';
-			
+
 			if ( get_user_meta( $user_object->ID, 'wp-approve-user', true ) ) {
 				$url	=	wp_nonce_url( add_query_arg( array(
 					'action'	=>	'wpau_unapprove',
