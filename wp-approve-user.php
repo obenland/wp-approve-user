@@ -24,7 +24,7 @@ if ( ! class_exists( 'Obenland_Wp_Plugins_v300' ) ) {
 
 
 class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
-	
+
 	
 	///////////////////////////////////////////////////////////////////////////
 	// PROPERTIES, PUBLIC
@@ -217,7 +217,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 			
 			$site_id	=	isset( $_REQUEST['id'] ) ? intval( $_REQUEST['id'] ) : 0;
 			$url		=	( 'site-users-network' == get_current_screen()->id ) ? add_query_arg( array( 'id' => $site_id ), 'site-users.php' ) : 'users.php';
-			
+
 			if ( get_user_meta( $user_object->ID, 'wp-approve-user', true ) ) {
 				$url	=	wp_nonce_url( add_query_arg( array(
 					'action'	=>	'wpau_unapprove',
@@ -519,7 +519,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		<div class="wrap">
 			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
-
+			
 			<div id="poststuff">
 				<div id="post-body" class="obenland-wp columns-2">
 					<div id="post-body-content">
@@ -618,7 +618,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		$output['wpau-send-unapprove-email']	=	(bool) isset( $input['wpau-send-unapprove-email'] );
 		$output['wpau-approve-email']			=	isset( $input['wpau-approve-email'] ) ? trim( $input['wpau-approve-email'] ) : '';
 		$output['wpau-unapprove-email']			=	isset( $input['wpau-unapprove-email'] ) ? trim( $input['wpau-unapprove-email'] ) : '';
-		
+
 		return $output;
 	}
 	
