@@ -1,0 +1,179 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2012-11-28 17:06+0330\n"
+"Last-Translator: Amin <medicamin@gmail.com>\n"
+"Language-Team: \n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Eazy Po 0.9.1\n"
+
+#: obenland-wp-plugins.php:130
+msgid "Donate"
+msgstr "کمک"
+
+#. translators: plugin header field 'Name'
+#: wp-approve-user.php:0
+msgid "WP Approve User"
+msgstr ""
+
+#. translators: plugin header field 'Description'
+#: wp-approve-user.php:0
+msgid "Adds action links to user table to approve or unapprove user registrations."
+msgstr ""
+
+#. translators: plugin header field 'Author'
+#: wp-approve-user.php:0
+msgid "Konstantin Obenland"
+msgstr ""
+
+#: wp-approve-user.php:173
+#: wp-approve-user.php:226
+msgid "Unapprove"
+msgstr "تعلیق عضویت"
+
+#: wp-approve-user.php:172
+#: wp-approve-user.php:234
+msgid "Approve"
+msgstr "تایید عضویت"
+
+#: wp-approve-user.php:258
+msgid "<strong>ERROR:</strong> Your account has to be confirmed by an administrator before you can login."
+msgstr "<strong>خطا:</strong> لطفا صبر کنید تا عضویت شما مورد تایید یکی از مدیران سایت قرار بگیرد. این موضوع به ایمیل شما ارسال می شود."
+
+#: wp-approve-user.php:707
+#: wp-approve-user.php:739
+msgid "You can&#8217;t edit that user."
+msgstr "شما نمی توانید این کاربر را ویرایش کنید"
+
+#: wp-approve-user.php:353
+#, php-format
+msgid "User approved."
+msgid_plural "%d users approved."
+msgstr[0] "عضویت یک کاربر تایید شد."
+msgstr[1] "عضویت %d کاربر تایید شد."
+
+#: wp-approve-user.php:357
+#, php-format
+msgid "User unapproved."
+msgid_plural "%d users unapproved."
+msgstr[0] "عضویت یک کاربر لغو شد"
+msgstr[1] "عضویت %d کاربر لغو شد."
+
+#: wp-approve-user.php:774
+msgid "You can&#8217;t unapprove users."
+msgstr "شما نمیتوانید عضویت کاربران را تعلیق کنید."
+
+#: obenland-wp-plugins.php:154
+msgid "Help spread the word!"
+msgstr ""
+
+#: obenland-wp-plugins.php:156
+#, php-format
+msgctxt "Plugin Name"
+msgid "Want to help make this plugin even better? All donations are used to improve %1$s, so donate $20, $50 or $100 now!"
+msgstr ""
+
+#: obenland-wp-plugins.php:163
+msgid "Or you could:"
+msgstr ""
+
+#: obenland-wp-plugins.php:165
+msgid "Rate the plugin 5&#9733; on WordPress.org"
+msgstr ""
+
+#: obenland-wp-plugins.php:166
+msgid "Blog about it &amp; link to the plugin page"
+msgstr ""
+
+#: obenland-wp-plugins.php:209
+msgid "News from Konstantin"
+msgstr ""
+
+#: obenland-wp-plugins.php:213
+msgid "No news items, feed might be broken..."
+msgstr ""
+
+#: obenland-wp-plugins.php:219
+msgid "Follow Konstantin on Twitter"
+msgstr ""
+
+#: obenland-wp-plugins.php:220
+msgid "Subscribe via RSS"
+msgstr ""
+
+#. translators: plugin header field 'PluginURI'
+#: wp-approve-user.php:0
+msgid "http://en.wp.obenland.it/wp-approve-user/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
+msgstr ""
+
+#. translators: plugin header field 'AuthorURI'
+#: wp-approve-user.php:0
+msgid "http://en.wp.obenland.it/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user"
+msgstr ""
+
+#. translators: plugin header field 'Version'
+#: wp-approve-user.php:0
+msgid "2.0.0"
+msgstr ""
+
+#: wp-approve-user.php:420
+#: wp-approve-user.php:421
+msgid "Approve User"
+msgstr ""
+
+#: wp-approve-user.php:448
+msgid "Email contents"
+msgstr "محتویات ایمیل"
+
+#: wp-approve-user.php:455
+msgid "Send Approve Email"
+msgstr "ارسال ایمیل تایید"
+
+#: wp-approve-user.php:461
+msgid "Send email on approval."
+msgstr "ارسال ایمیل تایید"
+
+#: wp-approve-user.php:466
+msgid "Approve Email"
+msgstr "ایمیل تایید"
+
+#: wp-approve-user.php:479
+msgid "Send Unapprove Email"
+msgstr "ارسال ایمیل تعلیق"
+
+#: wp-approve-user.php:485
+msgid "Send email on unapproval."
+msgstr "ارسال ایمیل تعلیق"
+
+#: wp-approve-user.php:490
+msgid "Unapprove Email"
+msgstr "ایمیل تعلیق"
+
+#: wp-approve-user.php:516
+msgid "Approve User Settings"
+msgstr "تنظیمات تایید/تعلیق کاربران"
+
+#: wp-approve-user.php:558
+#, php-format
+msgctxt "Placeholders"
+msgid "To take advantage of dynamic data, you can use the following placeholders: %s. Username will be the user login in most cases."
+msgstr "میتوانید از این پارامترها در ایمیل ارسالی استفاده کنید: %s"
+
+#: wp-approve-user.php:646
+#, php-format
+msgctxt "Blogname"
+msgid "[%s] Registration approved"
+msgstr "[%s] عضویت شما تایید شد"
+
+#: wp-approve-user.php:677
+#, php-format
+msgctxt "Blogname"
+msgid "[%s] Registration unapproved"
+msgstr "[%s] عضویت شما تایید نشد"
+

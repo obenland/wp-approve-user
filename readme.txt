@@ -23,6 +23,7 @@ Currently available in:
 * Deutsch
 * English
 * Hebrew
+* Persian
 * Russian
 
 
@@ -59,6 +60,9 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 
 == Changelog ==
+
+= 2.2.0=
+* Added Persian translation. Props Amin.
 
 = 2.1.1 =
 * Fixed a bug, where new settings were not saved
