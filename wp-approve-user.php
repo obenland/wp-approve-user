@@ -125,6 +125,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 	public function plugins_loaded() {
 
 		$this->hook( 'user_row_actions' );
+		$this->hook( 'ms_user_row_actions', 'user_row_actions' );
 		$this->hook( 'wp_authenticate_user' );
 		$this->hook( 'user_register' );
 		$this->hook( 'shake_error_codes' );
@@ -224,7 +225,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 					'user'   => $user_object->ID
 				), $url ), 'wpau-unapprove-users' );
 
-				$actions['wpau-unapprove'] = "<a class='submitunapprove' href='{$url}'>" . __( 'Unapprove', 'wp-approve-user' ) . "</a>";
+				$actions['wpau-unapprove'] = sprintf( '<a class="submitunapprove" href="%1$s">%2$s</a>', $url, __( 'Unapprove', 'wp-approve-user' ) );
 			}
 			else {
 				$url = wp_nonce_url( add_query_arg( array(
@@ -232,7 +233,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 					'user'   => $user_object->ID
 				), $url ), 'wpau-approve-users' );
 
-				$actions['wpau-approve'] = "<a class='submitapprove' href='{$url}'>" . __( 'Approve', 'wp-approve-user' ) . "</a>";
+				$actions['wpau-approve'] = sprintf( '<a class="submitapprove" href="%1$s">%2$s</a>', $url, __( 'Approve', 'wp-approve-user' ) );
 			}
 		}
 
@@ -414,7 +415,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 						'meta_key'   => 'wp-approve-user',
 						'meta_value' => false
 					) ) );
-					$menu[$key][0] .= " <span class='update-plugins count-{$awaiting_mod}'><span class='plugin-count'>{$awaiting_mod}</span></span>";
+					$menu[$key][0] .= sprintf( ' <span class="update-plugins count-%s"><span class="plugin-count">%s</span></span>', $awaiting_mod );
 
 					break; // Bail on success
 				}
