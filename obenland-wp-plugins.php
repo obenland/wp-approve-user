@@ -48,7 +48,7 @@ class Obenland_Wp_Plugins_v300 {
 	 */
 	protected $donate_link;
 
-	
+
 	/**
 	 * The path to the plugin file
 	 *
@@ -61,8 +61,8 @@ class Obenland_Wp_Plugins_v300 {
 	 * @var		string
 	 */
 	protected $plugin_path;
-	
-	
+
+
 	/**
 	 * The path to the plugin directory
 	 *
@@ -102,19 +102,19 @@ class Obenland_Wp_Plugins_v300 {
 		$this->plugin_name		=	plugin_basename( $args['plugin_path'] );
 
 		load_plugin_textdomain( 'obenland-wp' , false, $this->textdomain . '/lang' );
-		
+
 		$this->set_donate_link( $args['donate_link_id'] );
 		$this->hook( 'plugins_loaded', 'parent_plugins_loaded' );
 	}
-	
-	
+
+
 	/**
 	 * Hooks in all the hooks :)
 	 *
 	 * @author	Konstantin Obenland
 	 * @since	2.0.0 - 12.04.2012
 	 * @access	public
-	 * 
+	 *
 	 * @return	void
 	 */
 	public function parent_plugins_loaded() {
@@ -147,8 +147,8 @@ class Obenland_Wp_Plugins_v300 {
 		}
 		return $plugin_meta;
 	}
-	
-	
+
+
 	/**
 	 * Displays a box with a donate button and call to action links
 	 *
@@ -184,11 +184,11 @@ class Obenland_Wp_Plugins_v300 {
 		</div>
 		<?php
 	}
-		
-		
+
+
 	/**
 	 * Displays a box with feed items and social media links
-	 * 
+	 *
 	 * Props Joost de Valk, as this is almost entirely from his awesome WordPress
 	 * SEO Plugin
 	 * @see		http://plugins.svn.wordpress.org/wordpress-seo/tags/1.1.5/admin/yst_plugin_tools.php
@@ -200,17 +200,17 @@ class Obenland_Wp_Plugins_v300 {
 	 * @return	void
 	 */
 	public function feed_box() {
-		
+
 		include_once( ABSPATH . WPINC . '/feed.php' );
 		$feed_url = 'http://en.wp.obenland.it/feed/';
 		$rss = fetch_feed( $feed_url );
-		
+
 		// Bail if feed doesn't work
 		if ( is_wp_error($rss) )
 			return false;
-		
+
 		$rss_items = $rss->get_items( 0, $rss->get_item_quantity( 5 ) );
-		
+
 		// If the feed was erroneously
 		if ( ! $rss_items ) {
 			$md5 = md5( $feed_url );
@@ -279,8 +279,8 @@ class Obenland_Wp_Plugins_v300 {
 
 		return add_action(	$hook, array( $this, $method ), $priority , 999 );
 	}
-	
-	
+
+
 	/**
 	 * Sets the donate link
 	 *
@@ -302,7 +302,7 @@ class Obenland_Wp_Plugins_v300 {
 	///////////////////////////////////////////////////////////////////////////
 	// METHODS, PRIVATE
 	///////////////////////////////////////////////////////////////////////////
-	
+
 	/**
 	 * Sanitizes method names
 	 *
