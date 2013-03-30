@@ -24,6 +24,7 @@ Currently available in:
 * Deutsch
 * English
 * Hebrew
+* Persian
 * Russian
 
 

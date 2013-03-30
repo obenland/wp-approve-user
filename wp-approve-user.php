@@ -145,6 +145,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_v300 {
 		$this->hook( 'update_option_users_can_register' );
 
 		$this->hook( 'user_row_actions' );
+		$this->hook( 'ms_user_row_actions', 'user_row_actions' );
 		$this->hook( 'wp_authenticate_user' );
 		$this->hook( 'user_register' );
 		$this->hook( 'shake_error_codes' );
