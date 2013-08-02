@@ -12,8 +12,9 @@
  * License:     GPLv2
  */
 
+$registrations_enabled = apply_filters( 'wpau_registrations_enabled', get_option( 'users_can_register' ) );
 
-if ( ! get_option( 'users_can_register' ) ) {
+if ( ! $registrations_enabled ) {
 	return;
 }
 
