@@ -682,7 +682,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	 * @return void
 	 */
 	public function section_description_cb() {
-		$tags = array( 'USERNAME', 'BLOG_TITLE', 'BLOG_URL', 'LOGINLINK' );
+		$tags = array( 'USERNAME', 'BLOG_TITLE', 'BLOG_URL', 'LOGINLINK', 'RESETLINK' );
 		if ( is_multisite() ) {
 			$tags[] = 'SITE_NAME';
 		}
@@ -966,6 +966,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 		$message = str_replace( 'BLOG_URL', home_url(), $message );
 		$message = str_replace( 'LOGINLINK', wp_login_url(), $message );
 		$message = str_replace( 'USERNAME', $user->user_nicename, $message );
+		$message = str_replace( 'RESETLINK', $this->get_reset_password_url( $user->user_login ), $message );
 
 		if ( is_multisite() ) {
 			$message = str_replace( 'SITE_NAME', $GLOBALS['current_site']->site_name, $message );
@@ -974,6 +975,38 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 		return $message;
 	}
 
+
+
+	/**
+	 * Email template tag: reset_password_url
+	 * Generates a link to set or reset the user's password
+	 *
+	 * @param array $attributes
+	 *
+	 * @return string reset password URL
+	 */
+	protected function get_reset_password_url( $username ) {
+	    global $wpdb;
+
+	    // Generate something random for a password reset key.
+	    $key = wp_generate_password( 20, false );
+
+	    /** This action is documented in wp-login.php */
+	    do_action( 'retrieve_password_key', $username, $key );
+
+	    // Now insert the key, hashed, into the DB.
+	    if ( empty( $wp_hasher ) ) {
+	        require_once ABSPATH . WPINC . '/class-phpass.php';
+	        $wp_hasher = new PasswordHash( 8, true );
+	    }
+	    $hashed = time() . ':' . $wp_hasher->HashPassword( $key );
+	    $wpdb->update( $wpdb->users, array( 'user_activation_key' => $hashed ), array( 'user_login' => $username ) );
+
+	    $url = network_site_url("wp-login.php?action=rp&key=$key&login=" . rawurlencode($username), 'login');
+
+	    return $url;
+	}
+	
 
 	/**
 	 * Returns the default options.
