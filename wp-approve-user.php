@@ -646,7 +646,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	public function settings_page() {
 		?>
 		<div class="wrap">
-			<?php screen_icon(); ?>
 			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
 
 			<div id="poststuff">
