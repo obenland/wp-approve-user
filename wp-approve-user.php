@@ -967,7 +967,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 		$message = str_replace( 'USERNAME', $user->user_nicename, $message );
 		$message = str_replace( 'DISPLAYNAME', $user->display_name, $message );
 		$message = str_replace( 'FIRSTNAME', $user->first_name, $message );
-		$message = str_replace( 'RESETLINK', $this->get_reset_password_url( $user->user_login ), $message );
+		$message = str_replace( 'RESETLINK', $this->get_reset_password_url( $user ), $message );
 
 		if ( is_multisite() ) {
 			$message = str_replace( 'SITE_NAME', $GLOBALS['current_site']->site_name, $message );
@@ -982,28 +982,15 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	 * Email template tag: reset_password_url
 	 * Generates a link to set or reset the user's password
 	 *
-	 * @param array $attributes
+	 * @param obj WP_User $user
 	 *
 	 * @return string reset password URL
 	 */
-	protected function get_reset_password_url( $username ) {
-	    global $wpdb;
+	protected function get_reset_password_url( $user ) {
+	    
+	    $key = get_password_reset_key( $user );
 
-	    // Generate something random for a password reset key.
-	    $key = wp_generate_password( 20, false );
-
-	    /** This action is documented in wp-login.php */
-	    do_action( 'retrieve_password_key', $username, $key );
-
-	    // Now insert the key, hashed, into the DB.
-	    if ( empty( $wp_hasher ) ) {
-	        require_once ABSPATH . WPINC . '/class-phpass.php';
-	        $wp_hasher = new PasswordHash( 8, true );
-	    }
-	    $hashed = time() . ':' . $wp_hasher->HashPassword( $key );
-	    $wpdb->update( $wpdb->users, array( 'user_activation_key' => $hashed ), array( 'user_login' => $username ) );
-
-	    $url = network_site_url("wp-login.php?action=rp&key=$key&login=" . rawurlencode($username), 'login');
+	    $url = network_site_url( "wp-login.php?action=rp&key=$key&login=" . rawurlencode( $user->user_login ), 'login' );
 
 	    return $url;
 	}
