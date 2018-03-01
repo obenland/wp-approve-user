@@ -82,6 +82,21 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	 */
 	protected $unapproved_users = array();
 
+	/**
+	 * Main Obenland_Wp_Approve_User instance.
+	 *
+	 * Ensures only one instance of Obenland_Wp_Approve_User is loaded or can be loaded.
+	 *
+	 * @since  3.1
+	 *
+	 * @return Obenland_Wp_Approve_User single instance.
+	 */
+	public static function get_instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
+		}
+		return self::$instance;
+	}
 
 	/**
 	 * Constructor
@@ -99,7 +114,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 			'donate_link_id' => 'G65Y5CM3HVRNY',
 		) );
 
-		self::$instance = $this;
 		$this->options  = wp_parse_args(
 			get_option( $this->textdomain, array() ),
 			$this->default_options()
@@ -1103,7 +1117,7 @@ Contact details',
 } // End of class Obenland_Wp_Approve_User
 
 
-new Obenland_Wp_Approve_User();
+Obenland_Wp_Approve_User::get_instance();
 
 
 register_activation_hook( __FILE__, array(
