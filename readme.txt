@@ -1,19 +1,20 @@
 === WP Approve User ===
-Contributors: kobenland
+Contributors: obenland
 Tags: admin, user, login, approve, user management, plugin
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
 Requires at least: 3.1
-Tested up to: 3.6
-Stable tag: 2.2.0
+Tested up to: 5.0
+Stable tag: 3
 
 Adds action links to user table to approve or unapprove user registrations.
 
 == Description ==
 
 This plugin lets you approve or reject user registrations.
-While a user is unapproved, he/she can't access the WordPress Admin.
+While a user is unapproved, they can't access the WordPress Admin.
 
-On activation of the plugin, all existing users will automatically be flagged Approved. The blog admin will never experience restricted access and does not need approval.
+On activation of the plugin, all existing users will automatically be flagged Approved. The site admin will never experience restricted access and does not need approval.
+This plugin is probably not compatible with WooCommerce.
 
 = Translations =
 
@@ -71,6 +72,28 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 
 == Changelog ==
+
+= 3 =
+* Maintenance release.
+* Better multisite compatibility.
+* Now maintains role selection on batch modification.
+* Added some more sanitization.
+* Updated code to adhere to WordPress Coding Standards.
+* Tested for WordPress 5.0.
+
+= 2.3 =
+* Added French translation. Props Clovis Darrigan.
+* Added Arabic translation. Props Mehdi Bounya.
+
+= 2.2.3 =
+* Fixes a bug where administrators where locked out of their site if user registration was enabled after the plugin was.
+
+= 2.2.2 =
+* Adds backwards compatibility for WordPress versions pre-3.5 for the user list filter.
+* Removes unused development versions of scripts and styles.
+
+= 2.2.1 =
+* Updated utility class.
 
 = 2.2.0 =
 * Added a way to filter for unapproved users in the admin user list.
