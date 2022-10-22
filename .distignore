@@ -1,0 +1,8 @@
+# Directories
+/.git
+/.github
+/,idea
+/tests
+
+# Files
+.distignore
