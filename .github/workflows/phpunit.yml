@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: [ 7.4, 8.0, 8.1 ]
+        php-version: [ 7.4 ]
         wordpress-version: [ latest ]
     container:
       image: junaidbhura/wp-tests:php-${{ matrix.php-version }}
