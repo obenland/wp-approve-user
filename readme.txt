@@ -1,19 +1,20 @@
 === WP Approve User ===
-Contributors: kobenland
+Contributors: obenland
 Tags: admin, user, login, approve, user management, plugin
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
-Requires at least: 3.1
-Tested up to: 3.6
-Stable tag: 2.2.0
+Requires at least: 4.3
+Tested up to: 6.1
+Stable tag: 9
 
 Adds action links to user table to approve or unapprove user registrations.
 
 == Description ==
 
 This plugin lets you approve or reject user registrations.
-While a user is unapproved, he/she can't access the WordPress Admin.
+While a user is unapproved, they can't access the WordPress Admin.
 
-On activation of the plugin, all existing users will automatically be flagged Approved. The blog admin will never experience restricted access and does not need approval.
+On activation of the plugin, all existing users will automatically be flagged Approved. The site admin will never experience restricted access and does not need approval.
+This plugin is probably not compatible with WooCommerce.
 
 = Translations =
 
@@ -61,6 +62,9 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 **wpau_update_message_handler** (*string*)
 > Allows to return custom update messages.
 
+**wpau_message_placeholders** (*array*)
+> Filters the placeholders in approve/unapprove emails.
+
 
 == Screenshots ==
 
@@ -71,6 +75,51 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 
 == Changelog ==
+
+= 9 =
+* No longer checks approval status on log in for super admins in multisite installations. See https://wordpress.org/support/topic/super-admin-not-approved-on-multisite/
+* On activation now adds user meta in batches of 50 users, using cron jobs. See https://wordpress.org/support/topic/dont-use-if-you-have-a-large-user-database/
+
+= 8 =
+* Does no longer overwrite approval status after plugin re-activation. Props @zadro, @idearius, @howdy_mcgee.
+
+= 7 =
+* Added a filter to manipulate placeholders and their replacement values. See https://wordpress.org/support/topic/customize-email-templates-2/
+* Only sends out rejection email if it's a new registration and the user is not approved. See https://wordpress.org/support/topic/deleting-user-generates-user-not-approved-email-possible-to-disable-feature/
+* Various multisite improvements and bug fixes. The unapproved filter works now! See https://wordpress.org/support/topic/multisite-issues-with-user-lists-and-unapproved-filter/
+
+= 6 =
+* Improved approval flow, waiting with password email until after approval.
+* Fixed a bug where the approval email had some stray whitespace surrounding it.
+* Tested for WordPress 5.2.
+
+= 5 =
+* Fixed a bug where user registration couldn't be activated with the plugin active.
+
+= 4 =
+* For easier on-boarding, it now displays a notice if user registration is disabled.
+
+= 3 =
+* Maintenance release.
+* Better multisite compatibility.
+* Now maintains role selection on batch modification.
+* Added some more sanitization.
+* Updated code to adhere to WordPress Coding Standards.
+* Tested for WordPress 5.0.
+
+= 2.3 =
+* Added French translation. Props Clovis Darrigan.
+* Added Arabic translation. Props Mehdi Bounya.
+
+= 2.2.3 =
+* Fixes a bug where administrators where locked out of their site if user registration was enabled after the plugin was.
+
+= 2.2.2 =
+* Adds backwards compatibility for WordPress versions pre-3.5 for the user list filter.
+* Removes unused development versions of scripts and styles.
+
+= 2.2.1 =
+* Updated utility class.
 
 = 2.2.0 =
 * Added a way to filter for unapproved users in the admin user list.
@@ -109,3 +158,5 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 
 == Upgrade Notice ==
+Updated registration flow, now sending out Core's password-creation email only after a registration was approved.
+With this change, the minimum required version is now WordPress 4.3.
