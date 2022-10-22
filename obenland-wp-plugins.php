@@ -1,4 +1,4 @@
-<?php
+<?php //phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
 /**
  * Obenland plugin base class.
  *
@@ -299,10 +299,13 @@ class Obenland_Wp_Plugins_V4 {
 	 * @param  string $donate_link_id Donate link ID.
 	 */
 	protected function set_donate_link( $donate_link_id ) {
-		$this->donate_link = add_query_arg( array(
-			'cmd'              => '_s-xclick',
-			'hosted_button_id' => $donate_link_id,
-		), 'https://www.paypal.com/cgi-bin/webscr' );
+		$this->donate_link = add_query_arg(
+			array(
+				'cmd'              => '_s-xclick',
+				'hosted_button_id' => $donate_link_id,
+			),
+			'https://www.paypal.com/cgi-bin/webscr'
+		);
 	}
 
 

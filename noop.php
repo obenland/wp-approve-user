@@ -16,10 +16,12 @@
  */
 function wpau_whitelist_users( $new ) {
 	if ( $new ) {
-		$user_ids = get_users( array(
-			'blog_id' => '',
-			'fields'  => 'ID',
-		) );
+		$user_ids = get_users(
+			array(
+				'blog_id' => '',
+				'fields'  => 'ID',
+			)
+		);
 
 		foreach ( $user_ids as $user_id ) {
 			update_user_meta( $user_id, 'wp-approve-user', true );
