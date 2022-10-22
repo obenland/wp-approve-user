@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<ruleset name="WP Approve User">
+	<file>.</file>
+
+	<!-- Exclude JS/CSS files. -->
+	<exclude-pattern>*.[s]?css</exclude-pattern>
+	<exclude-pattern>*.js</exclude-pattern>
+
+	<!-- Show sniff codes -->
+	<arg value="s"/>
+
+	<rule ref="WordPress">
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_key" />
+		<exclude name="WordPress.DB.SlowDBQuery.slow_db_query_meta_value" />
+		<exclude name="WordPress.Security.NonceVerification.Recommended" />
+		<exclude name="WordPress.WP.DeprecatedFunctions.screen_iconFound" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.MultipleArguments" />
+	</rule>
+	<rule ref="WordPress-Core" />
+	<rule ref="WordPress-Docs" />
+</ruleset>
