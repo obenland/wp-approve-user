@@ -91,14 +91,12 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	 * @access public
 	 */
 	public function activation() {
-		$user_search = new WP_User_Query(
+		$user_ids = get_users(
 			array(
 				'blog_id' => '',
 				'fields'  => 'ID',
 			)
 		);
-
-		$user_ids = $user_search->get_results();
 
 		foreach ( $user_ids as $user_id ) {
 			add_user_meta( $user_id, 'wp-approve-user', true, true );
@@ -675,7 +673,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 		}
 
 		printf(
-		/* translators: Placeholders. */
+			/* translators: Placeholders. */
 			esc_html_x( 'To take advantage of dynamic data, you can use the following placeholders: %s. Username will be the user login in most cases.', 'Placeholders', 'wp-approve-user' ),
 			sprintf( '<code>%s</code>', implode( '</code>, <code>', $tags ) ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		);
