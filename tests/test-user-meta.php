@@ -54,10 +54,12 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::user_register
 	 */
 	public function test_user_register_admin_single_site() {
-		$this->skipWithMultisite();
-
 		$user_id = get_current_user_id();
 		$class   = new Obenland_Wp_Approve_User();
+
+		if ( is_multisite() ) {
+			grant_super_admin( $user_id );
+		}
 
 		$class->user_register( $user_id );
 
