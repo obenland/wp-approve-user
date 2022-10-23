@@ -5,10 +5,6 @@
  * @package wp-approve-user
  */
 
-// I shouldn't need to require them here.
-require_once dirname( __DIR__ ) . '/obenland-wp-plugins.php';
-require_once dirname( __DIR__ ) . '/class-obenland-wp-approve-user.php';
-
 /**
  * User meta related tests.
  *
@@ -16,6 +12,11 @@ require_once dirname( __DIR__ ) . '/class-obenland-wp-approve-user.php';
  */
 class User_Meta extends WP_UnitTestCase {
 
+	/**
+	 * Admin user object.
+	 *
+	 * @var WP_User
+	 */
 	public static $admin;
 
 	/**
@@ -27,12 +28,18 @@ class User_Meta extends WP_UnitTestCase {
 		static::$admin = $factory->user->create_and_get( array( 'role' => 'administrator' ) );
 	}
 
+	/**
+	 * Setup.
+	 */
 	public function setUp() {
 		parent::setUp();
 
 		wp_set_current_user( static::$admin->ID );
 	}
 
+	/**
+	 * Teardown.
+	 */
 	public function tearDown() {
 		delete_metadata( 'user', 0, 'wp-approve-user', '', true );
 		delete_metadata( 'user', 0, 'wp-approve-user-mail-sent', '', true );
@@ -51,7 +58,7 @@ class User_Meta extends WP_UnitTestCase {
 		$class   = new Obenland_Wp_Approve_User();
 
 		$class->user_register( $user_id );
-var_dump($user_id, current_user_can( 'create_users'), get_user_meta( $user_id, 'wp-approve-user', true ));
+var_dump($user_id, static::$admin->ID, current_user_can( 'create_users'), get_user_meta( $user_id, 'wp-approve-user', true ));
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
 	}

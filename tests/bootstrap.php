@@ -22,7 +22,11 @@ require_once $_tests_dir . '/includes/functions.php';
  * Manually load the plugin being tested.
  */
 function _manually_load_plugin() {
-	require_once dirname( __DIR__ ) . '/wp-approve-user.php';
+	$root = dirname( __DIR__ );
+
+	require_once $root . '/noop.php';
+	require_once $root . '/obenland-wp-plugins.php';
+	require_once $root . '/class-obenland-wp-approve-user.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
