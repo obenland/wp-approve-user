@@ -1,0 +1,10 @@
+# Directories
+/.git
+/.github
+/,idea
+/tests
+
+# Files
+.distignore
+composer.json
+phpunit.xml
