@@ -51,7 +51,7 @@ class User_Meta extends WP_UnitTestCase {
 		$class = new Obenland_Wp_Approve_User();
 
 		$class->user_register( $user->ID );
-var_dump( get_user_meta( $user->ID, 'wp-approve-user', true ) );
+var_dump($user->id,  get_current_user_id(), get_user_meta( $user->ID, 'wp-approve-user', true ) );
 		$this->assertSame( '0', get_user_meta( $user->ID, 'wp-approve-user', true ) );
 	}
 }
