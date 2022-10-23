@@ -28,6 +28,7 @@ class EnvironmentTest extends TestCase {
 				'post_type'    => 'post',
 				'post_title'   => 'roy',
 				'post_content' => 'sivan',
+				'context'      => 'test',
 			)
 		);
 		$this->assertTrue( is_numeric( $id ) );
