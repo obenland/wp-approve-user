@@ -8,6 +8,16 @@
     "mockery/mockery": "1.2",
     "brain/monkey": "2.*"
   },
+  "autoload": {
+    "psr-4": {
+      "WordPressPlugin\\": "./php"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "WordPressPlugin\\Tests\\": "./tests"
+    }
+  },
   "scripts": {
     "test": "phpunit --config=tests/phpunit.xml"
   }
