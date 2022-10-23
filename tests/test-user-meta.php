@@ -5,6 +5,7 @@
  * @package wp-approve-user
  */
 
+require_once dirname( __DIR__ ) . '/obenland-wp-plugins.php';
 require_once dirname( __DIR__ ) . '/class-obenland-wp-approve-user.php';
 
 /**
