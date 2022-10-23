@@ -28,7 +28,7 @@ jobs:
 
       - name: Install Composer dependencies
         run: |
-          composer install --no-dev
+          composer install
           composer global require "phpunit/phpunit=6.1.0"
 
       - name: Install WordPress test suite
