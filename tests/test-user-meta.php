@@ -116,15 +116,25 @@ class User_Meta extends WP_UnitTestCase {
 		$this->assertWPError( $result );
 		$this->assertSame( 'test_error', $error->get_error_code() );
 
-		// Returns WP_User for admins, even if they're unapproved.
-		update_user_meta( static::$admin->ID, 'wp-approve-user', false );
-		$result = $class->wp_authenticate_user( static::$admin );
-		$this->assertSame( static::$admin, $result );
-
 		// Returns WP_Error if they're not approved.
 		$result = $class->wp_authenticate_user( $user );
 		$this->assertWPError( $result );
 		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
+	}
+
+	/**
+	 * Tests wp_authenticate_user on single sites.
+	 *
+	 * @covers ::wp_authenticate_user
+	 */
+	public function test_wp_authenticate_user_simple_site() {
+		$this->skipWithMultisite();
+		$class = new Obenland_Wp_Approve_User();
+
+		// Returns WP_User for admins, even if they're unapproved.
+		update_user_meta( static::$admin->ID, 'wp-approve-user', false );
+		$result = $class->wp_authenticate_user( static::$admin );
+		$this->assertSame( static::$admin, $result );
 	}
 
 	/**
@@ -134,14 +144,19 @@ class User_Meta extends WP_UnitTestCase {
 	 */
 	public function test_wp_authenticate_user_multisite() {
 		$this->skipWithoutMultisite();
-
-		$user  = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
 		$class = new Obenland_Wp_Approve_User();
 
-		grant_super_admin( $user->ID );
+		// Returns WP_Error for admins when they're unapproved.
+		update_user_meta( static::$admin->ID, 'wp-approve-user', false );
+		$result = $class->wp_authenticate_user( static::$admin );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
 
 		// Returns WP_User for super admins, even if they're unapproved.
+		$user = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		grant_super_admin( $user->ID );
 		update_user_meta( $user->ID, 'wp-approve-user', false );
+
 		$result = $class->wp_authenticate_user( $user );
 		$this->assertSame( $user, $result );
 	}
