@@ -22,8 +22,11 @@ class User_Meta extends WP_UnitTestCase {
 	 * @param WP_UnitTest_Factory $factory Factory.
 	 */
 	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ): void {
-		$user = $factory->user->create_and_get( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $user->ID );
+		static::$admin = $factory->user->create_and_get( array( 'role' => 'administrator' ) );
+	}
+
+	public function set_up() {
+		wp_set_current_user( static::$admin->ID );
 	}
 
 	/**
@@ -47,14 +50,11 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::user_register
 	 */
 	public function test_user_register_subscriber() {
-		$admin      = $this->factory->user->create_and_get( array( 'role' => 'administrator' ) );
-		$subscriber = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
-		wp_set_current_user( $admin->ID );
-
+		$user  = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
 		$class = new Obenland_Wp_Approve_User();
 
-		$class->user_register( $subscriber->ID );
-var_dump($subscriber->id,  get_current_user_id(), get_user_meta( $subscriber->ID, 'wp-approve-user', true ) );
-		$this->assertSame( '0', get_user_meta( $subscriber->ID, 'wp-approve-user', true ) );
+		$class->user_register( $user->ID );
+var_dump($user->id,  get_current_user_id(), get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( '0', get_user_meta( $user->ID, 'wp-approve-user', true ) );
 	}
 }
