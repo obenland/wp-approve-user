@@ -6,3 +6,5 @@
 
 # Files
 .distignore
+composer.json
+phpunit.xml
