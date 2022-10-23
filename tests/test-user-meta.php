@@ -27,8 +27,18 @@ class User_Meta extends WP_UnitTestCase {
 		static::$admin = $factory->user->create_and_get( array( 'role' => 'administrator' ) );
 	}
 
-	public function set_up() {
+	public function setUp() {
+		parent::setUp();
+
 		wp_set_current_user( static::$admin->ID );
+	}
+
+	public function tearDown() {
+		delete_metadata( 'user', 0, 'wp-approve-user', '', true );
+		delete_metadata( 'user', 0, 'wp-approve-user-mail-sent', '', true );
+		delete_metadata( 'user', 0, 'wp-approve-user-new-registration', '', true );
+
+		parent::tearDown();
 	}
 
 	/**
@@ -41,7 +51,7 @@ class User_Meta extends WP_UnitTestCase {
 		$class   = new Obenland_Wp_Approve_User();
 
 		$class->user_register( $user_id );
-
+var_dump($user_id, current_user_can( 'create_users'), get_user_meta( $user_id, 'wp-approve-user', true ));
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
 	}
