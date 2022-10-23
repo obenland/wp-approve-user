@@ -124,7 +124,7 @@ class User_Meta extends WP_UnitTestCase {
 		// Returns WP_Error if they're not approved.
 		$result = $class->wp_authenticate_user( $user );
 		$this->assertWPError( $result );
-		$this->assertSame( 'wpau_confirmation_error', $error->get_error_code() );
+		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
 	}
 
 	/**
