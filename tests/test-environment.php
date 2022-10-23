@@ -23,14 +23,8 @@ class EnvironmentTest extends TestCase {
 		global $wpdb;
 
 		$this->assertTrue( is_object( $wpdb ) );
-		$id = wp_insert_post(
-			array(
-				'post_type'    => 'post',
-				'post_title'   => 'roy',
-				'post_content' => 'sivan',
-				'context'      => 'test',
-			)
-		);
-		$this->assertTrue( is_numeric( $id ) );
+		$success = add_option( 'test', 'test' );
+		$this->assertTrue( $success );
+		$this->assertSame( 'test', get_option( 'test' ) );
 	}
 }
