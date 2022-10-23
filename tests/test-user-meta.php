@@ -100,4 +100,49 @@ class User_Meta extends WP_UnitTestCase {
 		$this->assertEmpty( get_user_meta( $user->ID, 'wp-approve-user', true ) );
 		$this->assertSame( '1', get_user_meta( $user->ID, 'wp-approve-user-new-registration', true ) );
 	}
+
+	/**
+	 * Tests wp_authenticate_user.
+	 *
+	 * @covers ::wp_authenticate_user
+	 */
+	public function test_wp_authenticate_user() {
+		$user  = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		$class = new Obenland_Wp_Approve_User();
+
+		// Returns WP_Error if there's an error.
+		$error  = new WP_Error( 'test_error', 'Test Error' );
+		$result = $class->wp_authenticate_user( $error );
+		$this->assertWPError( $result );
+		$this->assertSame( 'test_error', $error->get_error_code() );
+
+		// Returns WP_User for admins, even if they're unapproved.
+		update_user_meta( static::$admin->ID, 'wp-approve-user', false );
+		$result = $class->wp_authenticate_user( static::$admin );
+		$this->assertSame( static::$admin, $result );
+
+		// Returns WP_Error if they're not approved.
+		$result = $class->wp_authenticate_user( $user );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wpau_confirmation_error', $error->get_error_code() );
+	}
+
+	/**
+	 * Tests wp_authenticate_user on multisite.
+	 *
+	 * @covers ::wp_authenticate_user
+	 */
+	public function test_wp_authenticate_user_multisite() {
+		$this->skipWithoutMultisite();
+
+		$user  = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		$class = new Obenland_Wp_Approve_User();
+
+		grant_super_admin( $user->ID );
+
+		// Returns WP_User for super admins, even if they're unapproved.
+		update_user_meta( $user->ID, 'wp-approve-user', false );
+		$result = $class->wp_authenticate_user( $user );
+		$this->assertSame( $user, $result );
+	}
 }
