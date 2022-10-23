@@ -345,7 +345,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	 * @param int $id User ID.
 	 */
 	public function user_register( $id ) {
-		update_user_meta( $id, 'wp-approve-user', current_user_can( 'create_users' ) );
+		update_user_meta( $id, 'wp-approve-user', user_can( $id, 'create_users' ) );
 		update_user_meta( $id, 'wp-approve-user-new-registration', true );
 	}
 
