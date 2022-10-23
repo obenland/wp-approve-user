@@ -47,11 +47,14 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::user_register
 	 */
 	public function test_user_register_subscriber() {
-		$user  = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		$admin      = $this->factory->user->create_and_get( array( 'role' => 'administrator' ) );
+		$subscriber = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $admin->ID );
+
 		$class = new Obenland_Wp_Approve_User();
 
-		$class->user_register( $user->ID );
-var_dump($user->id,  get_current_user_id(), get_user_meta( $user->ID, 'wp-approve-user', true ) );
-		$this->assertSame( '0', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$class->user_register( $subscriber->ID );
+var_dump($subscriber->id,  get_current_user_id(), get_user_meta( $subscriber->ID, 'wp-approve-user', true ) );
+		$this->assertSame( '0', get_user_meta( $subscriber->ID, 'wp-approve-user', true ) );
 	}
 }
