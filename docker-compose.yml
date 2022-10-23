@@ -1,0 +1,23 @@
+# Docker-compose file for running integration tests
+# For local dev, use wp-env: https://shelob9.github.io/wordpress-plugin/local-dev
+version: '3.7'
+services:
+  database:
+    container_name: database
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    image: mysql:5.7
+
+  phpunit:
+    command:
+      - bash
+    container_name: phpunit
+    depends_on:
+      - database
+    environment:
+      DATABASE_PASSWORD: root
+    image: futureys/phpunit-wordpress-plugin
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/plugin

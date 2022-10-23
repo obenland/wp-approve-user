@@ -36,4 +36,4 @@ jobs:
 
 
       - name: Tests
-        run: $HOME/.composer/vendor/bin/phpunit --config=tests/phpunit.xml
+        run: $HOME/.composer/vendor/bin/phpunit --config=phpunit.xml
