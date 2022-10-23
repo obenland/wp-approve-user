@@ -5,6 +5,8 @@
  * @package wp-approve-user
  */
 
+require_once dirname( __DIR__ ) . '/wp-approve-user.php';
+
 /**
  * User meta related tests.
  *
