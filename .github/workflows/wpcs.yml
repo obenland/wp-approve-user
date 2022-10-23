@@ -11,7 +11,7 @@ jobs:
         - name: PHPCS check
           uses: 10up/wpcs-action@stable
           with:
-              extra_args: '--report=full --report-json=./phpcs.json'
+              extra_args: '--report-json=./phpcs.json'
         - name: Update summary
           run: |
             npx --yes github:10up/phpcs-json-to-md --path ./phpcs.json --output ./phpcs.md
