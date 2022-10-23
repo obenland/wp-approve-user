@@ -31,8 +31,8 @@ class User_Meta extends WP_UnitTestCase {
 	/**
 	 * Setup.
 	 */
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		wp_set_current_user( static::$admin->ID );
 	}
@@ -40,12 +40,12 @@ class User_Meta extends WP_UnitTestCase {
 	/**
 	 * Teardown.
 	 */
-	public function tearDown() {
+	public function tear_down() {
 		delete_metadata( 'user', 0, 'wp-approve-user', '', true );
 		delete_metadata( 'user', 0, 'wp-approve-user-mail-sent', '', true );
 		delete_metadata( 'user', 0, 'wp-approve-user-new-registration', '', true );
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**
@@ -90,7 +90,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::user_register
 	 */
 	public function test_user_register_subscriber() {
-		$user = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		wp_set_current_user( $user->ID );
 
 		$class = new Obenland_Wp_Approve_User();
@@ -107,7 +107,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::wp_authenticate_user
 	 */
 	public function test_wp_authenticate_user() {
-		$user  = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		$user  = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		$class = new Obenland_Wp_Approve_User();
 
 		// Returns WP_Error if there's an error.
@@ -153,7 +153,7 @@ class User_Meta extends WP_UnitTestCase {
 		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
 
 		// Returns WP_User for super admins, even if they're unapproved.
-		$user = $this->factory->user->create_and_get( array( 'role' => 'subscriber' ) );
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		grant_super_admin( $user->ID );
 		update_user_meta( $user->ID, 'wp-approve-user', false );
 
