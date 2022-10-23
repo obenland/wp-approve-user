@@ -16,6 +16,8 @@ require_once dirname( __DIR__ ) . '/class-obenland-wp-approve-user.php';
  */
 class User_Meta extends WP_UnitTestCase {
 
+	public static $admin;
+
 	/**
 	 * Setup before class.
 	 *
