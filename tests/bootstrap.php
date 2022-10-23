@@ -15,11 +15,8 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 	exit( 1 );
 }
 
-require_once dirname( __DIR__ ) . '/vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php';
-
 // Give access to tests_add_filter() function.
 require_once $_tests_dir . '/includes/functions.php';
-require_once $_tests_dir . '/includes/bootstrap.php';
 
 /**
  * Manually load the plugin being tested.
@@ -28,3 +25,6 @@ function _manually_load_plugin() {
 	require_once dirname( __DIR__ ) . '/wp-approve-user.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
+
+// Start up the WP testing environment.
+require $_tests_dir . '/includes/bootstrap.php';
