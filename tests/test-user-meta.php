@@ -19,14 +19,11 @@ class User_Meta extends WP_UnitTestCase {
 	 *
 	 * @param WP_UnitTest_Factory $factory Factory.
 	 */
-	public static function setUpBeforeClass( WP_UnitTest_Factory $factory ): void {
-		parent::setUpBeforeClass( $factory );
-
+	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ): void {
 		new Obenland_Wp_Approve_User();
 
 		$user = $factory->user->create_and_get( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $user->ID );
-
 	}
 
 	/**
