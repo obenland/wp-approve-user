@@ -97,27 +97,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	}
 
 	/**
-	 * Approves all existing users.
-	 *
-	 * @author Konstantin Obenland
-	 * @since  1.0 - 29.01.2012
-	 * @access public
-	 */
-	public function activation() {
-		$user_ids = get_users(
-			array(
-				'blog_id' => '',
-				'fields'  => 'ID',
-			)
-		);
-
-		foreach ( $user_ids as $user_id ) {
-			add_user_meta( $user_id, 'wp-approve-user', true, true );
-			add_user_meta( $user_id, 'wp-approve-user-mail-sent', true, true );
-		}
-	}
-
-	/**
 	 * Hooks in all the hooks :)
 	 *
 	 * @author Konstantin Obenland
@@ -1092,5 +1071,19 @@ Contact details',
 	 */
 	public function update_option_users_can_register( $old, $new ) {
 		_deprecated_function( __FUNCTION__, '2.3' );
+	}
+
+	/**
+	 * Approves all existing users.
+	 *
+	 * @author     Konstantin Obenland
+	 * @since      1.0 - 29.01.2012
+	 * @deprecated 10 - 03.11.2022
+	 * @access     public
+	 */
+	public function activation() {
+		_deprecated_function( __FUNCTION__, '10', 'wp_approve_user_activate' );
+
+		wp_approve_user_activate();
 	}
 }
