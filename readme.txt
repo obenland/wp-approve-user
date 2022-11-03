@@ -78,7 +78,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 = 9 =
 * No longer checks approval status on log in for super admins in multisite installations. See https://wordpress.org/support/topic/super-admin-not-approved-on-multisite/
-* On activation now adds user meta in batches of 50 users, using cron jobs. See https://wordpress.org/support/topic/dont-use-if-you-have-a-large-user-database/
+* Fixes an incompatibility with WordPress 6.1 where the plugin would set up too early. See https://wordpress.org/support/topic/fatal-error-4281/
 
 = 8 =
 * Does no longer overwrite approval status after plugin re-activation. Props @zadro, @idearius, @howdy_mcgee.
