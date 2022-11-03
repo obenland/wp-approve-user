@@ -24,6 +24,13 @@ if ( ! class_exists( 'Obenland_Wp_Plugins_V4' ) ) {
 }
 
 require_once 'class-obenland-wp-approve-user.php';
-new Obenland_Wp_Approve_User();
 
-register_activation_hook( __FILE__, array( Obenland_Wp_Approve_User::$instance, 'activation' ) );
+/**
+ * Instantiates Obenland_Wp_Approve_User.
+ */
+function wp_approve_user_instantiate() {
+	Obenland_Wp_Approve_User::get_instance();
+}
+add_action( 'plugins_loaded', 'wp_approve_user_instantiate' );
+
+register_activation_hook( __FILE__, array( Obenland_Wp_Approve_User::get_instance(), 'activation' ) );

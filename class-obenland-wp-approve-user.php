@@ -84,6 +84,19 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 	}
 
 	/**
+	 * Singleton.
+	 *
+	 * @return Obenland_Wp_Approve_User
+	 */
+	public static function get_instance() {
+		if ( ! static::$instance ) {
+			static::$instance = new static();
+		}
+
+		return static::$instance;
+	}
+
+	/**
 	 * Approves all existing users.
 	 *
 	 * @author Konstantin Obenland
