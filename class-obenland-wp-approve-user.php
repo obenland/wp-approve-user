@@ -8,7 +8,7 @@
 /**
  * Class Obenland_Wp_Approve_User.
  */
-class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
+class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 	/**
 	 * Class instance.
@@ -54,7 +54,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 		parent::__construct(
 			array(
 				'textdomain'     => 'wp-approve-user',
-				'plugin_path'    => __FILE__,
+				'plugin_path'    => __DIR__ . '/wp-approve-user.php',
 				'donate_link_id' => 'G65Y5CM3HVRNY',
 			)
 		);
@@ -642,7 +642,10 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V4 {
 					</div>
 					<div id="postbox-container-1">
 						<div id="side-info-column">
-							<?php do_action( 'obenland_side_info_column' ); ?>
+							<?php
+							$this->donate_box();
+							$this->feed_box();
+							?>
 						</div>
 					</div>
 				</div>

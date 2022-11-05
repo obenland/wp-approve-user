@@ -1,16 +1,16 @@
-<?php //phpcs:ignore WordPress.Files.FileName.InvalidClassFileName
+<?php
 /**
  * Obenland plugin base class.
  *
  * @author  Konstantin Obenland
- * @version 4
+ * @version 5
  * @package Obenland Plugins
  */
 
 /**
- * Class Obenland_Wp_Plugins_V4
+ * Class Obenland_Wp_Plugins_V5
  */
-class Obenland_Wp_Plugins_V4 {
+class Obenland_Wp_Plugins_V5 {
 
 	/**
 	 * The plugins' text domain.
@@ -23,7 +23,6 @@ class Obenland_Wp_Plugins_V4 {
 	 */
 	protected $textdomain;
 
-
 	/**
 	 * The name of the calling plugin.
 	 *
@@ -35,7 +34,6 @@ class Obenland_Wp_Plugins_V4 {
 	 */
 	protected $plugin_name;
 
-
 	/**
 	 * The donate link for the plugin.
 	 *
@@ -46,7 +44,6 @@ class Obenland_Wp_Plugins_V4 {
 	 * @var    string
 	 */
 	protected $donate_link;
-
 
 	/**
 	 * The path to the plugin file.
@@ -60,7 +57,6 @@ class Obenland_Wp_Plugins_V4 {
 	 * @var    string
 	 */
 	protected $plugin_path;
-
 
 	/**
 	 * The path to the plugin directory.
@@ -103,7 +99,6 @@ class Obenland_Wp_Plugins_V4 {
 		$this->hook( 'plugins_loaded', 'parent_plugins_loaded' );
 	}
 
-
 	/**
 	 * Hooks in all the hooks :)
 	 *
@@ -113,13 +108,7 @@ class Obenland_Wp_Plugins_V4 {
 	 */
 	public function parent_plugins_loaded() {
 		$this->hook( 'plugin_row_meta' );
-
-		if ( ! has_action( 'obenland_side_info_column' ) ) {
-			$this->hook( 'obenland_side_info_column', 'donate_box', 1 );
-			$this->hook( 'obenland_side_info_column', 'feed_box' );
-		}
 	}
-
 
 	/**
 	 * Adds a Donate link to our plugin row.
@@ -130,8 +119,7 @@ class Obenland_Wp_Plugins_V4 {
 	 *
 	 * @param  array  $plugin_meta Existing plugin meta.
 	 * @param  string $plugin_file Plugin slug.
-	 *
-	 * @return string
+	 * @return array
 	 */
 	public function plugin_row_meta( $plugin_meta, $plugin_file ) {
 		if ( $this->plugin_name === $plugin_file ) {
@@ -141,9 +129,9 @@ class Obenland_Wp_Plugins_V4 {
 				__( 'Donate', 'obenland-wp' )
 			);
 		}
+
 		return $plugin_meta;
 	}
-
 
 	/**
 	 * Displays a box with a donate button and call to action links.
@@ -156,8 +144,6 @@ class Obenland_Wp_Plugins_V4 {
 	 * @author Joost de Valk, Konstantin Obenland
 	 * @since  2.0.0 - 31.03.2012
 	 * @access public
-	 *
-	 * @return void
 	 */
 	public function donate_box() {
 		$plugin_data = get_plugin_data( $this->plugin_path );
@@ -184,14 +170,13 @@ class Obenland_Wp_Plugins_V4 {
 				</form>
 				<p><?php esc_html_e( 'Or you could:', 'obenland-wp' ); ?></p>
 				<ul>
-					<li><a href="http://wordpress.org/extend/plugins/wp-approve-user/"><?php esc_html_e( 'Rate the plugin 5&#9733; on WordPress.org', 'obenland-wp' ); ?></a></li>
+					<li><a href="http://wordpress.org/plugins/wp-approve-user/"><?php esc_html_e( 'Rate the plugin 5&#9733; on WordPress.org', 'obenland-wp' ); ?></a></li>
 					<li><a href="<?php echo esc_url( $plugin_data['PluginURI'] ); ?>"><?php esc_html_e( 'Blog about it &amp; link to the plugin page', 'obenland-wp' ); ?></a></li>
 				</ul>
 			</div>
 		</div>
 		<?php
 	}
-
 
 	/**
 	 * Displays a box with feed items and social media links.
@@ -204,11 +189,8 @@ class Obenland_Wp_Plugins_V4 {
 	 * @author Joost de Valk, Konstantin Obenland
 	 * @since  2.0.0 - 31.03.2012
 	 * @access public
-	 *
-	 * @return void
 	 */
 	public function feed_box() {
-
 		include_once ABSPATH . WPINC . '/feed.php';
 		$feed_url = 'https://konstantin.obenland.it/feed/';
 		$rss      = fetch_feed( $feed_url );
@@ -253,7 +235,6 @@ class Obenland_Wp_Plugins_V4 {
 		<?php
 	}
 
-
 	/**
 	 * Hooks methods to their WordPress Actions and Filters.
 	 *
@@ -288,7 +269,6 @@ class Obenland_Wp_Plugins_V4 {
 		return add_action( $hook, array( $this, $method ), $priority, 999 );
 	}
 
-
 	/**
 	 * Sets the donate link.
 	 *
@@ -308,7 +288,6 @@ class Obenland_Wp_Plugins_V4 {
 		);
 	}
 
-
 	/**
 	 * Sanitizes method names.
 	 *
@@ -324,5 +303,4 @@ class Obenland_Wp_Plugins_V4 {
 	private function sanitize_method( $method ) {
 		return str_replace( array( '.', '-' ), '_', $method );
 	}
-
-} // End of class Obenland_Wp_Plugins.
+}
