@@ -3,9 +3,12 @@
 /.github
 /.idea
 /bin
+/node_modules
 /tests
 
 # Files
 .distignore
 composer.json
+package.json
+package-lock.json
 phpunit.xml
