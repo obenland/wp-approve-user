@@ -4,7 +4,7 @@ Tags: admin, user, login, approve, user management, plugin
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
 Requires at least: 4.3
 Tested up to: 6.1
-Stable tag: 10
+Stable tag: 11
 
 Adds action links to user table to approve or unapprove user registrations.
 
@@ -75,6 +75,10 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 
 == Changelog ==
+
+= 11 =
+* Replaced image files with inline SVGs.
+* Fixes a race condition with registering sidebar boxes between plugins I authored.
 
 = 10 =
 * Fixes a bug with the activation hook creating class instances before it should. See https://wordpress.org/support/topic/fatal-error-4281/
