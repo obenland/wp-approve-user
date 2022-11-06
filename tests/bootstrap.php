@@ -25,7 +25,7 @@ function _manually_load_plugin() {
 	$root = dirname( __DIR__ );
 
 	require_once $root . '/noop.php';
-	require_once $root . '/obenland-wp-plugins.php';
+	require_once $root . '/class-obenland-wp-plugins-v5.php';
 	require_once $root . '/class-obenland-wp-approve-user.php';
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );

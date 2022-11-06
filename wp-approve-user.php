@@ -19,8 +19,8 @@ if ( ! get_option( 'users_can_register' ) ) {
 }
 
 
-if ( ! class_exists( 'Obenland_Wp_Plugins_V4' ) ) {
-	require_once 'obenland-wp-plugins.php';
+if ( ! class_exists( 'Obenland_Wp_Plugins_V5' ) ) {
+	require_once 'class-obenland-wp-plugins-v5.php';
 }
 
 require_once 'class-obenland-wp-approve-user.php';
