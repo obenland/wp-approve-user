@@ -14,7 +14,7 @@ delete_option( 'wp-approve-user' );
 
 delete_metadata( 'user', 0, 'wp-approve-user', '', true );
 delete_metadata( 'user', 0, 'wp-approve-user-mail-sent', '', true );
- delete_metadata( 'user', 0, 'wp-approve-user-new-registration', '', true );
+delete_metadata( 'user', 0, 'wp-approve-user-new-registration', '', true );
 
 
 /* Goodbye! Thank you for having me! */
