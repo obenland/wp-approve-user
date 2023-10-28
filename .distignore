@@ -2,6 +2,7 @@
 /.git
 /.github
 /.idea
+/.wordpress-org
 /bin
 /node_modules
 /tests
