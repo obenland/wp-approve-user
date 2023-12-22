@@ -3,7 +3,7 @@
  * Plugin Name: WP Approve User
  * Plugin URI:  http://en.wp.obenland.it/wp-approve-user/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user
  * Description: Adds action links to user table to approve or unapprove user registrations.
- * Version:     10
+ * Version:     11
  * Author:      Konstantin Obenland
  * Author URI:  http://en.wp.obenland.it/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user
  * Text Domain: wp-approve-user
