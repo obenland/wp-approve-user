@@ -3,7 +3,7 @@ Contributors: obenland
 Tags: admin, user, login, approve, user management, plugin
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
 Requires at least: 4.3
-Tested up to: 6.4
+Tested up to: 6.4.2
 Stable tag: 11
 
 Adds action links to user table to approve or unapprove user registrations.
