@@ -29,6 +29,28 @@ Currently available in:
 * Russian
 
 
+= Plugin Hooks =
+
+== Actions ==
+
+**wpau_approve** (*int*)
+> User-ID of approved user.
+
+**wpau_unapprove** (*int*)
+> User-ID of unapproved user.
+
+== Filter ==
+
+**wpau_default_options** (*array*)
+> Default options.
+
+**wpau_update_message_handler** (*string*)
+> Allows to return custom update messages.
+
+**wpau_message_placeholders** (*array*)
+> Filters the placeholders in approve/unapprove emails.
+
+
 == Installation ==
 
 1. Download WP Approve User.
@@ -42,28 +64,6 @@ Currently available in:
 = Once a new user has been approved, will the plugin send out an email to inform them they have been approved? =
 
 Yes! Under Settings > Approve User, you can choose when to send an email and customize the email content to your needs!
-
-
-= Plugin Hooks =
-
-=== Actions ===
-
-**wpau_approve** (*int*)
-> User-ID of approved user.
-
-**wpau_unapprove** (*int*)
-> User-ID of unapproved user.
-
-=== Filter ===
-
-**wpau_default_options** (*array*)
-> Default options.
-
-**wpau_update_message_handler** (*string*)
-> Allows to return custom update messages.
-
-**wpau_message_placeholders** (*array*)
-> Filters the placeholders in approve/unapprove emails.
 
 
 == Screenshots ==
