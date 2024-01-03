@@ -46,7 +46,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 = Plugin Hooks =
 
-== Actions ==
+=== Actions ===
 
 **wpau_approve** (*int*)
 > User-ID of approved user.
@@ -54,7 +54,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 **wpau_unapprove** (*int*)
 > User-ID of unapproved user.
 
-== Filter ==
+=== Filter ===
 
 **wpau_default_options** (*array*)
 > Default options.
