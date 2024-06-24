@@ -2,7 +2,7 @@
 Contributors: obenland
 Tags: admin, user, login, approve, user management, plugin
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
-Requires at least: 4.3
+Requires at least: 4.7
 Tested up to: 6.4
 Stable tag: 11
 
@@ -75,6 +75,10 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 
 == Changelog ==
+
+= 12 =
+* Bumped minimum required WordPress version to 4.7.
+* When a user is unapproved, they now get immediately logged out from all active sessions.
 
 = 11 =
 * Replaced image files with inline SVGs.
