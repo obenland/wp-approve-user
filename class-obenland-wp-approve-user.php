@@ -827,6 +827,14 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			}
 
 			update_user_meta( $id, 'wp-approve-user', true );
+
+			/**
+			 * Fires after a user has been approved.
+			 *
+			 * @since 1.1.0
+			 *
+			 * @param int $id User ID.
+			 */
 			do_action( 'wpau_approve', $id );
 		}
 
@@ -868,6 +876,15 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			}
 
 			update_user_meta( $id, 'wp-approve-user', false );
+			WP_Session_Tokens::get_instance( $id )->destroy_all();
+
+			/**
+			 * Fires after a user has been unapproved.
+			 *
+			 * @since 1.1.0
+			 *
+			 * @param int $id User ID.
+			 */
 			do_action( 'wpau_unapprove', $id );
 		}
 
