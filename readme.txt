@@ -79,6 +79,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 = 12 =
 * Bumped minimum required WordPress version to 4.7.
 * When a user is unapproved, they now get immediately logged out from all active sessions.
+* Uses a cron job to auto-approve more than 100 users asynchronously after plugin activation.
 
 = 11 =
 * Replaced image files with inline SVGs.

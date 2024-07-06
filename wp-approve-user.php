@@ -14,16 +14,16 @@
  */
 
 if ( ! get_option( 'users_can_register' ) ) {
-	require_once 'noop.php';
+	require_once __DIR__ . '/noop.php';
 	return;
 }
 
-
 if ( ! class_exists( 'Obenland_Wp_Plugins_V5' ) ) {
-	require_once 'class-obenland-wp-plugins-v5.php';
+	require_once __DIR__ . '/class-obenland-wp-plugins-v5.php';
 }
 
-require_once 'class-obenland-wp-approve-user.php';
+require_once __DIR__ . '/class-obenland-wp-approve-user.php';
+require_once __DIR__ . '/cron-events.php';
 
 /**
  * Instantiates Obenland_Wp_Approve_User.
@@ -34,19 +34,9 @@ function wp_approve_user_instantiate() {
 add_action( 'plugins_loaded', 'wp_approve_user_instantiate', 0 );
 
 /**
- * Approves all existing users.
+ * Actions to take on plugin activation.
  */
 function wp_approve_user_activate() {
-	$user_ids = get_users(
-		array(
-			'blog_id' => '',
-			'fields'  => 'ID',
-		)
-	);
-
-	foreach ( $user_ids as $user_id ) {
-		add_user_meta( $user_id, 'wp-approve-user', true, true );
-		add_user_meta( $user_id, 'wp-approve-user-mail-sent', true, true );
-	}
+	wpau_allowlist_users();
 }
 register_activation_hook( __FILE__, 'wp_approve_user_activate' );
