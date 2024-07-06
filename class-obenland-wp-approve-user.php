@@ -44,6 +44,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	protected $unapproved_users = array();
 
 	/**
+	 * Number of unapproved users.
+	 *
+	 * @var int
+	 */
+	protected $unapproved_count = 0;
+
+	/**
 	 * Constructor
 	 *
 	 * @author Konstantin Obenland
@@ -66,16 +73,30 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		);
 
 		if ( is_admin() ) {
+			/**
+			 * Get all users where wp-approve-user meta value is false or doesn't exist.
+			 */
 			$args = array(
-				'meta_key'   => 'wp-approve-user', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-				'meta_value' => false, //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				'fields'     => 'ID',
+				'meta_query' => array(
+					'relation' => 'OR',
+					array(
+						'key'     => 'wp-approve-user',
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'key'     => 'wp-approve-user',
+						'value'   => false,
+						'compare' => '=',
+					),
+				),
 			);
 
 			if ( is_multisite() ) {
 				$args['blog_id'] = is_network_admin() ? 0 : get_current_blog_id();
 			}
 
-			$this->unapproved_users = get_users( $args );
+			$this->unapproved_count = count( get_users( $args ) );
 		}
 
 		load_plugin_textdomain( 'wp-approve-user', false, 'wp-approve-user/lang' );
@@ -201,7 +222,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @return array
 	 */
 	public function views_users( $views ) {
-		if ( $this->unapproved_users ) {
+		if ( $this->unapproved_count ) {
 			// phpcs:ignore WordPress.Security.NonceVerification
 			$site_id = isset( $_REQUEST['id'] ) ? intval( $_REQUEST['id'] ) : 0;
 			$url     = 'site-users-network' === get_current_screen()->id ? add_query_arg( array( 'id' => $site_id ), 'site-users.php' ) : 'users.php';
@@ -212,7 +233,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				'wpau_unapproved' === $this->get_role() ? 'current' : '',
 				esc_html__( 'Unapproved', 'wp-approve-users' ),
-				count( $this->unapproved_users )
+				$this->unapproved_count
 			);
 		}
 
@@ -233,10 +254,19 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		$role = empty( $query->query_vars['role'] ) && isset( $_REQUEST['role'] ) ? $_REQUEST['role'] : $query->query_vars['role'];
 
 		if ( 'wpau_unapproved' === $role ) {
-			unset( $query->query_vars['meta_query'] );
 			$query->query_vars['role']       = '';
-			$query->query_vars['meta_key']   = 'wp-approve-user'; //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-			$query->query_vars['meta_value'] = false; //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			$query->query_vars['meta_query'] = array(
+				'relation' => 'OR',
+				array(
+					'key'     => 'wp-approve-user',
+					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'key'     => 'wp-approve-user',
+					'value'   => false,
+					'compare' => '=',
+				),
+			);
 
 			remove_filter( 'pre_user_query', array( $this, 'pre_user_query' ) );
 			$query->prepare_query();
@@ -524,12 +554,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 			foreach ( $menu as $key => $menu_item ) {
 				if ( array_search( 'users.php', $menu_item, true ) ) {
-
-					// No need for number formatting, count() always returns an integer.
-					$awaiting_mod = count( $this->unapproved_users );
-
 					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-					$menu[ $key ][0] .= " <span class='update-plugins count-{$awaiting_mod}'><span class='plugin-count'>{$awaiting_mod}</span></span>";
+					$menu[ $key ][0] .= " <span class='update-plugins count-{$this->unapproved_count}'><span class='plugin-count'>{$this->unapproved_count}</span></span>";
 
 					break; // Bail on success.
 				}
