@@ -1,4 +1,9 @@
 <?php
+/**
+ * Cron events for WP Approve User.
+ *
+ * @package WP Approve User
+ */
 
 /**
  * Allow-lists 100 users per cron run.
