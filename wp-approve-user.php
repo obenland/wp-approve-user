@@ -18,12 +18,16 @@ if ( ! get_option( 'users_can_register' ) ) {
 	return;
 }
 
+// Define the current version for upgrades.
+$wpau_db_version = 12;
+
 if ( ! class_exists( 'Obenland_Wp_Plugins_V5' ) ) {
 	require_once __DIR__ . '/class-obenland-wp-plugins-v5.php';
 }
 
 require_once __DIR__ . '/class-obenland-wp-approve-user.php';
 require_once __DIR__ . '/cron-events.php';
+require_once __DIR__ . '/upgrade.php';
 
 /**
  * Instantiates Obenland_Wp_Approve_User.
