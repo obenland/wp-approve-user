@@ -1088,7 +1088,7 @@ Contact details',
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput
 
 		if ( empty( $_REQUEST['role'] ) && ! empty( $_REQUEST['_wp_http_referer'] ) ) {
-			$referrer = parse_url( $_REQUEST['_wp_http_referer'] );
+			$referrer = wp_parse_url( $_REQUEST['_wp_http_referer'] );
 
 			if ( ! empty( $referrer['query'] ) ) {
 				$args = wp_parse_args( $referrer['query'] );
