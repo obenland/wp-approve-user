@@ -38,12 +38,12 @@ jobs:
       - name: Modify Composer for WP 4.7
         if: matrix.wp-versions == '4.7'
         run: |
-          composer require --dev phpunit/phpunit:5.7 yoast/phpunit-polyfills:0.2 --no-update
+          composer require --dev phpunit/phpunit:5.7 yoast/phpunit-polyfills:0.2 --ignore-platform-reqs --no-update
 
       - name: Modify Composer for other WP versions
         if: matrix.wp-versions != '4.7'
         run: |
-          composer require --dev phpunit/phpunit:^9.5 yoast/phpunit-polyfills:^1.0 --no-update
+          composer require --dev phpunit/phpunit:^9.5 yoast/phpunit-polyfills:^1.0 --ignore-platform-reqs --no-update
 
       - name: Install Composer dependencies
         run: composer install --optimize-autoloader --prefer-dist
