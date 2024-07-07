@@ -7,35 +7,31 @@ env:
   WP_CORE_DIR: /github/home/wp-tests/wordpress
 
 jobs:
-
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        php-version: [ 7.4, 8.1, 8.2, 8.3 ]
-        wordpress-version: [ 4.7, latest ]
-    container:
-      image: junaidbhura/wp-tests:php-${{ matrix.php-version }}
-    services:
-      mysql:
-        image: mysql:5.7.27
-        env:
-          MYSQL_ROOT_PASSWORD: root
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v1
-
-      - name: Install Composer dependencies
-        run: |
-          composer install --no-dev
-          composer global require "phpunit/phpunit=5.7.27"
-          composer global require "yoast/phpunit-polyfills=1.1.0"
-
-      - name: Install WordPress test suite
-        run: bash bin/install-wp-tests.sh wordpress_test root root mysql ${{ matrix.wordpress-version }}
-
-      - name: Tests
-        run: | 
-          $HOME/.composer/vendor/bin/phpunit --config=phpunit.xml
-          WP_MULTISITE=1 $HOME/.composer/vendor/bin/phpunit --config=phpunit.xml
+        php: [ 7.4, 8.1, 8.2, 8.3 ]
+        wp: [ 4.7, latest ]
+    env:
+      WP_ENV_PHP_VERSION: ${{ matrix.php }}
+      WP_ENV_CORE: ${{ matrix.wp == 'trunk' && 'WordPress/WordPress' || format( 'https://wordpress.org/wordpress-{0}.zip', matrix.wp ) }}
+      steps:
+        - uses: styfle/cancel-workflow-action@0.11.0
+        - uses: actions/checkout@v3
+        - name: Setup Node.js (.nvmrc)
+          uses: actions/setup-node@v3
+          with:
+            node-version: 20
+            cache: npm
+        - name: Composer update
+          run: composer update
+        - name: npm install
+          run: npm ci
+        - name: Install WordPress
+          run: npm run wp-env start
+        - name: Running single site unit tests
+          run: npm run test-php
+        - name: Running multisite unit tests
+          run: npm run test-php-multisite
