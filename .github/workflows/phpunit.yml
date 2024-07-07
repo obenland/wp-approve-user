@@ -4,7 +4,7 @@ on: [push]
 
 jobs:
   run:
-    name: PHPUnit (PHP ${{ matrix.php-versions }}, WP ${{ matrix.wp-versions }})
+    name: PHP ${{ matrix.php-versions }}, WP ${{ matrix.wp-versions }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -33,7 +33,7 @@ jobs:
           php-version: ${{ matrix.php-versions }}
           coverage: none
           extensions: mysql, mysqli
-          tools: composer, phpunit-polyfills:1.1
+          tools: composer
 
       - name: Composer install
         run: |
