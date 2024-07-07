@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-version: [ 7.4 ]
-        wordpress-version: [ latest ]
+        php-version: [ 7.4, 8.1, 8.2, 8.3 ]
+        wordpress-version: [ 4.7, latest ]
     container:
       image: junaidbhura/wp-tests:php-${{ matrix.php-version }}
     services:
