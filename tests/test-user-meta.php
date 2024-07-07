@@ -63,7 +63,7 @@ class User_Meta extends WP_UnitTestCase {
 
 		$class->user_register( $user_id );
 
-		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
 	}
 
@@ -80,7 +80,7 @@ class User_Meta extends WP_UnitTestCase {
 
 		$class->user_register( $user_id );
 
-		$this->assertEmpty( get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', get_user_meta( $user_id, 'wp-approve-user', true ) );
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
 	}
 
@@ -97,7 +97,7 @@ class User_Meta extends WP_UnitTestCase {
 
 		$class->user_register( $user->ID );
 
-		$this->assertEmpty( get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
 		$this->assertSame( '1', get_user_meta( $user->ID, 'wp-approve-user-new-registration', true ) );
 	}
 
@@ -132,7 +132,7 @@ class User_Meta extends WP_UnitTestCase {
 		$class = new Obenland_Wp_Approve_User();
 
 		// Returns WP_User for admins, even if they're unapproved.
-		update_user_meta( static::$admin->ID, 'wp-approve-user', false );
+		update_user_meta( static::$admin->ID, 'wp-approve-user', 'unapproved' );
 		$result = $class->wp_authenticate_user( static::$admin );
 		$this->assertSame( static::$admin, $result );
 	}
@@ -147,7 +147,7 @@ class User_Meta extends WP_UnitTestCase {
 		$class = new Obenland_Wp_Approve_User();
 
 		// Returns WP_Error for admins when they're unapproved.
-		update_user_meta( static::$admin->ID, 'wp-approve-user', false );
+		update_user_meta( static::$admin->ID, 'wp-approve-user', 'unapproved' );
 		$result = $class->wp_authenticate_user( static::$admin );
 		$this->assertWPError( $result );
 		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
@@ -155,7 +155,7 @@ class User_Meta extends WP_UnitTestCase {
 		// Returns WP_User for super admins, even if they're unapproved.
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		grant_super_admin( $user->ID );
-		update_user_meta( $user->ID, 'wp-approve-user', false );
+		update_user_meta( $user->ID, 'wp-approve-user', 'unapproved' );
 
 		$result = $class->wp_authenticate_user( $user );
 		$this->assertSame( $user, $result );
