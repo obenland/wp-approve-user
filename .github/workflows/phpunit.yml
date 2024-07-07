@@ -39,7 +39,7 @@ jobs:
         run: composer install --optimize-autoloader --prefer-dist
 
       - name: Install WP Tests
-        run: bash bin/install-wp-tests.sh wordpress_test root root mysql ${{ matrix.wp-versions }}
+        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp-versions }}
 
       - name: PHPUnit tests
         run: |
