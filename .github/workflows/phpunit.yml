@@ -35,13 +35,18 @@ jobs:
           extensions: mysql, mysqli
           tools: composer
 
-      - name: Composer install
+      - name: Modify Composer for WP 4.7
+        if: matrix.wp-versions == '4.7'
         run: |
-          if [[ ${{ matrix.wp-versions }} == "4.7" ]]; then
-            composer require --dev phpunit/phpunit:5.7 yoast/phpunit-polyfills:0.2
-          else
-            composer install --optimize-autoloader --prefer-dist
-          fi
+          composer require --dev phpunit/phpunit:5.7 yoast/phpunit-polyfills:0.2 --no-update
+
+      - name: Modify Composer for other WP versions
+        if: matrix.wp-versions != '4.7'
+        run: |
+          composer require --dev phpunit/phpunit:^9.5 yoast/phpunit-polyfills:^1.0 --no-update
+
+      - name: Install Composer dependencies
+        run: composer install --optimize-autoloader --prefer-dist
 
       - name: Install WP Tests
         run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp-versions }}
