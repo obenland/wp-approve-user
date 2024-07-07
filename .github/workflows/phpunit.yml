@@ -3,6 +3,7 @@ name: PHPUnit
 on: [push]
 
 jobs:
+  name: PHPUnit (PHP ${{ matrix.php-versions }}, WP ${{ matrix.wp-versions }})
   run:
     runs-on: ubuntu-latest
     strategy:
@@ -32,7 +33,7 @@ jobs:
           php-version: ${{ matrix.php-versions }}
           coverage: none
           extensions: mysql, mysqli
-          tools: composer, phpunit-polyfills:1.1
+          tools: ${{ matrix.wp-versions == '4.7' && 'composer, phpunit-polyfills:1.1' || 'composer, phpunit-polyfills:0.2' }}
 
       - name: Composer install
         run: composer install --optimize-autoloader --prefer-dist
