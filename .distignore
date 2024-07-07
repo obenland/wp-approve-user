@@ -9,6 +9,7 @@
 
 # Files
 .distignore
+.wp-env.json
 composer.json
 package.json
 package-lock.json
