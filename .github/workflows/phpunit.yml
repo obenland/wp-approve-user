@@ -32,6 +32,9 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
+          coverage: none
+          extensions: mysql, mysqli
+          tools: composer, wp-cli, phpunit-polyfills:1.1
 
       - name: Install Composer dependencies
         run: |
