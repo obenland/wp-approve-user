@@ -3,8 +3,8 @@ name: PHPUnit
 on: [push]
 
 jobs:
-  name: PHPUnit (PHP ${{ matrix.php-versions }}, WP ${{ matrix.wp-versions }})
   run:
+    name: PHPUnit (PHP ${{ matrix.php-versions }}, WP ${{ matrix.wp-versions }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
