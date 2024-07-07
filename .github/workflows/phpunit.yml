@@ -33,10 +33,15 @@ jobs:
           php-version: ${{ matrix.php-versions }}
           coverage: none
           extensions: mysql, mysqli
-          tools: ${{ matrix.wp-versions == '4.7' && 'composer, phpunit-polyfills:1.1' || 'composer, phpunit-polyfills:0.2' }}
+          tools: composer, phpunit-polyfills:1.1
 
       - name: Composer install
-        run: composer install --optimize-autoloader --prefer-dist
+        run: |
+          if [[ ${{ matrix.wp-versions }} == "4.7" ]]; then
+            composer require --dev phpunit/phpunit:5.7 yoast/phpunit-polyfills:0.2
+          else
+            composer install --optimize-autoloader --prefer-dist
+          fi
 
       - name: Install WP Tests
         run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp-versions }}
