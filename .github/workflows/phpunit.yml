@@ -4,55 +4,43 @@ on: [push]
 
 jobs:
   run:
-    name: PHP ${{ matrix.php-versions }}, WP ${{ matrix.wp-versions }}
+    name: PHP ${{ matrix.php-version }}, WP ${{ matrix.wp-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php-versions:
-          ["7.4", "8.1", "8.2", "8.3"]
-        wp-versions:
-          ["latest", "4.7"]
+        php-version: ['7.4', '8.0', '8.1', '8.2']
+        wp-version: ['latest', '5.7', '5.6', '5.5']
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@master
-
-      - name: Setup MySQL 8.0 with mysql_native_password
-        uses: shogo82148/actions-setup-mysql@v1
-        with:
-          mysql-version: "8.0"
-          my-cnf: |
-            bind_address=127.0.0.1
-            default-authentication-plugin=mysql_native_password
-          root-password: root
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-versions }}
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, intl, curl, dom, xml, json, gd, mysql, mysqli
           coverage: none
-          extensions: mysql, mysqli
           tools: composer
 
-      - name: Modify Composer for WP 4.7
-        if: matrix.wp-versions == '4.7'
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-suggest
+
+      - name: Setup WordPress testing environment
         run: |
-          composer require --dev phpunit/phpunit:^5.7.21 yoast/phpunit-polyfills:0.2 --ignore-platform-reqs --no-update
+          curl -o wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          chmod +x wp-cli.phar
+          sudo mv wp-cli.phar /usr/local/bin/wp
+          wp core download --path=/tmp/wordpress --version=${{ matrix.wp-version }}
+          cp wp-tests-config.php /tmp/wordpress/wp-tests-config.php
+          wp core install --url="http://localhost" --title="Test" --admin_user="admin" --admin_password="password" --admin_email="admin@example.com" --skip-email --path=/tmp/wordpress
+          wp plugin activate --all --path=/tmp/wordpress
 
-      - name: Modify Composer for other WP versions
-        if: matrix.wp-versions != '4.7'
+      - name: Install WordPress tests
         run: |
-          composer require --dev phpunit/phpunit:^9.5 yoast/phpunit-polyfills:^1.0 --ignore-platform-reqs --no-update
+          bash bin/install-wp-tests.sh wordpress_test root '' localhost ${{ matrix.wp-version }}
 
-      - name: Install Composer dependencies
-        run: composer install --optimize-autoloader --prefer-dist --ignore-platform-reqs
-
-      - name: Install WP Tests
-        run: bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wp-versions }}
-
-      - name: PHPUnit tests
+      - name: Run PHPUnit tests
         run: |
-          echo "define('WP_TESTS_PHPUNIT_POLYFILLS_PATH', '$HOME/.composer/vendor/yoast/phpunit-polyfills');" >> /tmp/wordpress-tests-lib/wp-tests-config.php
-          ./vendor/bin/phpunit --config=phpunit.xml
-          WP_MULTISITE=1 ./vendor/bin/phpunit --config=phpunit.xml
+          ./vendor/bin/phpunit
