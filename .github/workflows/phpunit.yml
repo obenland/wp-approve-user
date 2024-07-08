@@ -38,14 +38,17 @@ jobs:
           sudo apt-get install -y mysql-client
           mysql --host=127.0.0.1 --port=3306 -uroot -proot -e "SHOW DATABASES;"
 
-      - name: Create or verify test database
-        run: |
-          mysql -e 'CREATE DATABASE IF NOT EXISTS wordpress_test;' -uroot -proot
-        continue-on-error: true
-
       - name: Install WordPress test suite
         run: |
-          bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wordpress-versions }}
+          if bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wordpress-versions }} --skip-database; then
+            echo "WordPress test suite installed with --skip-database option"
+          else
+            echo "Falling back to normal installation"
+            bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wordpress-versions }}
+          fi
+        continue-on-error: true
 
       - name: Run PHPUnit tests
-        run: vendor/bin/phpunit
+        run: |
+          vendor/bin/phpunit
+          WP_MULTISITE=1 vendor/bin/phpunit
