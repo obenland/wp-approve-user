@@ -10,7 +10,7 @@ jobs:
       fail-fast: false
       matrix:
         php-version: ['7.4', '8.0', '8.1', '8.2']
-        wp-version: ['latest', '5.7', '5.6', '5.5']
+        wp-version: ['latest', '4.7']
 
     steps:
       - name: Checkout code
@@ -27,20 +27,19 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-interaction --no-suggest
 
-      - name: Setup WordPress testing environment
+      - name: Download and configure WP-CLI
         run: |
           curl -o wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
           chmod +x wp-cli.phar
           sudo mv wp-cli.phar /usr/local/bin/wp
-          wp core download --path=/tmp/wordpress --version=${{ matrix.wp-version }}
-          cp wp-tests-config.php /tmp/wordpress/wp-tests-config.php
-          wp core install --url="http://localhost" --title="Test" --admin_user="admin" --admin_password="password" --admin_email="admin@example.com" --skip-email --path=/tmp/wordpress
-          wp plugin activate --all --path=/tmp/wordpress
 
-      - name: Install WordPress tests
+      - name: Install WordPress and set up tests
         run: |
           bash bin/install-wp-tests.sh wordpress_test root '' localhost ${{ matrix.wp-version }}
 
-      - name: Run PHPUnit tests
+      - name: PHPUnit tests
         run: |
-          ./vendor/bin/phpunit
+          echo "define('WP_TESTS_PHPUNIT_POLYFILLS_PATH', '$HOME/.composer/vendor/yoast/phpunit-polyfills');" >> /tmp/wordpress/wp-tests-config.php
+          ./vendor/bin/phpunit --version
+          ./vendor/bin/phpunit --config=phpunit.xml
+          WP_MULTISITE=1 ./vendor/bin/phpunit --config=phpunit.xml
