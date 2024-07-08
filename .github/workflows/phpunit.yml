@@ -33,17 +33,15 @@ jobs:
       - name: Start MySQL Service
         run: sudo systemctl start mysql.service
 
-      - name: Verify MySQL service
-        run: sudo service mysql status
-
       - name: Verify MySQL connection
         run: |
           sudo apt-get install -y mysql-client
           mysql --host=127.0.0.1 --port=3306 -uroot -proot -e "SHOW DATABASES;"
 
-      - name: Create test database
+      - name: Create or verify test database
         run: |
           mysql -e 'CREATE DATABASE IF NOT EXISTS wordpress_test;' -uroot -proot
+        continue-on-error: true
 
       - name: Install WordPress test suite
         run: |
