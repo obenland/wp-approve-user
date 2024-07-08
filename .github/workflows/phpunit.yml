@@ -3,51 +3,34 @@ name: PHPUnit
 on: [push]
 
 jobs:
-  run:
-    name: PHP ${{ matrix.php-version }}, WP ${{ matrix.wp-version }}
+  test:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
-        php-version: ['7.4', '8.0', '8.1', '8.2']
-        wp-version: ['latest', '4.7']
+        php-versions: ['7.4', '8.0', '8.1', '8.2']
+        wordpress-versions: ['latest', '4.7']
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php-version }}
-          extensions: mbstring, intl, curl, dom, xml, json, gd, mysql, mysqli
-          coverage: none
-          tools: composer
+          php-version: ${{ matrix.php-versions }}
+          extensions: mbstring, intl
+          coverage: xdebug
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-suggest
-
-      - name: Setup MySQL
+      - name: Setup WordPress
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mysql-server
-          sudo service mysql start
-          sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY '';"
-          sudo mysql -e "FLUSH PRIVILEGES;"
-
-      - name: Download and configure WP-CLI
-        run: |
-          curl -o wp-cli.phar https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+          wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
           chmod +x wp-cli.phar
           sudo mv wp-cli.phar /usr/local/bin/wp
+          wp core download --version=${{ matrix.wordpress-versions }} --path=/tmp/wordpress
 
-      - name: Install WordPress and set up tests
-        run: |
-          bash bin/install-wp-tests.sh wordpress_test root '' localhost ${{ matrix.wp-version }}
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
 
-      - name: PHPUnit tests
+      - name: Run PHPUnit tests
         run: |
-          echo "define('WP_TESTS_PHPUNIT_POLYFILLS_PATH', '$HOME/.composer/vendor/yoast/phpunit-polyfills');" >> /tmp/wordpress/wp-tests-config.php
-          ./vendor/bin/phpunit --version
-          ./vendor/bin/phpunit --config=phpunit.xml
-          WP_MULTISITE=1 ./vendor/bin/phpunit --config=phpunit.xml
+          bash bin/install-wp-tests.sh wordpress_test root '' localhost ${{ matrix.wordpress-versions }}
+          vendor/bin/phpunit
