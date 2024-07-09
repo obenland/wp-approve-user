@@ -5,7 +5,6 @@
  * @package wp-approve-user
  */
 
-
 define( 'TESTS_PLUGIN_DIR', dirname( __DIR__ ) );
 
 // Determine correct location for plugins directory to use.
