@@ -1,6 +1,51 @@
 {
+  "engines": {
+    "node": ">=20.10.0",
+    "npm": ">=10.2.3"
+  },
+  "dependencies": {
+    "web-vitals": "3.5.0"
+  },
   "devDependencies": {
-    "uglify-js": "^3.17.4",
-    "uglifycss": "^0.0.29"
+    "@octokit/rest": "^19.0.5",
+    "@wordpress/env": "^9.6.0",
+    "@wordpress/scripts": "^26.19.0",
+    "commander": "^9.4.1",
+    "copy-webpack-plugin": "^12.0.2",
+    "fast-glob": "^3.3.2",
+    "fs-extra": "^11.2.0",
+    "husky": "^8.0.2",
+    "lint-staged": "^13.1.0",
+    "lodash": "4.17.21",
+    "micromatch": "^4.0.7",
+    "npm-run-all": "^4.1.5",
+    "webpackbar": "^6.0.1"
+  },
+  "scripts": {
+    "changelog": "./bin/plugin/cli.js changelog",
+    "since": "./bin/plugin/cli.js since",
+    "readme": "./bin/plugin/cli.js readme",
+    "versions": "./bin/plugin/cli.js versions",
+    "build": "wp-scripts build",
+    "build-plugins": "npm-run-all 'build:plugin:*'",
+    "build-plugins:zip": "npm-run-all 'build:plugin:* --env zip=true'",
+    "build:plugin:performance-lab": "webpack --mode production --env plugin=performance-lab",
+    "build:plugin:auto-sizes": "webpack --mode production --env plugin=auto-sizes",
+    "build:plugin:dominant-color-images": "webpack --mode production --env plugin=dominant-color-images",
+    "build:plugin:embed-optimizer": "webpack --mode production --env plugin=embed-optimizer",
+    "build:plugin:image-prioritizer": "webpack --mode production --env plugin=image-prioritizer",
+    "build:plugin:optimization-detective": "webpack --mode production --env plugin=optimization-detective",
+    "build:plugin:speculation-rules": "webpack --mode production --env plugin=speculation-rules",
+    "build:plugin:webp-uploads": "webpack --mode production --env plugin=webp-uploads",
+    "generate-pending-release-diffs": "bin/generate-pending-release-diffs.sh",
+    "format-js": "wp-scripts format",
+    "lint-js": "wp-scripts lint-js",
+    "format-php": "composer format",
+    "phpstan": "composer phpstan",
+    "lint-php": "composer lint:all",
+    "test-php": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/performance composer test:plugins",
+    "test-php-multisite": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/performance composer test-multisite:plugins",
+    "wp-env": "wp-env",
+    "prepare": "husky install"
   }
 }
