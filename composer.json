@@ -4,7 +4,6 @@
     "yoast/phpunit-polyfills": "^1.0"
   },
   "require": {
-    "composer/installers": "~1.0",
     "php": ">=7|^8"
   },
   "scripts": {
@@ -13,8 +12,6 @@
   },
   "config": {
     "allow-plugins": {
-      "composer/installers": true,
-      "phpstan/extension-installer": true,
       "dealerdirect/phpcodesniffer-composer-installer": true
     }
   },
