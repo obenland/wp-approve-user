@@ -48,20 +48,18 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ "${{ matrix.wordpress-versions }}" = "4.7" ] && [ "${{ matrix.php-versions }}" = "7.4" ]; then
-            composer require --dev phpunit/phpunit:^7.5 --no-update
-          elif [ "${{ matrix.wordpress-versions }}" = "4.7" ] && [[ "${{ matrix.php-versions }}" =~ ^8\. ]]; then
-            composer require --dev phpunit/phpunit:^8.5 --no-update
-          else
-            composer require --dev phpunit/phpunit:^9.0 --no-update
-          fi
+          composer require --dev phpunit/phpunit:^8.5 --no-update
           composer install --prefer-dist --no-progress
 
       - name: Install WordPress test suite
         env:
           WP_VERSION: ${{ matrix.wordpress-versions }}
         run: |
-          bash bin/install-wp-tests.sh wordpress_test root rootpassword 127.0.0.1:${{ job.services.mysql.ports['3306'] }} $WP_VERSION
+          if [ "$WP_VERSION" = "4.7" ]; then
+            bash bin/install-wp-tests.sh wordpress_test root rootpassword 127.0.0.1:${{ job.services.mysql.ports['3306'] }} $WP_VERSION false 5.2.0
+          else
+            bash bin/install-wp-tests.sh wordpress_test root rootpassword 127.0.0.1:${{ job.services.mysql.ports['3306'] }} $WP_VERSION
+          fi
 
       - name: Run PHPUnit tests
         run: |

@@ -18,17 +18,6 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 // Give access to tests_add_filter() function.
 require_once $_tests_dir . '/includes/functions.php';
 
-// Detect PHPUnit version and load appropriate compatibility layer
-if ( class_exists( 'PHPUnit\Runner\Version' ) ) {
-	$phpunit_version = PHPUnit\Runner\Version::id();
-	if (version_compare($phpunit_version, '8.0', '<')) {
-		require_once $_tests_dir . '/includes/phpunit7-compat.php';
-	}
-} else {
-	// PHPUnit 6.x or older
-	require_once $_tests_dir . '/includes/phpunit6-compat.php';
-}
-
 /**
  * Manually load the plugin being tested.
  */
