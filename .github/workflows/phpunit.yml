@@ -48,7 +48,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require --dev phpunit/phpunit:^8.5 --no-update
+          composer require --dev phpunit/phpunit:^6.1 --no-update
           composer install --prefer-dist --no-progress
 
       - name: Install WordPress test suite
