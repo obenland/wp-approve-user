@@ -10,6 +10,15 @@ jobs:
         php-versions: ['7.4', '8.1', '8.2', '8.3']
         wordpress-versions: ['latest', '4.7']
 
+    services:
+      mysql:
+        image: mysql:5.7
+        env:
+          MYSQL_ROOT_PASSWORD: rootpassword
+        ports:
+          - 3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
     steps:
       - uses: actions/checkout@v3
 
@@ -17,31 +26,22 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
-          extensions: mbstring, intl
+          extensions: mbstring, intl, mysqli
           coverage: xdebug
 
-      - name: Setup WordPress
+      - name: Start MySQL Service
         run: |
-          wget https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-          chmod +x wp-cli.phar
-          sudo mv wp-cli.phar /usr/local/bin/wp
-          wp core download --version=${{ matrix.wordpress-versions }} --path=/tmp/wordpress
+          sudo systemctl start mysql.service
+          sudo systemctl status mysql.service
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Start MySQL Service
-        run: sudo systemctl start mysql.service
-
-      - name: Verify MySQL connection
-        run: |
-          sudo apt-get install -y mysql-client
-          mysql --host=127.0.0.1 --port=3306 -uroot -proot -e "SHOW DATABASES;"
-
       - name: Install WordPress test suite
+        env:
+          WP_VERSION: ${{ matrix.wordpress-versions }}
         run: |
-          bash bin/install-wp-tests.sh wordpress_test root root 127.0.0.1 ${{ matrix.wordpress-versions }}
-        continue-on-error: true
+          bash bin/install-wp-tests.sh wordpress_test root rootpassword 127.0.0.1:${{ job.services.mysql.ports['3306'] }} $WP_VERSION
 
       - name: Run PHPUnit tests
         run: |
