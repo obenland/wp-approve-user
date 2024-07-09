@@ -1,10 +1,12 @@
 {
-  "require-dev": {
-    "wp-phpunit/wp-phpunit": "^5.8",
-    "yoast/phpunit-polyfills": "^1.0"
-  },
   "require": {
     "php": ">=7|^8"
+  },
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
+    "wp-coding-standards/wpcs": "^2.3",
+    "wp-phpunit/wp-phpunit": "^5.8",
+    "yoast/phpunit-polyfills": "^1.0"
   },
   "scripts": {
     "test": "phpunit -c phpunit.xml --verbose",
