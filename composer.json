@@ -20,8 +20,8 @@
       "composer --working-dir=build-cs update --no-interaction",
       "build-cs/vendor/bin/phpcs --standard=phpcs.xml.dist"
     ],
-    "test": "phpunit -c phpunit.xml.dist --verbose",
-    "test-multisite": "phpunit -c tests/multisite.xml --verbose"
+    "test": "phpunit -c phpunit.xml --verbose",
+    "test-multisite": "WP_MULTISITE=1 phpunit -c phpunit.xml --verbose"
   },
   "config": {
     "allow-plugins": {
