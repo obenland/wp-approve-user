@@ -8,18 +8,6 @@
     "php": ">=7|^8"
   },
   "scripts": {
-    "phpstan": [
-      "composer --working-dir=build-cs update --no-interaction",
-      "build-cs/vendor/bin/phpstan analyse --memory-limit=2048M -c phpstan.neon.dist"
-    ],
-    "format": [
-      "composer --working-dir=build-cs update --no-interaction",
-      "build-cs/vendor/bin/phpcbf --standard=phpcs.xml.dist --report-summary --report-source"
-    ],
-    "lint": [
-      "composer --working-dir=build-cs update --no-interaction",
-      "build-cs/vendor/bin/phpcs --standard=phpcs.xml.dist"
-    ],
     "test": "phpunit -c phpunit.xml --verbose",
     "test-multisite": "WP_MULTISITE=1 phpunit -c phpunit.xml --verbose"
   },
