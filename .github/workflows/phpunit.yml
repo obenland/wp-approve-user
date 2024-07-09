@@ -48,10 +48,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          if [ "${{ matrix.wordpress-versions }}" = "4.7" ]; then
-            composer require --dev phpunit/phpunit:^5.7 --no-update
-          else
+          if [ "${{ matrix.wordpress-versions }}" = "4.7" ] && [ "${{ matrix.php-versions }}" = "7.4" ]; then
+            composer require --dev phpunit/phpunit:^7.5 --no-update
+          elif [ "${{ matrix.wordpress-versions }}" = "4.7" ] && [[ "${{ matrix.php-versions }}" =~ ^8\. ]]; then
             composer require --dev phpunit/phpunit:^8.5 --no-update
+          else
+            composer require --dev phpunit/phpunit:^9.0 --no-update
           fi
           composer install --prefer-dist --no-progress
 

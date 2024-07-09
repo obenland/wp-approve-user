@@ -25,16 +25,5 @@
   "scripts": {
     "test": "phpunit",
     "phpcs": "phpcs"
-  },
-  "extra": {
-    "wordpress-install-dir": "vendor/wordpress/wordpress",
-    "wordpress-version": {
-      "4.7": {
-        "phpunit/phpunit": "^5.7"
-      },
-      "default": {
-        "phpunit/phpunit": "^8.5"
-      }
-    }
   }
 }

@@ -19,10 +19,13 @@ if ( ! file_exists( $_tests_dir . '/includes/functions.php' ) ) {
 require_once $_tests_dir . '/includes/functions.php';
 
 // Detect PHPUnit version and load appropriate compatibility layer
-$phpunit_version = PHPUnit\Runner\Version::id();
-if (version_compare($phpunit_version, '6.0', '<')) {
-	require_once $_tests_dir . '/includes/phpunit-compat.php';
-} elseif (version_compare($phpunit_version, '7.0', '<')) {
+if ( class_exists( 'PHPUnit\Runner\Version' ) ) {
+	$phpunit_version = PHPUnit\Runner\Version::id();
+	if (version_compare($phpunit_version, '8.0', '<')) {
+		require_once $_tests_dir . '/includes/phpunit7-compat.php';
+	}
+} else {
+	// PHPUnit 6.x or older
 	require_once $_tests_dir . '/includes/phpunit6-compat.php';
 }
 
