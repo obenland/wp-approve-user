@@ -15,11 +15,9 @@ jobs:
       - name: Read directories from file and format
         id: format_dirs
         run: |
-          # Read the file and replace newlines with commas
-          dirs=$(cat .distignore | tr '\n' ',')
-          # Remove the trailing comma if there is one
-          dirs=${dirs%,}
-          echo "formatted_dirs=$dirs" >> $GITHUB_ENV
+          # Read the file, remove lines starting with '#', remove empty lines, remove leading slashes, and replace newlines with commas
+          dirs=$(grep -v '^#' directories.txt | sed '/^$/d' | sed 's|^/||' | tr -s '\n' ',' | sed 's/,$//')
+          echo "::set-output name=formatted_dirs::$dirs"
 
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1

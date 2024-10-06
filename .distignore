@@ -1,3 +1,4 @@
+# Directories
 /.git
 /.github
 /.idea
@@ -5,6 +6,8 @@
 /bin
 /node_modules
 /tests
+
+# Files
 .distignore
 .wp-env.json
 composer.json
