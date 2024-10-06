@@ -1,10 +1,11 @@
 === WP Approve User ===
 Contributors: obenland
-Tags: admin, user, login, approve, user management, plugin
+Tags: admin, user, login, approve, user management
+License: GPLv2
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
 Requires at least: 4.7
-Tested up to: 6.4
-Stable tag: 11
+Tested up to: 6.6
+Stable tag: 12
 
 Adds action links to user table to approve or unapprove user registrations.
 

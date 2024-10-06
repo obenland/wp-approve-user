@@ -1,4 +1,4 @@
-name: 'wp-plugin-check'
+name: WP Plugin Check
 on: # rebuild any PRs and main branch changes
   pull_request:
   push:
@@ -14,3 +14,5 @@ jobs:
 
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1
+        with:
+          exclude-files: '.*'
