@@ -14,10 +14,20 @@ jobs:
 
       - name: Read directories from file and format
         id: format_dirs
+        # Read the file, remove lines starting with '#', remove empty lines, remove leading slashes, and replace newlines with commas
         run: |
+          # Output the file contents for debugging
+          echo "Contents of .distignore:"
+          cat .distignore
+
           # Read the file, remove lines starting with '#', remove empty lines, remove leading slashes, and replace newlines with commas
           dirs=$(grep -v '^#' .distignore | sed '/^$/d' | sed 's|^/||' | tr -s '\n' ',' | sed 's/,$//')
-          echo "::set-output name=formatted_dirs::$dirs"
+
+          # Output the formatted directories for debugging
+          echo "Formatted directories: $dirs"
+
+          # Save the formatted directories to an environment file for use in subsequent steps
+          echo "formatted_dirs=$dirs" >> $GITHUB_ENV
 
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1
