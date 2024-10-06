@@ -15,4 +15,4 @@ jobs:
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1
         with:
-          exclude-directories: '.*'
+          exclude-directories: '\^\.\*'
