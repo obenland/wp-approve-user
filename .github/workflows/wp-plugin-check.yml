@@ -16,7 +16,7 @@ jobs:
         id: format_dirs
         run: |
           # Read the file, remove lines starting with '#', remove empty lines, remove leading slashes, and replace newlines with commas
-          dirs=$(grep -v '^#' directories.txt | sed '/^$/d' | sed 's|^/||' | tr -s '\n' ',' | sed 's/,$//')
+          dirs=$(grep -v '^#' .distignore | sed '/^$/d' | sed 's|^/||' | tr -s '\n' ',' | sed 's/,$//')
           echo "::set-output name=formatted_dirs::$dirs"
 
       - name: Run plugin check
