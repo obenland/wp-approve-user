@@ -12,24 +12,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Read directories from file and format
-        id: format_dirs
-        # Read the file, remove lines starting with '#', remove empty lines, remove leading slashes, and replace newlines with commas
+      - name: Read and format directories and files from .distignore
+        id: format_exclusions
         run: |
-          # Output the file contents for debugging
-          echo "Contents of .distignore:"
-          cat .distignore
+          # Extract directories (lines starting with '/'), remove empty lines, comments, and leading slashes
+          directories=$(grep -v '^#' .distignore | grep '^/' | sed '/^$/d' | sed 's|^/||' | tr -s '\n' ',' | sed 's/,$//')
 
-          # Read the file, remove lines starting with '#', remove empty lines, remove leading slashes, and replace newlines with commas
-          dirs=$(grep -v '^#' .distignore | sed '/^$/d' | sed 's|^/||' | tr -s '\n' ',' | sed 's/,$//')
+          # Extract files (lines NOT starting with '/'), remove empty lines and comments
+          files=$(grep -v '^#' .distignore | grep -v '^/' | sed '/^$/d' | tr -s '\n' ',' | sed 's/,$//')
 
-          # Output the formatted directories for debugging
-          echo "Formatted directories: $dirs"
-
-          # Save the formatted directories to an environment file for use in subsequent steps
-          echo "formatted_dirs=$dirs" >> $GITHUB_ENV
+          # Save the directories and files to environment variables
+          echo "formatted_dirs=$directories" >> $GITHUB_ENV
+          echo "formatted_files=$files" >> $GITHUB_ENV
 
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1
         with:
           exclude-directories: ${{ env.formatted_dirs }}
+          exclude-files: ${{ env.formatted_files }}
