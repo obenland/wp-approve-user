@@ -26,7 +26,7 @@ jobs:
           echo "formatted_files=$files" >> $GITHUB_ENV
 
       - name: Run plugin check
-        uses: wordpress/plugin-check-action@v1
+        uses: wordpress/plugin-check-action@v1.0.6
         with:
           exclude-directories: ${{ env.formatted_dirs }}
           exclude-files: ${{ env.formatted_files }}
