@@ -28,5 +28,5 @@ jobs:
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1.0.6
         with:
+          exclude-files: '.distignore,.gitignore,.wp-env.json'
           exclude-directories: ${{ env.formatted_dirs }}
-          exclude-files: ${{ env.formatted_files }}
