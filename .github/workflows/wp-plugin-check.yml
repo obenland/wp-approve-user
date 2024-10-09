@@ -10,23 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Read and format directories and files from .distignore
-        id: format_exclusions
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: latest
+          coverage: none
+          tools: wp-cli
+
+      - name: Install latest version of dist-archive-command
+        run: wp package install wp-cli/dist-archive-command:@stable
+
+      - name: Build plugin
         run: |
-          # Extract directories (lines starting with '/'), remove empty lines, comments, and leading slashes
-          directories=$(grep -v '^#' .distignore | grep '^/' | sed '/^$/d' | sed 's|^/||' | tr -s '\n' ',' | sed 's/,$//')
-
-          # Extract files (lines NOT starting with '/'), remove empty lines and comments
-          files=$(grep -v '^#' .distignore | grep -v '^/' | sed '/^$/d' | tr -s '\n' ',' | sed 's/,$//')
-
-          # Save the directories and files to environment variables
-          echo "formatted_dirs=$directories" >> $GITHUB_ENV
-          echo "formatted_files=$files" >> $GITHUB_ENV
+          wp dist-archive . ./wp-approve-user.zip
+          mkdir tmp-build
+          unzip wp-approve-user.zip -d tmp-build
 
       - name: Run plugin check
         uses: wordpress/plugin-check-action@v1.0.6
         with:
-          exclude-files: '.distignore,.gitignore,.wp-env.json'
-          exclude-directories: ${{ env.formatted_dirs }}
+          build-dir: './tmp-build/wp-approve-user'
