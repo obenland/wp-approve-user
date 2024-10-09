@@ -9,6 +9,7 @@
 
 # Files
 .distignore
+.gitignore
 .wp-env.json
 composer.json
 package.json
