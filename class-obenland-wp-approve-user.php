@@ -890,17 +890,20 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			do_action( 'wpau_approve', $id );
 		}
 
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'action' => 'wpau_update',
-					'update' => 'wpau-approved',
-					'count'  => count( $user_ids ),
-					'role'   => $this->get_role(),
-				),
-				$url
-			)
+		$role          = $this->get_role();
+		$count         = count( $user_ids );
+		$has_remaining = $this->has_remaining_users( $role, $count );
+		$query_args    = array(
+			'action' => 'wpau_update',
+			'update' => 'wpau-approved',
+			'count'  => $count,
 		);
+
+		if ( $has_remaining ) {
+			$query_args['role'] = $role;
+		}
+
+		wp_safe_redirect( add_query_arg( $query_args, $url ) );
 		exit();
 	}
 
@@ -940,17 +943,21 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			do_action( 'wpau_unapprove', $id );
 		}
 
-		wp_safe_redirect(
-			add_query_arg(
-				array(
-					'action' => 'wpau_update',
-					'update' => 'wpau-unapproved',
-					'count'  => count( $user_ids ),
-					'role'   => $this->get_role(),
-				),
-				$url
-			)
+		$role          = $this->get_role();
+		$count         = count( $user_ids );
+		$has_remaining = $this->has_remaining_users( $role, $count );
+		$query_args    = array(
+			'action' => 'wpau_update',
+			'update' => 'wpau-unapproved',
+			'count'  => $count,
 		);
+
+		// Special case: If someone unapproves all unapproved users, we want to stay on the unapproved list.
+		if ( $has_remaining || 'wpau_unapproved' === $role ) {
+			$query_args['role'] = $role;
+		}
+
+		wp_safe_redirect( add_query_arg( $query_args, $url ) );
 		exit();
 	}
 
@@ -1126,6 +1133,29 @@ Contact details',
 		return $role;
 
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput
+	}
+
+	/**
+	 * Checks if there are remaining users to approve/unapprove.
+	 *
+	 * This function is used to determine if the user should be redirected back
+	 * to the all user view or to the role-specific view after approving/unapproving users.
+	 *
+	 * @param string $role  Role key.
+	 * @param int    $count Number of users approved/unapproved.
+	 * @return int Number of remaining users.
+	 */
+	protected function has_remaining_users( $role, $count ) {
+		// If we're in a role context outside of our custom roles, always redirect back to the role view.
+		$has_remaining = ! in_array( $role, array( 'wpau_pending', 'wpau_unapproved' ), true );
+
+		if ( 'wpau_pending' === $role ) {
+			$has_remaining = $this->pending_count - $count;
+		} elseif ( 'wpau_unapproved' === $role ) {
+			$has_remaining = $this->unapproved_count - $count;
+		}
+
+		return $has_remaining;
 	}
 
 	/**
