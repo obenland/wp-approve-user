@@ -27,7 +27,11 @@ jobs:
 
       - name: Run PHPCS checks
         continue-on-error: true
-        run: vendor/bin/phpcs --report-full --report-checkstyle=./phpcs-report.xml --standard=WordPress --extensions=php --ignore="node_modules,vendor" --warning-severity=1 .
+        run: vendor/bin/phpcs --standard=WordPress --extensions=php --ignore="node_modules,vendor" --warning-severity=1 .
+
+      - name: Generate report for PR
+        continue-on-error: true
+        run: vendor/bin/phpcs --report-checkstyle=./phpcs-report.xml --standard=WordPress --extensions=php --ignore="node_modules,vendor" --warning-severity=1 .
 
       - name: Show PHPCS results in PR
         run: cs2pr ./phpcs-report.xml
