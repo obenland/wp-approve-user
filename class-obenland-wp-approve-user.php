@@ -581,7 +581,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			foreach ( $menu as $key => $menu_item ) {
 				if ( array_search( 'users.php', $menu_item, true ) ) {
 					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-					$menu[ $key ][0] .= " <span class='update-plugins count-{$this->unapproved_count}'><span class='plugin-count'>{$this->unapproved_count}</span></span>";
+					$menu[ $key ][0] .= sprintf( ' <span class="update-plugins count-%1$s"><span class="plugin-count">%1$s</span></span>', $this->pending_count );
 
 					break; // Bail on success.
 				}
