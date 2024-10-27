@@ -40,46 +40,14 @@ function wpau_upgrade_to_12() {
 			'meta_value' => true,
 		)
 	);
-	// phpcs:enable WordPress.DB
 
-	wpau_set_users_pending();
-}
-
-/**
- * Set 100 users to pending per cron run.
- *
- * @param int $processed Number of users processed.
- */
-function wpau_set_users_pending( $processed = 0 ) {
-	$users = get_users(
+	$wpdb->update(
+		$wpdb->usermeta,
+		array( 'meta_value' => 'pending' ),
 		array(
-			'fields'     => 'ID',
-			'number'     => 100,
-			'offset'     => $processed,
-			'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-				'relation' => 'OR',
-				array(
-					'key'     => 'wp-approve-user',
-					'compare' => 'NOT EXISTS',
-				),
-				array(
-					'key'     => 'wp-approve-user',
-					'value'   => '',
-					'compare' => '=',
-				),
-			),
+			'meta_key'   => 'wp-approve-user',
+			'meta_value' => false,
 		)
 	);
-	$users = array_diff( $users, array( get_user_by( 'email', get_bloginfo( 'admin_email' ) )->ID ) );
-
-	foreach ( $users as $user_id ) {
-		update_user_meta( $user_id, 'wp-approve-user', 'pending' );
-	}
-
-	$processed += count( $users );
-
-	if ( count( $users ) >= 99 ) {
-		wp_schedule_single_event( time() + 5, 'wpau_pending_users_cron', array( $processed ) );
-	}
+	// phpcs:enable WordPress.DB
 }
-add_action( 'wpau_pending_users_cron', 'wpau_set_users_pending' );
