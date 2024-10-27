@@ -11,32 +11,16 @@ jobs:
     name: PHPCS check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: "shivammathur/setup-php@v2"
+      - uses: actions/checkout@v3
+      - name: WPCS check
+        uses: 10up/wpcs-action@stable
         with:
-          php-version: "8.2"
-          ini-values: "memory_limit=1G"
-          coverage: none
-          tools: cs2pr
-
-      - name: Install Composer dependencies
-        uses: "ramsey/composer-install@v3"
-
-      - name: Run PHPCS checks
-        continue-on-error: true
+          standard: 'WordPress'
+          enable_warnings: true
+          extra_args: '--report-json=./phpcs.json'
+      - name: Update summary
         run: |
-            # Run PHPCS and display results in the log
-            vendor/bin/phpcs --standard=WordPress --extensions=php --ignore="node_modules,vendor" --warning-severity=1 .
-
-      - name: Generate report for PR
-        continue-on-error: true
-        run: |
-          # Run PHPCS to create a checkstyle report for PR annotations
-          vendor/bin/phpcs --report-checkstyle=./phpcs-report.xml --standard=WordPress --extensions=php --ignore="node_modules,vendor" --warning-severity=1 .
-
-      - name: Show PHPCS results in PR
-        if: always()  # Run this step even if previous steps fail
-        run: cs2pr ./phpcs-report.xml
+          npm i -g github:10up/phpcs-json-to-md
+          phpcs-json-to-md --path ./phpcs.json --output ./phpcs.md
+          cat phpcs.md >> $GITHUB_STEP_SUMMARY
+        if: always()
