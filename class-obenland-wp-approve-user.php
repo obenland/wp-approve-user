@@ -946,11 +946,11 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		$role          = $this->get_role();
 		$count         = count( $user_ids );
 		$has_remaining = $this->has_remaining_users( $role, $count );
-		$query_args   = [
+		$query_args    = array(
 			'action' => 'wpau_update',
 			'update' => 'wpau-unapproved',
-			'count'   => $count,
-		];
+			'count'  => $count,
+		);
 
 		// Special case: If someone unapproves all unapproved users, we want to stay on the unapproved list.
 		if ( $has_remaining || 'wpau_unapproved' === $role ) {
@@ -970,7 +970,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 *
 	 * @return array User IDs and URL
 	 */
-	protected function checkUser() {
+	protected function check_user() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 
 		$screen_id = get_current_screen()->id;
 		$users_key = 'user';
