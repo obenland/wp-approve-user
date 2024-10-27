@@ -57,9 +57,15 @@ function wpau_set_users_pending( $processed = 0 ) {
 			'number'     => 100,
 			'offset'     => $processed,
 			'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				'relation' => 'OR',
 				array(
 					'key'     => 'wp-approve-user',
 					'compare' => 'NOT EXISTS',
+				),
+				array(
+					'key'     => 'wp-approve-user',
+					'value'   => '',
+					'compare' => '=',
 				),
 			),
 		)
@@ -71,9 +77,8 @@ function wpau_set_users_pending( $processed = 0 ) {
 	}
 
 	$processed += count( $users );
-	$count      = count_users();
 
-	if ( $processed < $count['total_users'] ) {
+	if ( count( $users ) >= 99 ) {
 		wp_schedule_single_event( time() + 5, 'wpau_pending_users_cron', array( $processed ) );
 	}
 }
