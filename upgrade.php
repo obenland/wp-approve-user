@@ -40,5 +40,14 @@ function wpau_upgrade_to_12() {
 			'meta_value' => true,
 		)
 	);
+
+	$wpdb->update(
+		$wpdb->usermeta,
+		array( 'meta_value' => 'pending' ),
+		array(
+			'meta_key'   => 'wp-approve-user',
+			'meta_value' => false,
+		)
+	);
 	// phpcs:enable WordPress.DB
 }
