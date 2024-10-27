@@ -11,23 +11,18 @@ jobs:
     name: PHPCS check
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup PHP
-        uses: "shivammathur/setup-php@v2"
+      - uses: actions/checkout@v4
+      - name: WPCS check
+        uses: 10up/wpcs-action@stable
         with:
-          php-version: "7.4"
-          ini-values: "memory_limit=1G"
-          coverage: none
-          tools: cs2pr
+          standard: 'WordPress'
+          enable_warnings: true
+          repo_branch: trunk
+          extra_args: '--report-json=./phpcs.json'
 
-      - name: Install Composer dependencies
-        uses: "ramsey/composer-install@v2"
-
-      - name: Run PHPCS checks
-        continue-on-error: true
-        run: vendor/bin/phpcs --report-full --report-checkstyle=./phpcs-report.xml --standard=WordPress --extensions=php --ignore="node_modules,vendor" .
-
-      - name: Show PHPCS results in PR
-        run: cs2pr ./phpcs-report.xml
+      - name: Update summary
+        run: |
+          npm i -g github:10up/phpcs-json-to-md
+          phpcs-json-to-md --path ./phpcs.json --output ./phpcs.md
+          cat phpcs.md >> $GITHUB_STEP_SUMMARY
+        if: always()
