@@ -971,7 +971,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @return array User IDs and URL
 	 */
 	protected function check_user() {
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 
 		$screen_id = get_current_screen()->id;
 		$users_key = 'user';
