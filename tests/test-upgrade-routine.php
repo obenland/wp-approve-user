@@ -30,8 +30,8 @@ class Test_Upgrade_Routine extends WP_UnitTestCase {
 	/**
 	 * Set up test environment before each test.
 	 */
-	public function setUp() {
-		parent::setUp();
+	public function set_up() {
+		parent::set_up();
 
 		// Create test users with different approval states.
 		$this->test_users[] = $this->create_test_user_with_meta( true );  // Approved user.
@@ -43,7 +43,7 @@ class Test_Upgrade_Routine extends WP_UnitTestCase {
 	/**
 	 * Clean up after each test.
 	 */
-	public function tearDown() {
+	public function tear_down() {
 		// Delete test users and their meta.
 		foreach ( $this->test_users as $user_id ) {
 			delete_user_meta( $user_id, 'wp-approve-user' );
@@ -55,7 +55,7 @@ class Test_Upgrade_Routine extends WP_UnitTestCase {
 		delete_site_option( 'wpau_db_version' );
 		unset( $GLOBALS['wpau_db_version'] );
 
-		parent::tearDown();
+		parent::tear_down();
 	}
 
 	/**
