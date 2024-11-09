@@ -5,6 +5,7 @@
   "scripts": {
     "test-php": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test",
     "test-php-multisite": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test-multisite",
+    "test-php-coverage": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test-coverage",
     "wp-env": "wp-env"
   }
 }

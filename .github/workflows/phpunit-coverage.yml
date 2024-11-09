@@ -40,13 +40,9 @@ jobs:
         run: npm run wp-env start
 
       - name: Generate code coverage report
-        run: |
-          XDEBUG_MODE=coverage ./vendor/bin/phpunit \
-            --coverage-clover=coverage.xml \
-            --coverage-text \
-            --colors=never \
-            --coverage-html=coverage \
-            --whitelist=src
+        env:
+          XDEBUG_MODE: coverage
+        run: npm run test-php-coverage
 
       - name: Generate coverage summary
         id: coverage-summary
