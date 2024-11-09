@@ -1,0 +1,85 @@
+name: PHPUnit Coverage
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  php-coverage:
+    name: "PHP Coverage Analysis"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WP_ENV_PHP_VERSION: '8.2'
+      WP_ENV_CORE: wordpress.org/wordpress-latest.zip
+
+    steps:
+      - uses: styfle/cancel-workflow-action@0.11.0
+
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js (.nvmrc)
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup PHP with Xdebug
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: xdebug
+
+      - name: Composer update
+        run: composer update
+
+      - name: npm install
+        run: npm ci
+
+      - name: Install WordPress
+        run: npm run wp-env start
+
+      - name: Generate code coverage report
+        run: |
+          XDEBUG_MODE=coverage ./vendor/bin/phpunit \
+            --coverage-clover=coverage.xml \
+            --coverage-text \
+            --colors=never \
+            --coverage-html=coverage \
+            --whitelist=src \
+            --exclude-directory=tests \
+            --exclude-directory=vendor
+
+      - name: Generate coverage summary
+        id: coverage-summary
+        run: |
+          COVERAGE=$(grep -Po 'Lines:\s+\K[0-9.]+%' coverage.xml)
+          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v2
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: PHPUnit Coverage Report
+
+      - name: Create or Update Comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ## PHPUnit Coverage Report
+
+            Total Coverage: ${{ steps.coverage-summary.outputs.coverage }}
+
+            <details>
+            <summary>View Details</summary>
+
+            ```
+            $(cat coverage.xml)
+            ```
+
+            </details>
+          edit-mode: replace
