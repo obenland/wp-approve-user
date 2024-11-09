@@ -30,65 +30,24 @@ jobs:
           php-version: '8.2'
           coverage: xdebug
 
-      - name: Install xmllint
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
-
-      - name: Composer update
-        run: composer update
-
-      - name: npm install
-        run: npm ci
-
-      - name: Cache WordPress environment
-        id: cache-wp-env
-        uses: actions/cache@v3
-        with:
-          path: ~/.wp-env
-          key: wp-env-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
-          restore-keys: |
-            wp-env-${{ runner.os }}-
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y libxml2-utils
+          composer update
+          npm ci
 
       - name: Install WordPress with Xdebug enabled
         run: npm run wp-env start -- --xdebug=coverage
 
-      - name: Generate code coverage report
-        run: npm run test-php-coverage
-
-      - name: Copy coverage file from container
+      - name: Run PHPUnit with Coverage
+        id: phpunit
         run: |
-          CONTAINER_ID=$(npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user sh -c 'hostname' | tail -n 1)
-          docker cp ${CONTAINER_ID}:/var/www/html/wp-content/plugins/wp-approve-user/coverage.xml ./coverage.xml
-
-      - name: Generate coverage summary
-        id: coverage-summary
-        run: |
-          # Get PR coverage metrics
-          TOTAL_ELEMENTS=$(xmllint --xpath "string(//metrics/@elements)" coverage.xml)
-          COVERED_ELEMENTS=$(xmllint --xpath "string(//metrics/@coveredelements)" coverage.xml)
-          COVERAGE=$(echo "scale=4; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc | xargs printf "%.2f")
-          
-          # Get detailed metrics
-          TOTAL_METHODS=$(xmllint --xpath "string(//metrics/@methods)" coverage.xml)
-          COVERED_METHODS=$(xmllint --xpath "string(//metrics/@coveredmethods)" coverage.xml)
-          TOTAL_STATEMENTS=$(xmllint --xpath "string(//metrics/@statements)" coverage.xml)
-          COVERED_STATEMENTS=$(xmllint --xpath "string(//metrics/@coveredstatements)" coverage.xml)
-          METHOD_COVERAGE=$(echo "scale=4; ($COVERED_METHODS / $TOTAL_METHODS) * 100" | bc | xargs printf "%.2f")
-          STATEMENT_COVERAGE=$(echo "scale=4; ($COVERED_STATEMENTS / $TOTAL_STATEMENTS) * 100" | bc | xargs printf "%.2f")
-          
-          # Store all values
-          echo "coverage=$COVERAGE%" >> $GITHUB_OUTPUT
-          echo "method_coverage=$METHOD_COVERAGE%" >> $GITHUB_OUTPUT
-          echo "statement_coverage=$STATEMENT_COVERAGE%" >> $GITHUB_OUTPUT
-          echo "total_methods=$TOTAL_METHODS" >> $GITHUB_OUTPUT
-          echo "covered_methods=$COVERED_METHODS" >> $GITHUB_OUTPUT
-          echo "total_statements=$TOTAL_STATEMENTS" >> $GITHUB_OUTPUT
-          echo "covered_statements=$COVERED_STATEMENTS" >> $GITHUB_OUTPUT
-          
-          # Store XML content
-          XML_CONTENT=$(cat coverage.xml)
-          echo "xml_content<<EOF" >> $GITHUB_OUTPUT
-          echo "$XML_CONTENT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Run tests and capture summary output
+          coverage_output=$(npm run test-php-coverage -- --coverage-text)
+          echo "$coverage_output" | tee coverage-summary.txt
+          echo "coverage_summary<<EOF" >> $GITHUB_ENV
+          echo "$coverage_output" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Find Comment
         uses: peter-evans/find-comment@v2
@@ -106,21 +65,7 @@ jobs:
           body: |
             ## PHPUnit Coverage Report
 
-            ### Coverage Summary
-            - **Coverage**: ${{ steps.coverage-summary.outputs.coverage }}
-
-            ### Detailed Breakdown
-            | Type | Coverage | Details |
-            |------|----------|---------|
-            | Methods | ${{ steps.coverage-summary.outputs.method_coverage }} | ${{ steps.coverage-summary.outputs.covered_methods }}/${{ steps.coverage-summary.outputs.total_methods }} covered |
-            | Statements | ${{ steps.coverage-summary.outputs.statement_coverage }} | ${{ steps.coverage-summary.outputs.covered_statements }}/${{ steps.coverage-summary.outputs.total_statements }} covered |
-
-            <details>
-            <summary>Full Coverage Report</summary>
-
-            ```xml
-            ${{ steps.coverage-summary.outputs.xml_content }}
+            ```plaintext
+            ${{ env.coverage_summary }}
             ```
-
-            </details>
           edit-mode: replace
