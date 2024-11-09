@@ -11,7 +11,7 @@ jobs:
     timeout-minutes: 20
     env:
       WP_ENV_PHP_VERSION: '8.2'
-      WP_ENV_CORE: wordpress.org/wordpress-latest.zip
+      WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
 
     steps:
       - uses: styfle/cancel-workflow-action@0.11.0
