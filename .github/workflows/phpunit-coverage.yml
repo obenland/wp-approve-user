@@ -39,9 +39,11 @@ jobs:
       - name: Install WordPress
         run: npm run wp-env start
 
+      - name: Install Xdebug in container
+        run: |
+          npm run wp-env run tests-cli "pecl install xdebug && docker-php-ext-enable xdebug"
+
       - name: Generate code coverage report
-        env:
-          XDEBUG_MODE: coverage
         run: npm run test-php-coverage
 
       - name: Generate coverage summary
