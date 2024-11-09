@@ -56,7 +56,7 @@ jobs:
           # Get overall metrics
           TOTAL_ELEMENTS=$(xmllint --xpath "string(//metrics/@elements)" coverage.xml)
           COVERED_ELEMENTS=$(xmllint --xpath "string(//metrics/@coveredelements)" coverage.xml)
-          COVERAGE=$(echo "scale=2; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc)
+          COVERAGE=$(echo "scale=4; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc | xargs printf "%.2f")
           
           # Get class metrics
           TOTAL_CLASSES=$(xmllint --xpath "string(//metrics/@classes)" coverage.xml)
@@ -65,9 +65,15 @@ jobs:
           TOTAL_STATEMENTS=$(xmllint --xpath "string(//metrics/@statements)" coverage.xml)
           COVERED_STATEMENTS=$(xmllint --xpath "string(//metrics/@coveredstatements)" coverage.xml)
           
-          # Calculate percentages
-          METHOD_COVERAGE=$(echo "scale=2; ($COVERED_METHODS / $TOTAL_METHODS) * 100" | bc)
-          STATEMENT_COVERAGE=$(echo "scale=2; ($COVERED_STATEMENTS / $TOTAL_STATEMENTS) * 100" | bc)
+          # Calculate percentages with higher precision and proper rounding
+          METHOD_COVERAGE=$(echo "scale=4; ($COVERED_METHODS / $TOTAL_METHODS) * 100" | bc | xargs printf "%.2f")
+          STATEMENT_COVERAGE=$(echo "scale=4; ($COVERED_STATEMENTS / $TOTAL_STATEMENTS) * 100" | bc | xargs printf "%.2f")
+          
+          # Print values for debugging
+          echo "Debug values:"
+          echo "TOTAL_ELEMENTS: $TOTAL_ELEMENTS"
+          echo "COVERED_ELEMENTS: $COVERED_ELEMENTS"
+          echo "Raw coverage calculation: $(echo "scale=4; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc)"
           
           # Store all values
           echo "coverage=$COVERAGE%" >> $GITHUB_OUTPUT
