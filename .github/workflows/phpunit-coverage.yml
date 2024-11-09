@@ -41,9 +41,13 @@ jobs:
 
       - name: Install Xdebug in container
         run: |
-          npm run wp-env run tests-cli "pecl install xdebug && docker-php-ext-enable xdebug"
+          npm run wp-env run tests-cli "apt-get update"
+          npm run wp-env run tests-cli "apt-get install -y php-xdebug"
+          npm run wp-env run tests-cli "phpenmod xdebug"
 
       - name: Generate code coverage report
+        env:
+          XDEBUG_MODE: coverage
         run: npm run test-php-coverage
 
       - name: Generate coverage summary
@@ -67,15 +71,15 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
             ## PHPUnit Coverage Report
-
+            
             Total Coverage: ${{ steps.coverage-summary.outputs.coverage }}
-
+            
             <details>
             <summary>View Details</summary>
-
+            
             ```
             $(cat coverage.xml)
             ```
-
+            
             </details>
           edit-mode: replace
