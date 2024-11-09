@@ -42,11 +42,13 @@ jobs:
       - name: Run PHPUnit with Coverage
         id: phpunit
         run: |
-          # Run tests and capture summary output
+          # Run tests and capture coverage output
           coverage_output=$(npm run test-php-coverage -- --coverage-text)
-          echo "$coverage_output" | tee coverage-summary.txt
+          # Extract only the coverage report section
+          filtered_output=$(echo "$coverage_output" | sed -n '/^Code Coverage Report:/,$p')
+          echo "$filtered_output" | tee coverage-summary.txt
           echo "coverage_summary<<EOF" >> $GITHUB_ENV
-          echo "$coverage_output" >> $GITHUB_ENV
+          echo "$filtered_output" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Find Comment
@@ -65,7 +67,5 @@ jobs:
           body: |
             ## PHPUnit Coverage Report
 
-            ```plaintext
             ${{ env.coverage_summary }}
-            ```
           edit-mode: replace
