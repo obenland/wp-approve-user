@@ -50,14 +50,10 @@ jobs:
       - name: Generate coverage summary
         id: coverage-summary
         run: |
-          echo "Checking if coverage.xml exists:"
-          ls -l coverage.xml
-          echo "Content of coverage.xml:"
-          cat coverage.xml
-          echo "Trying to extract coverage:"
-          grep -Po 'Lines:\s+\K[0-9.]+%' coverage.xml || echo "Failed to find coverage percentage"
-          COVERAGE=$(grep -Po 'Lines:\s+\K[0-9.]+%' coverage.xml || echo "0%")
-          echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          TOTAL_ELEMENTS=$(xmllint --xpath "string(//metrics/@elements)" coverage.xml)
+          COVERED_ELEMENTS=$(xmllint --xpath "string(//metrics/@coveredelements)" coverage.xml)
+          COVERAGE=$(echo "scale=2; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc)
+          echo "coverage=$COVERAGE%" >> $GITHUB_OUTPUT
 
       - name: Find Comment
         uses: peter-evans/find-comment@v2
@@ -80,7 +76,7 @@ jobs:
             <details>
             <summary>View Details</summary>
             
-            ```
+            ```xml
             $(cat coverage.xml)
             ```
             
