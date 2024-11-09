@@ -43,7 +43,11 @@ jobs:
         run: npm run test-php-coverage
 
       - name: Copy coverage file from container
-        run: npm run get-coverage
+        run: |
+          echo "Listing files in plugin directory:"
+          npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user ls -la
+          echo "Trying to get coverage file:"
+          npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user cat coverage.xml > coverage.xml
 
       - name: Generate coverage summary
         id: coverage-summary
