@@ -44,10 +44,8 @@ jobs:
 
       - name: Copy coverage file from container
         run: |
-          echo "Listing files in plugin directory:"
-          npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user ls -la
-          echo "Trying to get coverage file:"
-          npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user cat coverage.xml > coverage.xml
+          CONTAINER_ID=$(npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user sh -c 'hostname' | tail -n 1)
+          docker cp ${CONTAINER_ID}:/var/www/html/wp-content/plugins/wp-approve-user/coverage.xml ./coverage.xml
 
       - name: Generate coverage summary
         id: coverage-summary
