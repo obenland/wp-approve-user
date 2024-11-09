@@ -42,6 +42,9 @@ jobs:
       - name: Generate code coverage report
         run: npm run test-php-coverage
 
+      - name: Copy coverage file from container
+        run: npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user cat coverage.xml > coverage.xml
+
       - name: Generate coverage summary
         id: coverage-summary
         run: |
