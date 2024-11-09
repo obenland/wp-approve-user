@@ -44,9 +44,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/.wp-env
-          key: wp-env-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}-${{ github.run_id }}
+          key: wp-env-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}
           restore-keys: |
-            wp-env-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json') }}-
             wp-env-${{ runner.os }}-
 
       - name: Install WordPress with Xdebug enabled
