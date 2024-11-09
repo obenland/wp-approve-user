@@ -17,8 +17,6 @@ jobs:
       - uses: styfle/cancel-workflow-action@0.11.0
 
       - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Setup Node.js (.nvmrc)
         uses: actions/setup-node@v3
@@ -41,69 +39,51 @@ jobs:
       - name: npm install
         run: npm ci
 
-      # Get base branch coverage first
-      - name: Fetch base branch
-        run: git fetch origin ${{ github.event.pull_request.base.sha }}
+      - name: Install WordPress with Xdebug enabled
+        run: npm run wp-env start -- --xdebug=coverage
 
-      - name: Generate base coverage
-        run: |
-          git checkout ${{ github.event.pull_request.base.sha }}
-          npm run wp-env start -- --xdebug=coverage
-          npm run test-php-coverage
-          CONTAINER_ID=$(npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user sh -c 'hostname' | tail -n 1)
-          docker cp ${CONTAINER_ID}:/var/www/html/wp-content/plugins/wp-approve-user/coverage.xml ./coverage-base.xml
+      - name: Generate code coverage report
+        run: npm run test-php-coverage
 
-      # Switch back to PR and get PR coverage
-      - name: Generate PR coverage
+      - name: Copy coverage file from container
         run: |
-          git checkout ${{ github.event.pull_request.head.sha }}
-          npm run wp-env start -- --xdebug=coverage
-          npm run test-php-coverage
           CONTAINER_ID=$(npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user sh -c 'hostname' | tail -n 1)
           docker cp ${CONTAINER_ID}:/var/www/html/wp-content/plugins/wp-approve-user/coverage.xml ./coverage.xml
 
       - name: Generate coverage summary
         id: coverage-summary
         run: |
-          # Get PR coverage metrics
+          # Get overall metrics
           TOTAL_ELEMENTS=$(xmllint --xpath "string(//metrics/@elements)" coverage.xml)
           COVERED_ELEMENTS=$(xmllint --xpath "string(//metrics/@coveredelements)" coverage.xml)
           COVERAGE=$(echo "scale=4; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc | xargs printf "%.2f")
           
-          # Get base coverage metrics
-          BASE_TOTAL_ELEMENTS=$(xmllint --xpath "string(//metrics/@elements)" coverage-base.xml)
-          BASE_COVERED_ELEMENTS=$(xmllint --xpath "string(//metrics/@coveredelements)" coverage-base.xml)
-          BASE_COVERAGE=$(echo "scale=4; ($BASE_COVERED_ELEMENTS / $BASE_TOTAL_ELEMENTS) * 100" | bc | xargs printf "%.2f")
-          
-          # Calculate difference
-          COVERAGE_DIFF=$(echo "scale=4; $COVERAGE - $BASE_COVERAGE" | bc | xargs printf "%.2f")
-          
-          # Get PR changed files
-          CHANGED_FILES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '.php$' || true)
-          
-          # Get detailed metrics
+          # Get class metrics
+          TOTAL_CLASSES=$(xmllint --xpath "string(//metrics/@classes)" coverage.xml)
           TOTAL_METHODS=$(xmllint --xpath "string(//metrics/@methods)" coverage.xml)
           COVERED_METHODS=$(xmllint --xpath "string(//metrics/@coveredmethods)" coverage.xml)
           TOTAL_STATEMENTS=$(xmllint --xpath "string(//metrics/@statements)" coverage.xml)
           COVERED_STATEMENTS=$(xmllint --xpath "string(//metrics/@coveredstatements)" coverage.xml)
+          
+          # Calculate percentages with higher precision and proper rounding
           METHOD_COVERAGE=$(echo "scale=4; ($COVERED_METHODS / $TOTAL_METHODS) * 100" | bc | xargs printf "%.2f")
           STATEMENT_COVERAGE=$(echo "scale=4; ($COVERED_STATEMENTS / $TOTAL_STATEMENTS) * 100" | bc | xargs printf "%.2f")
           
+          # Print values for debugging
+          echo "Debug values:"
+          echo "TOTAL_ELEMENTS: $TOTAL_ELEMENTS"
+          echo "COVERED_ELEMENTS: $COVERED_ELEMENTS"
+          echo "Raw coverage calculation: $(echo "scale=4; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc)"
+          
           # Store all values
           echo "coverage=$COVERAGE%" >> $GITHUB_OUTPUT
-          echo "base_coverage=$BASE_COVERAGE%" >> $GITHUB_OUTPUT
-          echo "coverage_diff=$COVERAGE_DIFF" >> $GITHUB_OUTPUT
+          echo "classes=$TOTAL_CLASSES" >> $GITHUB_OUTPUT
           echo "method_coverage=$METHOD_COVERAGE%" >> $GITHUB_OUTPUT
           echo "statement_coverage=$STATEMENT_COVERAGE%" >> $GITHUB_OUTPUT
           echo "total_methods=$TOTAL_METHODS" >> $GITHUB_OUTPUT
           echo "covered_methods=$COVERED_METHODS" >> $GITHUB_OUTPUT
           echo "total_statements=$TOTAL_STATEMENTS" >> $GITHUB_OUTPUT
           echo "covered_statements=$COVERED_STATEMENTS" >> $GITHUB_OUTPUT
-          
-          # Save changed files info
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
           
           # Store XML content
           XML_CONTENT=$(cat coverage.xml)
@@ -127,21 +107,15 @@ jobs:
           body: |
             ## PHPUnit Coverage Report
             
-            ### Coverage Changes
-            - **Base Branch Coverage**: ${{ steps.coverage-summary.outputs.base_coverage }}
-            - **PR Coverage**: ${{ steps.coverage-summary.outputs.coverage }}
-            - **Change**: ${{ steps.coverage-summary.outputs.coverage_diff >= 0 && '+' || '' }}${{ steps.coverage-summary.outputs.coverage_diff }}%
+            ### Coverage Summary
+            - **Overall Coverage**: ${{ steps.coverage-summary.outputs.coverage }}
+            - **Total Classes**: ${{ steps.coverage-summary.outputs.classes }}
             
             ### Detailed Breakdown
             | Type | Coverage | Details |
             |------|----------|---------|
             | Methods | ${{ steps.coverage-summary.outputs.method_coverage }} | ${{ steps.coverage-summary.outputs.covered_methods }}/${{ steps.coverage-summary.outputs.total_methods }} covered |
             | Statements | ${{ steps.coverage-summary.outputs.statement_coverage }} | ${{ steps.coverage-summary.outputs.covered_statements }}/${{ steps.coverage-summary.outputs.total_statements }} covered |
-            
-            ### Changed Files
-            ```
-            ${{ steps.coverage-summary.outputs.changed_files }}
-            ```
             
             <details>
             <summary>Full Coverage Report</summary>
