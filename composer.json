@@ -11,7 +11,7 @@
   "scripts": {
     "test": "phpunit -c phpunit.xml --verbose",
     "test-multisite": "WP_MULTISITE=1 phpunit -c phpunit.xml --verbose",
-    "test-coverage": "phpunit -c phpunit.xml --coverage-clover=coverage.xml --coverage-text --colors=never"
+    "test-coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml --coverage-clover=coverage.xml --coverage-text --colors=never"
   },
   "config": {
     "allow-plugins": {

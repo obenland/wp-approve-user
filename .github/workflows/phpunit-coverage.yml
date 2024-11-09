@@ -43,9 +43,11 @@ jobs:
         run: npm run wp-env install-packages php-xdebug
 
       - name: Generate code coverage report
-        env:
-          XDEBUG_MODE: coverage
-        run: npm run test-php-coverage
+        run: |
+          wp-env run tests-cli \
+            --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user \
+            -e XDEBUG_MODE=coverage \
+            composer test-coverage
 
       - name: Generate coverage summary
         id: coverage-summary
