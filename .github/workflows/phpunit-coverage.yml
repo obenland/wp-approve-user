@@ -45,7 +45,7 @@ jobs:
           # Run tests and capture coverage output
           coverage_output=$(npm run test-php-coverage -- --coverage-text)
           # Extract only the coverage report section
-          filtered_output=$(echo "$coverage_output" | sed -n '/^Code Coverage Report:/,$p')
+          filtered_output=$(echo "$coverage_output" | sed -n '/^Summary:/,$p')
           echo "$filtered_output" | tee coverage-summary.txt
           echo "coverage_summary<<EOF" >> $GITHUB_ENV
           echo "$filtered_output" >> $GITHUB_ENV
