@@ -48,7 +48,13 @@ jobs:
       - name: Generate coverage summary
         id: coverage-summary
         run: |
-          COVERAGE=$(grep -Po 'Lines:\s+\K[0-9.]+%' coverage.xml)
+          echo "Checking if coverage.xml exists:"
+          ls -l coverage.xml
+          echo "Content of coverage.xml:"
+          cat coverage.xml
+          echo "Trying to extract coverage:"
+          grep -Po 'Lines:\s+\K[0-9.]+%' coverage.xml || echo "Failed to find coverage percentage"
+          COVERAGE=$(grep -Po 'Lines:\s+\K[0-9.]+%' coverage.xml || echo "0%")
           echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Find Comment
