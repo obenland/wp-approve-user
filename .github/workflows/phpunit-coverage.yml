@@ -39,7 +39,6 @@ jobs:
       - name: npm install
         run: npm ci
 
-      # Cache WordPress environment
       - name: Cache WordPress environment
         id: cache-wp-env
         uses: actions/cache@v3
@@ -69,9 +68,6 @@ jobs:
           COVERED_ELEMENTS=$(xmllint --xpath "string(//metrics/@coveredelements)" coverage.xml)
           COVERAGE=$(echo "scale=4; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc | xargs printf "%.2f")
           
-          # Get PR changed files
-          CHANGED_FILES=$(git diff --name-only origin/trunk HEAD | grep '.php$' || true)
-          
           # Get detailed metrics
           TOTAL_METHODS=$(xmllint --xpath "string(//metrics/@methods)" coverage.xml)
           COVERED_METHODS=$(xmllint --xpath "string(//metrics/@coveredmethods)" coverage.xml)
@@ -88,11 +84,6 @@ jobs:
           echo "covered_methods=$COVERED_METHODS" >> $GITHUB_OUTPUT
           echo "total_statements=$TOTAL_STATEMENTS" >> $GITHUB_OUTPUT
           echo "covered_statements=$COVERED_STATEMENTS" >> $GITHUB_OUTPUT
-          
-          # Save changed files info
-          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGED_FILES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
           
           # Store XML content
           XML_CONTENT=$(cat coverage.xml)
@@ -124,11 +115,6 @@ jobs:
             |------|----------|---------|
             | Methods | ${{ steps.coverage-summary.outputs.method_coverage }} | ${{ steps.coverage-summary.outputs.covered_methods }}/${{ steps.coverage-summary.outputs.total_methods }} covered |
             | Statements | ${{ steps.coverage-summary.outputs.statement_coverage }} | ${{ steps.coverage-summary.outputs.covered_statements }}/${{ steps.coverage-summary.outputs.total_statements }} covered |
-            
-            ### Changed Files
-            ```
-            ${{ steps.coverage-summary.outputs.changed_files }}
-            ```
             
             <details>
             <summary>Full Coverage Report</summary>
