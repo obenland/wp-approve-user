@@ -31,7 +31,7 @@ jobs:
           coverage: xdebug
 
       - name: Install xmllint
-        run: sudo apt-get install -y libxml2-utils
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
       - name: Composer update
         run: composer update
@@ -53,10 +53,37 @@ jobs:
       - name: Generate coverage summary
         id: coverage-summary
         run: |
+          # Get overall metrics
           TOTAL_ELEMENTS=$(xmllint --xpath "string(//metrics/@elements)" coverage.xml)
           COVERED_ELEMENTS=$(xmllint --xpath "string(//metrics/@coveredelements)" coverage.xml)
           COVERAGE=$(echo "scale=2; ($COVERED_ELEMENTS / $TOTAL_ELEMENTS) * 100" | bc)
+          
+          # Get class metrics
+          TOTAL_CLASSES=$(xmllint --xpath "string(//metrics/@classes)" coverage.xml)
+          TOTAL_METHODS=$(xmllint --xpath "string(//metrics/@methods)" coverage.xml)
+          COVERED_METHODS=$(xmllint --xpath "string(//metrics/@coveredmethods)" coverage.xml)
+          TOTAL_STATEMENTS=$(xmllint --xpath "string(//metrics/@statements)" coverage.xml)
+          COVERED_STATEMENTS=$(xmllint --xpath "string(//metrics/@coveredstatements)" coverage.xml)
+          
+          # Calculate percentages
+          METHOD_COVERAGE=$(echo "scale=2; ($COVERED_METHODS / $TOTAL_METHODS) * 100" | bc)
+          STATEMENT_COVERAGE=$(echo "scale=2; ($COVERED_STATEMENTS / $TOTAL_STATEMENTS) * 100" | bc)
+          
+          # Store all values
           echo "coverage=$COVERAGE%" >> $GITHUB_OUTPUT
+          echo "classes=$TOTAL_CLASSES" >> $GITHUB_OUTPUT
+          echo "method_coverage=$METHOD_COVERAGE%" >> $GITHUB_OUTPUT
+          echo "statement_coverage=$STATEMENT_COVERAGE%" >> $GITHUB_OUTPUT
+          echo "total_methods=$TOTAL_METHODS" >> $GITHUB_OUTPUT
+          echo "covered_methods=$COVERED_METHODS" >> $GITHUB_OUTPUT
+          echo "total_statements=$TOTAL_STATEMENTS" >> $GITHUB_OUTPUT
+          echo "covered_statements=$COVERED_STATEMENTS" >> $GITHUB_OUTPUT
+          
+          # Store XML content
+          XML_CONTENT=$(cat coverage.xml)
+          echo "xml_content<<EOF" >> $GITHUB_OUTPUT
+          echo "$XML_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Find Comment
         uses: peter-evans/find-comment@v2
@@ -74,13 +101,21 @@ jobs:
           body: |
             ## PHPUnit Coverage Report
             
-            Total Coverage: ${{ steps.coverage-summary.outputs.coverage }}
+            ### Coverage Summary
+            - **Overall Coverage**: ${{ steps.coverage-summary.outputs.coverage }}
+            - **Total Classes**: ${{ steps.coverage-summary.outputs.classes }}
+            
+            ### Detailed Breakdown
+            | Type | Coverage | Details |
+            |------|----------|---------|
+            | Methods | ${{ steps.coverage-summary.outputs.method_coverage }} | ${{ steps.coverage-summary.outputs.covered_methods }}/${{ steps.coverage-summary.outputs.total_methods }} covered |
+            | Statements | ${{ steps.coverage-summary.outputs.statement_coverage }} | ${{ steps.coverage-summary.outputs.covered_statements }}/${{ steps.coverage-summary.outputs.total_statements }} covered |
             
             <details>
-            <summary>View Details</summary>
+            <summary>Full Coverage Report</summary>
             
             ```xml
-            $(cat coverage.xml)
+            ${{ steps.coverage-summary.outputs.xml_content }}
             ```
             
             </details>
