@@ -36,15 +36,11 @@ jobs:
       - name: npm install
         run: npm ci
 
-      - name: Install WordPress
-        run: npm run wp-env start
-
-      - name: Install Xdebug in container
-        run: npm run wp-env install-packages php-xdebug
+      - name: Install WordPress with Xdebug enabled
+        run: npm run wp-env start -- --xdebug=coverage
 
       - name: Generate code coverage report
-        run: |
-          XDEBUG_MODE=coverage npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user "XDEBUG_MODE=coverage phpunit -c phpunit.xml --coverage-clover=coverage.xml --coverage-text --colors=never"
+        run: npm run test-php-coverage
 
       - name: Generate coverage summary
         id: coverage-summary
