@@ -30,6 +30,9 @@ jobs:
           php-version: '8.2'
           coverage: xdebug
 
+      - name: Install xmllint
+        run: sudo apt-get install -y libxml2-utils
+
       - name: Composer update
         run: composer update
 
