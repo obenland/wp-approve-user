@@ -44,10 +44,7 @@ jobs:
 
       - name: Generate code coverage report
         run: |
-          npm run wp-env run tests-cli \
-            --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user \
-            -e XDEBUG_MODE=coverage \
-            composer test-coverage
+          XDEBUG_MODE=coverage npm run wp-env run tests-cli -- --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user "XDEBUG_MODE=coverage phpunit -c phpunit.xml --coverage-clover=coverage.xml --coverage-text --colors=never"
 
       - name: Generate coverage summary
         id: coverage-summary
