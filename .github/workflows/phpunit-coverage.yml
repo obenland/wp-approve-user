@@ -44,11 +44,11 @@ jobs:
         run: |
           # Run tests and capture coverage output
           coverage_output=$(npm run test-php-coverage -- --coverage-text)
-          # Extract only the coverage report section
+          # Extract only the coverage report section, starting from "Summary:" line
           filtered_output=$(echo "$coverage_output" | sed -n '/^Summary:/,$p')
           echo "$filtered_output" | tee coverage-summary.txt
           echo "coverage_summary<<EOF" >> $GITHUB_ENV
-          echo "$filtered_output" >> $GITHUB_ENV
+          cat coverage-summary.txt >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Find Comment
