@@ -46,9 +46,7 @@ jobs:
             --coverage-text \
             --colors=never \
             --coverage-html=coverage \
-            --whitelist=src \
-            --exclude-directory=tests \
-            --exclude-directory=vendor
+            --whitelist=src
 
       - name: Generate coverage summary
         id: coverage-summary
