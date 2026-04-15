@@ -51,7 +51,7 @@ function wpau_add_settings_error() {
 		'no-users-can-register',
 		sprintf(
 			/* translators: Link to options page. */
-			wp_kses_post( __( 'Please <a href="%s">enable user registrations</a> for WP Approve User to work.' ) ),
+			wp_kses_post( __( 'Please <a href="%s">enable user registrations</a> for WP Approve User to work.', 'wp-approve-user' ) ),
 			esc_url( $url )
 		),
 		'notice-info'

@@ -1,6 +1,24 @@
 name: PHPUnit
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - '**/*.md'
+      - 'readme.txt'
+      - 'lang/**'
+      - '.wordpress-org/**'
+      - '.distignore'
+      - '.editorconfig'
+      - '.gitignore'
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'readme.txt'
+      - 'lang/**'
+      - '.wordpress-org/**'
+      - '.distignore'
+      - '.editorconfig'
+      - '.gitignore'
 
 jobs:
   php-test:
@@ -26,7 +44,7 @@ jobs:
       - name: Setup Node.js (.nvmrc)
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version-file: '.nvmrc'
           cache: npm
       - name: Composer update
         run: composer update

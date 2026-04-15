@@ -1,18 +1,34 @@
 # Directories
+/.claude
 /.git
 /.github
 /.idea
 /.wordpress-org
 /bin
 /node_modules
+/playwright-report
+/scripts
+/test-results
 /tests
+/vendor
 
 # Files
 .distignore
+.editorconfig
+.eslintignore
+.gitignore
+.phpunit.result.cache
 .wp-env.json
+.wp-env.override.json
 CLAUDE.md
+CONTRIBUTING.md
 composer.json
 composer.lock
+coverage.xml
+eslint.config.js
 package.json
 package-lock.json
+phpcs-report.xml
+phpcs.xml.dist
 phpunit.xml
+playwright.config.js

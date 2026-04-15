@@ -1,3 +1,13 @@
 {
-  "plugins": [ ".", "https://downloads.wordpress.org/plugin/debug-log-manager.2.3.3.zip" ]
+	"core": null,
+	"phpVersion": "8.4",
+	"plugins": [ ".", "https://downloads.wordpress.org/plugin/debug-log-manager.2.3.3.zip" ],
+	"config": {
+		"WP_DEBUG": true,
+		"WP_DEBUG_LOG": true,
+		"SCRIPT_DEBUG": true
+	},
+	"lifecycleScripts": {
+		"afterStart": "bash -c 'set -e; npx wp-env run cli wp option update users_can_register 1; npx wp-env run tests-cli wp option update users_can_register 1'"
+	}
 }
