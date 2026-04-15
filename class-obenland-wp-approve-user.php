@@ -1169,10 +1169,10 @@ Contact details',
 	 * @deprecated 2.3.0 - 13.08.2013
 	 * @access     public
 	 *
-	 * @param string $old Old settings value.
-	 * @param int    $new New settings value.
+	 * @param string $old       Old settings value.
+	 * @param int    $new_value New settings value.
 	 */
-	public function update_option_users_can_register( $old, $new ) {
+	public function update_option_users_can_register( $old, $new_value ) {
 		_deprecated_function( __FUNCTION__, '2.3' );
 	}
 
