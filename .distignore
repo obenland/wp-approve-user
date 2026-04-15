@@ -10,7 +10,9 @@
 # Files
 .distignore
 .wp-env.json
+CLAUDE.md
 composer.json
+composer.lock
 package.json
 package-lock.json
 phpunit.xml

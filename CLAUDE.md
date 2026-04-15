@@ -12,6 +12,7 @@ Tests run inside a `@wordpress/env` container — the `npm run test-php*` script
 
 ```bash
 npm ci                      # install @wordpress/env
+composer install            # install PHPUnit/WPCS into vendor/ (mounted into the container)
 npm run wp-env start        # boot the WordPress test environment
 npm run test-php            # single-site PHPUnit
 npm run test-php-multisite  # multisite PHPUnit
@@ -26,7 +27,7 @@ npm run wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-appro
   composer test -- --filter test_name
 ```
 
-PHPCS (WordPress coding standards, warnings treated as errors) runs in CI via 10up/wpcs-action — there is no local composer script for it. Match CI by running `phpcs --standard=WordPress` against changed files.
+PHPCS (WordPress coding standards, warnings treated as errors) runs in CI via 10up/wpcs-action — there is no local composer script for it. Match CI by running `./vendor/bin/phpcs --standard=WordPress` against changed files (after `composer install`).
 
 ## Architecture
 
@@ -73,4 +74,4 @@ Multisite branches exist throughout the main class: `network_admin_menu` replace
 - **`wpau_` prefix** for all global functions, hooks, and options. The plugin's textdomain is `wp-approve-user`.
 - Action hooks exposed to third parties: `wpau_approve`, `wpau_unapprove`. Filters: `wpau_default_options`, `wpau_update_message_handler`, `wpau_message_placeholders`. Don't rename these without a deprecation path — they're documented in `readme.txt`.
 - **No JS/CSS build step.** `js/wp-approve-user.js` and `css/settings-page.css` are checked in alongside hand-maintained `.min.js` / `.min.css` siblings. The main class enqueues the `.min` variant unless `SCRIPT_DEBUG` is defined, so when editing the source you must update the minified file in the same commit.
-- `.distignore` controls what ships to wordpress.org via the deploy workflow — add new dev-only files there.
+- `.distignore` controls what ships to wordpress.org via the deploy workflow — add new dev-only files there (e.g. `CLAUDE.md` is excluded because it is a repo helper, not part of the plugin release).
