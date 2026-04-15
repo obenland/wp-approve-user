@@ -12,17 +12,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: WPCS check
-        uses: 10up/wpcs-action@stable
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
         with:
-          standard: 'WordPress'
-          enable_warnings: true
-          repo_branch: trunk
-          extra_args: '--report-json=./phpcs.json'
+          php-version: '8.2'
+          coverage: none
+          tools: composer
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+
+      - name: Run PHPCS
+        run: ./vendor/bin/phpcs --standard=WordPress --report-full --report-json=./phpcs.json
 
       - name: Update summary
+        if: always()
         run: |
           npm i -g github:10up/phpcs-json-to-md
           phpcs-json-to-md --path ./phpcs.json --output ./phpcs.md
           cat phpcs.md >> $GITHUB_STEP_SUMMARY
-        if: always()
