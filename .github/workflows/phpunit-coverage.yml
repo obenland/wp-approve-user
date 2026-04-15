@@ -3,6 +3,14 @@ name: PHPUnit Coverage
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths-ignore:
+      - '**/*.md'
+      - 'readme.txt'
+      - 'lang/**'
+      - '.wordpress-org/**'
+      - '.distignore'
+      - '.editorconfig'
+      - '.gitignore'
 
 jobs:
   php-coverage:
@@ -21,7 +29,7 @@ jobs:
       - name: Setup Node.js (.nvmrc)
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version-file: '.nvmrc'
           cache: npm
 
       - name: Setup PHP with Xdebug

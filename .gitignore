@@ -1,3 +1,8 @@
+/.claude/
+/.phpunit.result.cache
+/coverage.xml
 /node_modules/
+/playwright-report/
+/test-results/
+/tests/e2e/.auth/
 /vendor/
-/.claude/settings.local.json

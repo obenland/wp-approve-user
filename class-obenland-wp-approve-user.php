@@ -235,7 +235,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				esc_url( add_query_arg( array( 'role' => 'wpau_pending' ), $url ) ),
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				'wpau_pending' === $this->get_role() ? 'current' : '',
-				esc_html__( 'Pending', 'wp-approve-users' ),
+				esc_html__( 'Pending', 'wp-approve-user' ),
 				$this->pending_count
 			);
 		}
@@ -246,7 +246,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				esc_url( add_query_arg( array( 'role' => 'wpau_unapproved' ), $url ) ),
 				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				'wpau_unapproved' === $this->get_role() ? 'current' : '',
-				esc_html__( 'Unapproved', 'wp-approve-users' ),
+				esc_html__( 'Unapproved', 'wp-approve-user' ),
 				$this->unapproved_count
 			);
 		}
@@ -870,7 +870,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 			if ( ! current_user_can( 'edit_user', $id ) ) {
 				wp_die(
-					esc_html__( 'You can&#8217;t edit that user.' ),
+					esc_html__( 'You can&#8217;t edit that user.', 'wp-approve-user' ),
 					'',
 					array(
 						'back_link' => true,
@@ -922,7 +922,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 			if ( ! current_user_can( 'edit_user', $id ) ) {
 				wp_die(
-					esc_html__( 'You can&#8217;t edit that user.' ),
+					esc_html__( 'You can&#8217;t edit that user.', 'wp-approve-user' ),
 					'',
 					array(
 						'back_link' => true,

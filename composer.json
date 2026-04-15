@@ -1,14 +1,17 @@
 {
   "require": {
-    "php": ">=7|^8"
+    "php": ">=7.4"
   },
   "require-dev": {
-    "dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
-    "wp-coding-standards/wpcs": "^2.3",
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "wp-coding-standards/wpcs": "^3.0",
+    "phpcompatibility/phpcompatibility-wp": "^2.1",
     "wp-phpunit/wp-phpunit": "^5.8",
     "yoast/phpunit-polyfills": "^1.0"
   },
   "scripts": {
+    "lint": "phpcs",
+    "lint:fix": "phpcbf",
     "test": "phpunit -c phpunit.xml --verbose",
     "test-multisite": "WP_MULTISITE=1 phpunit -c phpunit.xml --verbose",
     "test-coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml --coverage-clover=coverage.xml --coverage-text --colors=never"
