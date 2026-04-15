@@ -12,37 +12,44 @@ on:
       - '.editorconfig'
       - '.gitignore'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   php-coverage:
     name: "PHP Coverage Analysis"
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      WP_ENV_PHP_VERSION: '8.2'
+      WP_ENV_PHP_VERSION: '8.4'
       WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
 
     steps:
-      - uses: styfle/cancel-workflow-action@0.11.0
-
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js (.nvmrc)
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: npm
 
-      - name: Setup PHP with Xdebug
-        uses: shivammathur/setup-php@v2
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        id: composer-cache
         with:
-          php-version: '8.2'
-          coverage: xdebug
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
 
-      - name: Install dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y libxml2-utils
-          composer update
-          npm ci
+      - name: Install PHP dependencies
+        if: steps.composer-cache.outputs.cache-hit != 'true'
+        run: composer install --prefer-dist --no-progress
+
+      - name: Install system tools
+        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+
+      - name: npm install
+        run: npm ci
 
       - name: Install WordPress with Xdebug enabled
         run: npm run wp-env start -- --xdebug=coverage

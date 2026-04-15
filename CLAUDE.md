@@ -106,7 +106,7 @@ Multisite branches exist throughout the main class: `network_admin_menu` replace
 
 ### Tests
 
-`tests/bootstrap.php` loads `noop.php`, the base class, and the main class directly — it does **not** run `wp-approve-user.php`, so activation/upgrade hooks are skipped in the test harness. Tests live alongside code (phpunit `<directory>` is `.` with `prefix="test-"`) but currently only `tests/test-user-meta.php` exists. CI runs on PHP 7.4/8.1/8.2 against latest WordPress, plus PHP 7.4/WP 6.3 and PHP 8.3/WP trunk — avoid syntax that breaks 7.4.
+`tests/bootstrap.php` loads `noop.php`, the base class, and the main class directly — it does **not** run `wp-approve-user.php`, so activation/upgrade hooks are skipped in the test harness. Tests live alongside code (phpunit `<directory>` is `.` with `prefix="test-"`) but currently only `tests/test-user-meta.php` exists. CI runs PHP 7.4 and 8.4 against latest WordPress, plus PHP 7.4/WP 6.3 and PHP 8.4/WP trunk — avoid syntax that breaks 7.4.
 
 ## Project-specific rules
 

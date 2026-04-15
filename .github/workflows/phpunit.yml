@@ -2,6 +2,7 @@ name: PHPUnit
 
 on:
   push:
+    branches: [trunk]
     paths-ignore:
       - '**/*.md'
       - 'readme.txt'
@@ -11,6 +12,7 @@ on:
       - '.editorconfig'
       - '.gitignore'
   pull_request:
+    branches: [trunk]
     paths-ignore:
       - '**/*.md'
       - 'readme.txt'
@@ -20,6 +22,10 @@ on:
       - '.editorconfig'
       - '.gitignore'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   php-test:
     name: "PHP ${{ matrix.php }} / WP ${{ matrix.wp }}"
@@ -28,31 +34,44 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['8.2', '8.1', '7.4']
-        wp: [ 'latest' ]
+        php: ['7.4', '8.4']
+        wp: ['latest']
         include:
           - php: '7.4'
             wp: '6.3'
-          - php: '8.3'
+          - php: '8.4'
             wp: 'trunk'
     env:
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
       WP_ENV_CORE: ${{ matrix.wp == 'trunk' && 'WordPress/WordPress' || format( 'https://wordpress.org/wordpress-{0}.zip', matrix.wp ) }}
     steps:
-      - uses: styfle/cancel-workflow-action@0.11.0
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - name: Setup Node.js (.nvmrc)
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: npm
-      - name: Composer update
-        run: composer update
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        id: composer-cache
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Install PHP dependencies
+        if: steps.composer-cache.outputs.cache-hit != 'true'
+        run: composer install --prefer-dist --no-progress
+
       - name: npm install
         run: npm ci
+
       - name: Install WordPress
         run: npm run wp-env start
+
       - name: Running single site unit tests
         run: npm run test-php
+
       - name: Running multisite unit tests
         run: npm run test-php-multisite
