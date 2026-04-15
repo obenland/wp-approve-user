@@ -14,6 +14,9 @@
     "test-coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml --coverage-clover=coverage.xml --coverage-text --colors=never"
   },
   "config": {
+    "platform": {
+      "php": "7.4"
+    },
     "allow-plugins": {
       "dealerdirect/phpcodesniffer-composer-installer": true
     }
