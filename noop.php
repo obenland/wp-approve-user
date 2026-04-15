@@ -11,11 +11,11 @@
  * @author Konstantin Obenland
  * @since  2.2.0 - 30.03.2013
  *
- * @param bool $new New option value.
+ * @param bool $new_value New option value.
  * @return bool New option value.
  */
-function wpau_whitelist_users( $new ) {
-	if ( $new ) {
+function wpau_whitelist_users( $new_value ) {
+	if ( $new_value ) {
 		$user_ids = get_users(
 			array(
 				'blog_id' => '',
@@ -29,7 +29,7 @@ function wpau_whitelist_users( $new ) {
 		}
 	}
 
-	return $new;
+	return $new_value;
 }
 add_filter( 'pre_update_option_users_can_register', 'wpau_whitelist_users' );
 
