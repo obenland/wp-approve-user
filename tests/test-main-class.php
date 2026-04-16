@@ -1282,18 +1282,30 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * @covers ::populate_message
 	 */
 	public function test_populate_message_replaces_resetlink() {
+		$user = self::factory()->user->create_and_get(
+			array(
+				'user_login' => 'foo@bar',
+				'user_email' => 'foo-bar@example.org',
+				'role'       => 'subscriber',
+			)
+		);
+
 		$instance = new Obenland_Wp_Approve_User();
 		$reflect  = new ReflectionObject( $instance );
 		$method   = $reflect->getMethod( 'populate_message' );
 		$method->setAccessible( true );
 
-		$result = $method->invoke( $instance, 'Reset: RESETLINK', self::$subscriber );
+		$result = $method->invoke( $instance, 'Reset: RESETLINK', $user );
+
+		$encoded_login = 'login=' . rawurlencode( $user->user_login );
 
 		$this->assertStringStartsWith( 'Reset: ', $result );
 		$this->assertStringContainsString( 'wp-login.php', $result );
 		$this->assertStringContainsString( 'action=rp', $result );
 		$this->assertStringContainsString( 'key=', $result );
-		$this->assertStringContainsString( 'login=' . rawurlencode( self::$subscriber->user_login ), $result );
+		$this->assertStringContainsString( $encoded_login, $result );
+		$this->assertSame( 1, substr_count( $result, $encoded_login ) );
+		$this->assertStringNotContainsString( 'login=' . rawurlencode( rawurlencode( $user->user_login ) ), $result );
 		$this->assertStringNotContainsString( 'RESETLINK', $result );
 	}
 
