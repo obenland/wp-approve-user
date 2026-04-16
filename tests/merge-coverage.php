@@ -14,7 +14,7 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 if ( $argc < 4 ) {
-	fwrite( STDERR, "Usage: php merge-coverage.php <single.cov> <multi.cov> <out.xml>\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- CLI helper, WP_Filesystem isn't bootstrapped.
+	fwrite( STDERR, "Usage: php tests/merge-coverage.php <single.cov> <multi.cov> <out.xml>\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite -- CLI helper, WP_Filesystem isn't bootstrapped.
 	exit( 1 );
 }
 
