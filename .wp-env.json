@@ -1,7 +1,10 @@
 {
 	"core": null,
 	"phpVersion": "8.4",
-	"plugins": [ ".", "https://downloads.wordpress.org/plugin/debug-log-manager.2.3.3.zip" ],
+	"plugins": [
+		".",
+		"https://downloads.wordpress.org/plugin/debug-log-manager.2.3.3.zip"
+	],
 	"config": {
 		"WP_DEBUG": true,
 		"WP_DEBUG_LOG": true,

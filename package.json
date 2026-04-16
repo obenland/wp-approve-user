@@ -1,64 +1,64 @@
 {
-  "name": "wp-approve-user",
-  "version": "11.0.0",
-  "private": true,
-  "description": "Adds an approval step before new WordPress users can log in.",
-  "author": "Konstantin Obenland",
-  "license": "GPL-2.0-or-later",
-  "keywords": [
-    "wordpress",
-    "users",
-    "registration",
-    "approval"
-  ],
-  "homepage": "https://wordpress.org/plugins/wp-approve-user/",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/obenland/wp-approve-user.git"
-  },
-  "bugs": {
-    "url": "https://github.com/obenland/wp-approve-user/issues"
-  },
-  "engines": {
-    "node": ">=24"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.47.0",
-    "@wordpress/env": "^11.4.0",
-    "@wordpress/eslint-plugin": "^25.0.0",
-    "@wordpress/scripts": "^32.0.0"
-  },
-  "overrides": {
-    "serialize-javascript": "^7.0.5",
-    "webpack-dev-server": "^5.2.1",
-    "simple-git": "^3.32.3",
-    "minimatch@<3.1.3": "^3.1.3",
-    "js-yaml@<3.14.2": "^3.14.2"
-  },
-  "scripts": {
-    "wp-env": "wp-env",
-    "start": "wp-env start",
-    "stop": "wp-env stop",
-    "destroy": "wp-env destroy",
-    "lint": "npm run lint:php && npm run lint:js && npm run lint:css && npm run lint:md && npm run lint:pkg-json",
-    "lint:fix": "npm run lint:php:fix && npm run lint:js:fix && npm run lint:css:fix",
-    "lint:php": "wp-env run cli --env-cwd=wp-content/plugins/wp-approve-user ./vendor/bin/phpcs",
-    "lint:php:fix": "wp-env run cli --env-cwd=wp-content/plugins/wp-approve-user ./vendor/bin/phpcbf",
-    "lint:js": "wp-scripts lint-js",
-    "lint:js:fix": "wp-scripts lint-js --fix",
-    "lint:css": "wp-scripts lint-style 'css/**/*.css' '!css/**/*.min.css'",
-    "lint:css:fix": "wp-scripts lint-style 'css/**/*.css' '!css/**/*.min.css' --fix",
-    "lint:md": "wp-scripts lint-md-docs",
-    "lint:pkg-json": "wp-scripts lint-pkg-json",
-    "format": "wp-scripts format",
-    "test": "npm run test-php",
-    "test-php": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test",
-    "test-php-multisite": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test-multisite",
-    "test-php-coverage": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test-coverage",
-    "get-coverage": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user cat coverage.xml > ./coverage.xml",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:install": "playwright install --with-deps chromium",
-    "screenshot": "node scripts/screenshot.js"
-  }
+	"name": "wp-approve-user",
+	"version": "11.0.0",
+	"private": true,
+	"description": "Adds an approval step before new WordPress users can log in.",
+	"author": "Konstantin Obenland",
+	"license": "GPL-2.0-or-later",
+	"keywords": [
+		"wordpress",
+		"users",
+		"registration",
+		"approval"
+	],
+	"homepage": "https://wordpress.org/plugins/wp-approve-user/",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/obenland/wp-approve-user.git"
+	},
+	"bugs": {
+		"url": "https://github.com/obenland/wp-approve-user/issues"
+	},
+	"engines": {
+		"node": ">=24"
+	},
+	"devDependencies": {
+		"@playwright/test": "^1.47.0",
+		"@wordpress/env": "^11.4.0",
+		"@wordpress/eslint-plugin": "^25.0.0",
+		"@wordpress/scripts": "^32.0.0"
+	},
+	"overrides": {
+		"serialize-javascript": "^7.0.5",
+		"webpack-dev-server": "^5.2.1",
+		"simple-git": "^3.32.3",
+		"minimatch@<3.1.3": "^3.1.3",
+		"js-yaml@<3.14.2": "^3.14.2"
+	},
+	"scripts": {
+		"wp-env": "wp-env",
+		"start": "wp-env start",
+		"stop": "wp-env stop",
+		"destroy": "wp-env destroy",
+		"lint": "npm run lint:php && npm run lint:js && npm run lint:css && npm run lint:md && npm run lint:pkg-json",
+		"lint:fix": "npm run lint:php:fix && npm run lint:js:fix && npm run lint:css:fix",
+		"lint:php": "wp-env run cli --env-cwd=wp-content/plugins/wp-approve-user ./vendor/bin/phpcs",
+		"lint:php:fix": "wp-env run cli --env-cwd=wp-content/plugins/wp-approve-user ./vendor/bin/phpcbf",
+		"lint:js": "wp-scripts lint-js",
+		"lint:js:fix": "wp-scripts lint-js --fix",
+		"lint:css": "wp-scripts lint-style 'css/**/*.css' '!css/**/*.min.css'",
+		"lint:css:fix": "wp-scripts lint-style 'css/**/*.css' '!css/**/*.min.css' --fix",
+		"lint:md": "wp-scripts lint-md-docs",
+		"lint:pkg-json": "wp-scripts lint-pkg-json",
+		"format": "wp-scripts format",
+		"test": "npm run test-php",
+		"test-php": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test",
+		"test-php-multisite": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test-multisite",
+		"test-php-coverage": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user composer test-coverage",
+		"get-coverage": "wp-env run tests-cli --env-cwd=/var/www/html/wp-content/plugins/wp-approve-user cat coverage.xml > ./coverage.xml",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:install": "playwright install --with-deps chromium",
+		"screenshot": "node scripts/screenshot.js"
+	}
 }

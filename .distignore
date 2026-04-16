@@ -19,6 +19,7 @@
 .gitignore
 .phpunit.result.cache
 .wp-env.json
+.wp-env.multisite.json
 .wp-env.override.json
 CLAUDE.md
 CONTRIBUTING.md
@@ -32,3 +33,4 @@ phpcs-report.xml
 phpcs.xml.dist
 phpunit.xml
 playwright.config.js
+playwright.multisite.config.js

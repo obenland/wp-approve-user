@@ -1,0 +1,52 @@
+<?php
+/**
+ * Tests for uninstall.php.
+ *
+ * The file has no functions — its executable code only runs when the file is
+ * included with `WP_UNINSTALL_PLUGIN` defined. We include it manually inside
+ * tests (inside the transactional test case, so the deletes are rolled back).
+ *
+ * @package wp-approve-user
+ */
+
+/**
+ * Covers uninstall.php.
+ */
+class WPAU_Uninstall_Test extends WP_UnitTestCase {
+
+	/**
+	 * Including uninstall.php without WP_UNINSTALL_PLUGIN defined bails via wp_die().
+	 */
+	public function test_uninstall_requires_wp_uninstall_plugin_constant() {
+		if ( defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+			$this->markTestSkipped( 'WP_UNINSTALL_PLUGIN is already defined in this process.' );
+		}
+
+		$this->expectException( WPDieException::class );
+		include dirname( __DIR__ ) . '/uninstall.php';
+	}
+
+	/**
+	 * Including uninstall.php with the constant defined clears plugin options and user meta.
+	 *
+	 * @depends test_uninstall_requires_wp_uninstall_plugin_constant
+	 */
+	public function test_uninstall_clears_plugin_data() {
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'wp-approve-user', 'approved' );
+		update_user_meta( $user_id, 'wp-approve-user-mail-sent', true );
+		update_user_meta( $user_id, 'wp-approve-user-new-registration', true );
+		update_option( 'wp-approve-user', array( 'foo' => 'bar' ) );
+
+		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+			define( 'WP_UNINSTALL_PLUGIN', true );
+		}
+
+		include dirname( __DIR__ ) . '/uninstall.php';
+
+		$this->assertFalse( get_option( 'wp-approve-user' ) );
+		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) );
+		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
+	}
+}

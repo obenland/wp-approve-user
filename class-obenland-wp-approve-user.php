@@ -904,7 +904,9 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		}
 
 		wp_safe_redirect( add_query_arg( $query_args, $url ) );
+		// @codeCoverageIgnoreStart
 		exit();
+		// @codeCoverageIgnoreEnd
 	}
 
 	/**
@@ -958,7 +960,9 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		}
 
 		wp_safe_redirect( add_query_arg( $query_args, $url ) );
+		// @codeCoverageIgnoreStart
 		exit();
+		// @codeCoverageIgnoreEnd
 	}
 
 	/**
@@ -985,7 +989,9 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 		if ( empty( $_REQUEST[ $users_key ] ) ) {
 			wp_safe_redirect( $url );
+			// @codeCoverageIgnoreStart
 			exit();
+			// @codeCoverageIgnoreEnd
 		}
 
 		if ( ! current_user_can( 'promote_users' ) ) {

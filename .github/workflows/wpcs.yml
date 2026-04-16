@@ -1,73 +1,73 @@
 name: Coding Standards
 
 on:
-  push:
-    branches: [trunk]
-  pull_request:
-    branches: [trunk]
+    push:
+        branches: [trunk]
+    pull_request:
+        branches: [trunk]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  phpcs:
-    name: PHP Coding Standards
-    runs-on: ubuntu-latest
+    phpcs:
+        name: PHP Coding Standards
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.4'
-          tools: cs2pr
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  tools: cs2pr
 
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        id: composer-cache
-        with:
-          path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
+            - name: Cache Composer dependencies
+              uses: actions/cache@v4
+              id: composer-cache
+              with:
+                  path: vendor
+                  key: composer-${{ hashFiles('composer.lock') }}
 
-      - name: Install PHP dependencies
-        if: steps.composer-cache.outputs.cache-hit != 'true'
-        run: composer install --prefer-dist --no-progress
+            - name: Install PHP dependencies
+              if: steps.composer-cache.outputs.cache-hit != 'true'
+              run: composer install --prefer-dist --no-progress
 
-      - name: Run PHPCS
-        run: ./vendor/bin/phpcs --report-full --report-checkstyle=./phpcs-report.xml
+            - name: Run PHPCS
+              run: ./vendor/bin/phpcs --report-full --report-checkstyle=./phpcs-report.xml
 
-      - name: Show PHPCS results in PR
-        if: ${{ always() && github.event_name == 'pull_request' }}
-        run: cs2pr ./phpcs-report.xml
+            - name: Show PHPCS results in PR
+              if: ${{ always() && github.event_name == 'pull_request' }}
+              run: cs2pr ./phpcs-report.xml
 
-  js-lint:
-    name: JS / CSS / Docs Standards
-    runs-on: ubuntu-latest
+    js-lint:
+        name: JS / CSS / Docs Standards
+        runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
 
-      - name: Install npm dependencies
-        run: npm ci
+            - name: Install npm dependencies
+              run: npm ci
 
-      - name: Run ESLint
-        run: npm run lint:js
+            - name: Run ESLint
+              run: npm run lint:js
 
-      - name: Run Stylelint
-        run: npm run lint:css
+            - name: Run Stylelint
+              run: npm run lint:css
 
-      - name: Run markdownlint
-        run: npm run lint:md
+            - name: Run markdownlint
+              run: npm run lint:md
 
-      - name: Run package.json lint
-        run: npm run lint:pkg-json
+            - name: Run package.json lint
+              run: npm run lint:pkg-json
