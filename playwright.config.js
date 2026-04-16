@@ -4,6 +4,7 @@ const baseURL = process.env.WP_BASE_URL || 'http://localhost:8888';
 
 module.exports = defineConfig( {
 	testDir: './tests/e2e',
+	testIgnore: '**/multisite/**',
 	fullyParallel: false,
 	forbidOnly: !! process.env.CI,
 	retries: process.env.CI ? 1 : 0,

@@ -31,8 +31,13 @@ function setWpauOption( value ) {
 }
 
 function getWpauOption() {
-	const raw = wp( 'option get wp-approve-user --format=json' );
-	return JSON.parse( raw );
+	try {
+		const raw = wp( 'option get wp-approve-user --format=json' );
+		return JSON.parse( raw );
+	} catch {
+		// Option may not exist in the DB yet (plugin defaults are lazy).
+		return null;
+	}
 }
 
 test.describe( 'WP Approve User — registration meta and message', () => {
@@ -116,7 +121,11 @@ test.describe
 			// Already deleted by the test in most runs.
 		}
 		try {
-			setWpauOption( original );
+			if ( original ) {
+				setWpauOption( original );
+			} else {
+				wp( 'option delete wp-approve-user' );
+			}
 		} catch {
 			// Best-effort.
 		}
