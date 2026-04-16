@@ -19,6 +19,7 @@
 			<directory>./tests</directory>
 			<directory>./vendor</directory>
 			<directory>./node_modules</directory>
+			<file>./class-obenland-wp-plugins-v5.php</file>
 		</exclude>
 		<report>
 			<clover outputFile="coverage.xml"/>

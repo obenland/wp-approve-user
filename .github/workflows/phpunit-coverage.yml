@@ -1,88 +1,89 @@
 name: PHPUnit Coverage
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths-ignore:
-      - '**/*.md'
-      - 'readme.txt'
-      - 'lang/**'
-      - '.wordpress-org/**'
-      - '.distignore'
-      - '.editorconfig'
-      - '.gitignore'
+    pull_request:
+        types: [opened, synchronize, reopened]
+        paths-ignore:
+            - '**/*.md'
+            - 'readme.txt'
+            - 'lang/**'
+            - '.wordpress-org/**'
+            - '.distignore'
+            - '.editorconfig'
+            - '.gitignore'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  php-coverage:
-    name: "PHP Coverage Analysis"
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      WP_ENV_PHP_VERSION: '8.4'
-      WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
+    php-coverage:
+        name: 'PHP Coverage Analysis'
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+        env:
+            WP_ENV_PHP_VERSION: '8.4'
+            WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Setup Node.js (.nvmrc)
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
+            - name: Setup Node.js (.nvmrc)
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
 
-      - name: Cache Composer dependencies
-        uses: actions/cache@v4
-        id: composer-cache
-        with:
-          path: vendor
-          key: composer-coverage-${{ hashFiles('composer.json') }}
+            - name: Cache Composer dependencies
+              uses: actions/cache@v4
+              id: composer-cache
+              with:
+                  path: vendor
+                  key: composer-coverage-${{ hashFiles('composer.json') }}
 
-      - name: Install PHP dependencies
-        if: steps.composer-cache.outputs.cache-hit != 'true'
-        run: composer update --prefer-dist --no-progress
+            - name: Install PHP dependencies
+              if: steps.composer-cache.outputs.cache-hit != 'true'
+              run: composer update --prefer-dist --no-progress
 
-      - name: Install system tools
-        run: sudo apt-get update && sudo apt-get install -y libxml2-utils
+            - name: Install system tools
+              run: sudo apt-get update && sudo apt-get install -y libxml2-utils
 
-      - name: npm install
-        run: npm ci
+            - name: npm install
+              run: npm ci
 
-      - name: Install WordPress with Xdebug enabled
-        run: npm run wp-env start -- --xdebug=coverage
+            - name: Install WordPress with Xdebug enabled
+              run: npm run wp-env start -- --xdebug=coverage
 
-      - name: Run PHPUnit with Coverage
-        id: phpunit
-        run: |
-          # Run tests and capture coverage output
-          coverage_output=$(npm run test-php-coverage -- --coverage-text)
-          # Extract only the coverage report section
-          filtered_output=$(echo "$coverage_output" | sed -n '/^Code Coverage Report:/,$p')
-          echo "$filtered_output" | tee coverage-summary.txt
-          echo "coverage_summary<<EOF" >> $GITHUB_ENV
-          echo "$filtered_output" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+            - name: Run PHPUnit with Coverage
+              id: phpunit
+              run: |
+                  # Run tests and capture coverage output (text summary is
+                  # emitted by tests/merge-coverage.php automatically).
+                  coverage_output=$(npm run test-php-coverage)
+                  # Extract only the coverage report section
+                  filtered_output=$(echo "$coverage_output" | sed -n '/^Code Coverage Report:/,$p')
+                  echo "$filtered_output" | tee coverage-summary.txt
+                  echo "coverage_summary<<EOF" >> $GITHUB_ENV
+                  echo "$filtered_output" >> $GITHUB_ENV
+                  echo "EOF" >> $GITHUB_ENV
 
-      - name: Find Comment
-        uses: peter-evans/find-comment@v2
-        id: fc
-        with:
-          issue-number: ${{ github.event.pull_request.number }}
-          comment-author: 'github-actions[bot]'
-          body-includes: PHPUnit Coverage Report
+            - name: Find Comment
+              uses: peter-evans/find-comment@v2
+              id: fc
+              with:
+                  issue-number: ${{ github.event.pull_request.number }}
+                  comment-author: 'github-actions[bot]'
+                  body-includes: PHPUnit Coverage Report
 
-      - name: Create or Update Comment
-        uses: peter-evans/create-or-update-comment@v3
-        with:
-          comment-id: ${{ steps.fc.outputs.comment-id }}
-          issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## PHPUnit Coverage Report
+            - name: Create or Update Comment
+              uses: peter-evans/create-or-update-comment@v3
+              with:
+                  comment-id: ${{ steps.fc.outputs.comment-id }}
+                  issue-number: ${{ github.event.pull_request.number }}
+                  body: |
+                      ## PHPUnit Coverage Report
 
-            ```yaml
-            ${{ env.coverage_summary }}
-            ```
-          edit-mode: replace
+                      ```yaml
+                      ${{ env.coverage_summary }}
+                      ```
+                  edit-mode: replace

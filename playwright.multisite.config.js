@@ -1,10 +1,9 @@
 const { defineConfig, devices } = require( '@playwright/test' );
 
-const baseURL = process.env.WP_BASE_URL || 'http://localhost:8888';
+const baseURL = process.env.WP_BASE_URL || 'http://localhost:8890';
 
 module.exports = defineConfig( {
-	testDir: './tests/e2e',
-	testIgnore: '**/multisite/**',
+	testDir: './tests/e2e/multisite',
 	fullyParallel: false,
 	forbidOnly: !! process.env.CI,
 	retries: process.env.CI ? 1 : 0,
@@ -17,7 +16,7 @@ module.exports = defineConfig( {
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
 	},
-	globalSetup: require.resolve( './tests/e2e/global-setup.js' ),
+	globalSetup: require.resolve( './tests/e2e/multisite/global-setup.js' ),
 	projects: [
 		{
 			name: 'chromium',

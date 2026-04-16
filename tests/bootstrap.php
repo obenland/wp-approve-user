@@ -41,14 +41,50 @@ $GLOBALS['wp_tests_options'] = array(
 require_once $_tests_dir . '/includes/functions.php';
 
 /**
- * Manually load the plugin being tested.
+ * Manually loads the plugin under test into the WP test harness.
+ *
+ * @throws RuntimeException When the `users_can_register` gate bypass fails
+ *                          and the plugin entry file silently falls back
+ *                          to the noop path.
  */
 function _manually_load_plugin() {
+	global $wpau_db_version;
+
 	$root = dirname( __DIR__ );
 
 	require_once $root . '/noop.php';
 	require_once $root . '/class-obenland-wp-plugins-v5.php';
 	require_once $root . '/class-obenland-wp-approve-user.php';
+	require_once $root . '/tests/class-wpau-redirect-exception.php';
+
+	/*
+	 * Force the `users_can_register` gate in the plugin entry file to
+	 * evaluate truthy so PHPUnit collects coverage for wp-approve-user.php,
+	 * cron-events.php and upgrade.php. A short-circuit filter avoids calling
+	 * update_option() this early (user functions aren't available yet).
+	 */
+	add_filter( 'pre_option_users_can_register', '__return_true' );
+	require_once $root . '/wp-approve-user.php';
+	remove_filter( 'pre_option_users_can_register', '__return_true' );
+
+	/*
+	 * Hard-fail if the gate bypass silently dropped us back into the noop path.
+	 * Without this check, a future refactor of wp-approve-user.php could leave
+	 * the suite running against an empty plugin and every test would still pass.
+	 */
+	if ( ! function_exists( 'wp_approve_user_instantiate' ) ) {
+		throw new RuntimeException(
+			'wp-approve-user.php did not register — the users_can_register gate bypass is broken.'
+		);
+	}
+
+	/*
+	 * The entry file also queues wp_approve_user_instantiate on plugins_loaded.
+	 * Keeping that hook would globally register the main class' filters, which
+	 * would change user_register behaviour for every test. Each test that needs
+	 * the class creates its own instance explicitly, so we can unhook it here.
+	 */
+	remove_action( 'plugins_loaded', 'wp_approve_user_instantiate', 0 );
 }
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 

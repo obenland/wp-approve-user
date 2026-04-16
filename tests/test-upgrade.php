@@ -1,0 +1,70 @@
+<?php
+/**
+ * Tests for upgrade.php.
+ *
+ * @package wp-approve-user
+ */
+
+/**
+ * Covers the upgrade routines.
+ */
+class WPAU_Upgrade_Test extends WP_UnitTestCase {
+
+	/**
+	 * Reset db version before each test.
+	 */
+	public function set_up() {
+		parent::set_up();
+		delete_site_option( 'wpau_db_version' );
+	}
+
+	/**
+	 * Runs the v12 meta migration and stamps the current wpau_db_version.
+	 *
+	 * @covers ::wpau_upgrade_all
+	 * @covers ::wpau_upgrade_to_12
+	 */
+	public function test_upgrade_all_runs_migration_and_sets_version() {
+		global $wpau_db_version;
+
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'wp-approve-user', true );
+
+		wpau_upgrade_all();
+
+		$this->assertSame( $wpau_db_version, (int) get_site_option( 'wpau_db_version' ) );
+		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Skips the migration when wpau_db_version already matches the current version.
+	 *
+	 * @covers ::wpau_upgrade_all
+	 */
+	public function test_upgrade_all_bails_when_up_to_date() {
+		global $wpau_db_version;
+
+		update_site_option( 'wpau_db_version', $wpau_db_version );
+
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'wp-approve-user', true );
+
+		wpau_upgrade_all();
+
+		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Migrates legacy boolean-false meta to the string "pending".
+	 *
+	 * @covers ::wpau_upgrade_to_12
+	 */
+	public function test_upgrade_to_12_migrates_false_to_pending() {
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'wp-approve-user', false );
+
+		wpau_upgrade_to_12();
+
+		$this->assertSame( 'pending', get_user_meta( $user_id, 'wp-approve-user', true ) );
+	}
+}

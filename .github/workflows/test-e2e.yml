@@ -1,75 +1,122 @@
 name: E2E Tests
 
 on:
-  push:
-    branches: [trunk]
-    paths-ignore:
-      - '**/*.md'
-      - 'readme.txt'
-      - 'lang/**'
-      - '.wordpress-org/**'
-      - '.distignore'
-      - '.editorconfig'
-      - '.gitignore'
-  pull_request:
-    branches: [trunk]
-    paths-ignore:
-      - '**/*.md'
-      - 'readme.txt'
-      - 'lang/**'
-      - '.wordpress-org/**'
-      - '.distignore'
-      - '.editorconfig'
-      - '.gitignore'
+    push:
+        branches: [trunk]
+        paths-ignore:
+            - '**/*.md'
+            - 'readme.txt'
+            - 'lang/**'
+            - '.wordpress-org/**'
+            - '.distignore'
+            - '.editorconfig'
+            - '.gitignore'
+    pull_request:
+        branches: [trunk]
+        paths-ignore:
+            - '**/*.md'
+            - 'readme.txt'
+            - 'lang/**'
+            - '.wordpress-org/**'
+            - '.distignore'
+            - '.editorconfig'
+            - '.gitignore'
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+    group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
 
 jobs:
-  playwright:
-    name: Playwright
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    playwright:
+        name: Playwright
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: npm
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
 
-      - name: Install npm dependencies
-        run: npm ci
+            - name: Install npm dependencies
+              run: npm ci
 
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ hashFiles('package-lock.json') }}
+            - name: Cache Playwright browsers
+              uses: actions/cache@v4
+              id: playwright-cache
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: playwright-${{ hashFiles('package-lock.json') }}
 
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+            - name: Install Playwright browsers
+              if: steps.playwright-cache.outputs.cache-hit != 'true'
+              run: npx playwright install --with-deps chromium
 
-      - name: Install Playwright system deps
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+            - name: Install Playwright system deps
+              if: steps.playwright-cache.outputs.cache-hit == 'true'
+              run: npx playwright install-deps chromium
 
-      - name: Start WordPress environment
-        run: npm run start
+            - name: Start WordPress environment
+              run: npm run start
 
-      - name: Run Playwright tests
-        run: npm run test:e2e
+            - name: Run Playwright tests
+              run: npm run test:e2e
 
-      - name: Upload Playwright report
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
+            - name: Upload Playwright report
+              if: ${{ always() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-report
+                  path: playwright-report/
+                  retention-days: 7
+
+    playwright-multisite:
+        name: Playwright (Multisite)
+        runs-on: ubuntu-latest
+        timeout-minutes: 20
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
+
+            - name: Install npm dependencies
+              run: npm ci
+
+            - name: Cache Playwright browsers
+              uses: actions/cache@v4
+              id: playwright-cache
+              with:
+                  path: ~/.cache/ms-playwright
+                  key: playwright-${{ hashFiles('package-lock.json') }}
+
+            - name: Install Playwright browsers
+              if: steps.playwright-cache.outputs.cache-hit != 'true'
+              run: npx playwright install --with-deps chromium
+
+            - name: Install Playwright system deps
+              if: steps.playwright-cache.outputs.cache-hit == 'true'
+              run: npx playwright install-deps chromium
+
+            - name: Start multisite WordPress environment
+              run: npm run start:multisite
+
+            - name: Run Playwright multisite tests
+              run: npm run test:e2e:multisite
+
+            - name: Upload Playwright multisite report
+              if: ${{ always() }}
+              uses: actions/upload-artifact@v4
+              with:
+                  name: playwright-report-multisite
+                  path: playwright-report/
+                  retention-days: 7
