@@ -55,9 +55,9 @@ test.describe( 'WP Approve User — registration meta and message', () => {
 			await page.locator( '#wp-submit' ).click();
 
 			// wp_login_errors() rewrites the "registered" message into one that
-			// mentions administrator approval.
+			// mentions approval.
 			await expect( page.locator( '#login .message' ) ).toContainText(
-				/approval|confirmed by an administrator/i
+				'once your registration is approved'
 			);
 
 			// user_register() drops both the status and the new-registration

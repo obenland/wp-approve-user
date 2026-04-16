@@ -34,7 +34,7 @@ test.describe.serial( 'WP Approve User', () => {
 	test( 'pending user is blocked from logging in', async ( { page } ) => {
 		await loginAs( page, username, password );
 		await expect( page.locator( '#login_error' ) ).toContainText(
-			'has to be confirmed by an administrator'
+			'Your account must be confirmed before you can log in.'
 		);
 	} );
 

@@ -83,6 +83,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 * Switches to a three-state approval system: approved, unapproved, and pending.
 * When a user is unapproved, they now get immediately logged out from all active sessions.
 * Uses a cron job to auto-approve more than 100 users asynchronously after plugin activation.
+* Adds a `RESETLINK` email placeholder that sends users a one-time set/reset-password URL. Props @helgatheviking.
 
 = 11 =
 * Replaced image files with inline SVGs.

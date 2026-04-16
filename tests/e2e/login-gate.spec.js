@@ -56,7 +56,7 @@ test.describe.serial( 'WP Approve User — login gate', () => {
 		await attemptLogin( page, unapprovedUser, password );
 
 		await expect( page.locator( '#login_error' ) ).toContainText(
-			'has to be confirmed by an administrator'
+			'Your account must be confirmed before you can log in.'
 		);
 		// We never reached wp-admin.
 		await expect( page ).toHaveURL( /wp-login\.php/ );
