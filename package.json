@@ -1,6 +1,6 @@
 {
 	"name": "wp-approve-user",
-	"version": "11.0.0",
+	"version": "12.0.0",
 	"private": true,
 	"description": "Adds an approval step before new WordPress users can log in.",
 	"author": "Konstantin Obenland",

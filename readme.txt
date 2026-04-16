@@ -4,7 +4,8 @@ Tags: admin, user, login, approve, user management
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY
 Requires at least: 4.7
 Tested up to: 6.9
-Stable tag: 11
+Requires PHP: 7.4
+Stable tag: 12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -76,14 +77,27 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 4. Count notification and row highlight for unapproved users
 
 
+== Upgrade Notice ==
+
+= 12 =
+Migrates user approval data to a three-state system, adds a RESETLINK email placeholder, and now requires PHP 7.4+. Back up before upgrading large installs.
+
+
 == Changelog ==
 
 = 12 =
 * Bumped minimum required WordPress version to 4.7.
+* Requires PHP 7.4 or later.
 * Switches to a three-state approval system: approved, unapproved, and pending.
 * When a user is unapproved, they now get immediately logged out from all active sessions.
 * Uses a cron job to auto-approve more than 100 users asynchronously after plugin activation.
 * Adds a `RESETLINK` email placeholder that sends users a one-time set/reset-password URL. Props @helgatheviking.
+* Pending count (not unapproved count) now drives the admin menu update bubble.
+* After approving or unapproving the last user in a filtered view, the redirect now lands on All Users instead of an empty list.
+* Migrates legacy boolean approval meta on upgrade: `true` becomes `approved` and `false` becomes `pending`.
+* Fixes an issue where the upgrade routine re-ran on every admin page load due to a strict type comparison.
+* Corrected text domain on the "Pending" and "Unapproved" view labels so they can be translated.
+* Updated the login error and post-registration messages to be shorter and clearer.
 
 = 11 =
 * Replaced image files with inline SVGs.
