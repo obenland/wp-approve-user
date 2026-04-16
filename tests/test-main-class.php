@@ -1335,6 +1335,31 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Falls back to the login URL when get_password_reset_key() returns a WP_Error.
+	 *
+	 * @covers ::populate_message
+	 */
+	public function test_populate_message_resetlink_falls_back_on_wp_error() {
+		$deny = function () {
+			return false;
+		};
+		add_filter( 'allow_password_reset', $deny );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$reflect  = new ReflectionObject( $instance );
+		$method   = $reflect->getMethod( 'populate_message' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $instance, 'Reset: RESETLINK', self::$subscriber );
+
+		remove_filter( 'allow_password_reset', $deny );
+
+		$this->assertStringContainsString( wp_login_url(), $result );
+		$this->assertStringNotContainsString( 'action=rp', $result );
+		$this->assertStringNotContainsString( 'RESETLINK', $result );
+	}
+
+	/**
 	 * The settings section description lists RESETLINK as a supported placeholder.
 	 *
 	 * @covers ::section_description_cb
