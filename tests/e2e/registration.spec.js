@@ -7,9 +7,9 @@
  *   - the wp-approve-user-new-registration meta is also set,
  *   - the post-registration message tells the user to wait for approval,
  *   - deleting an unapproved new registration triggers the unapprove email
- *     code path. We assert by stubbing wp_mail() via a mu-plugin file that
- *     records the most recent recipient into an option; the plugin's
- *     delete_user() handler will call wp_mail() and the option will be set.
+ *     code path. We assert by using a `wp eval` call to add a `pre_wp_mail`
+ *     filter that records the most recent recipient into an option, so the
+ *     test can verify `wp_mail()` was reached without a real SMTP round-trip.
  */
 const { test, expect } = require( '@playwright/test' );
 const { execSync } = require( 'node:child_process' );

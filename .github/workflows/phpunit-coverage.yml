@@ -57,8 +57,9 @@ jobs:
             - name: Run PHPUnit with Coverage
               id: phpunit
               run: |
-                  # Run tests and capture coverage output
-                  coverage_output=$(npm run test-php-coverage -- --coverage-text)
+                  # Run tests and capture coverage output (text summary is
+                  # emitted by tests/merge-coverage.php automatically).
+                  coverage_output=$(npm run test-php-coverage)
                   # Extract only the coverage report section
                   filtered_output=$(echo "$coverage_output" | sed -n '/^Code Coverage Report:/,$p')
                   echo "$filtered_output" | tee coverage-summary.txt

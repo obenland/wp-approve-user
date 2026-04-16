@@ -29,7 +29,15 @@ class WPAU_Uninstall_Test extends WP_UnitTestCase {
 	/**
 	 * Including uninstall.php with the constant defined clears plugin options and user meta.
 	 *
+	 * Runs in a separate process because `WP_UNINSTALL_PLUGIN` is a
+	 * process-wide constant that can't be unset once defined, so the
+	 * rest of the suite would otherwise see the uninstall flag for every
+	 * subsequent test in the same PHP process.
+	 *
 	 * @depends test_uninstall_requires_wp_uninstall_plugin_constant
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test_uninstall_clears_plugin_data() {
 		$user_id = self::factory()->user->create();

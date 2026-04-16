@@ -41,13 +41,19 @@ async function logout( page ) {
 }
 
 function getSubSiteId() {
-	const out = wp( 'site list --fields=blog_id,url' );
-	const lines = out.split( '\n' ).slice( 1 );
-	for ( const line of lines ) {
-		const [ id, url ] = line.split( /\s+/ );
-		if ( url && url.includes( '/sub/' ) ) {
-			return parseInt( id, 10 );
+	// `wp site list` default table output isn't a stable interface — parse the
+	// JSON format instead so formatting or locale changes can't break this.
+	try {
+		const sites = JSON.parse(
+			wp( 'site list --fields=blog_id,url --format=json' )
+		);
+		for ( const site of sites ) {
+			if ( site.url && site.url.includes( '/sub/' ) ) {
+				return parseInt( site.blog_id, 10 );
+			}
 		}
+	} catch {
+		// Fall through to the zero sentinel below.
 	}
 	return 0;
 }

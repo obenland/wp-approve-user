@@ -40,6 +40,9 @@
 		"start": "wp-env start",
 		"stop": "wp-env stop",
 		"destroy": "wp-env destroy",
+		"start:multisite": "wp-env --config=.wp-env.multisite.json start --xdebug=off",
+		"stop:multisite": "wp-env --config=.wp-env.multisite.json stop",
+		"destroy:multisite": "wp-env --config=.wp-env.multisite.json destroy",
 		"lint": "npm run lint:php && npm run lint:js && npm run lint:css && npm run lint:md && npm run lint:pkg-json",
 		"lint:fix": "npm run lint:php:fix && npm run lint:js:fix && npm run lint:css:fix",
 		"lint:php": "wp-env run cli --env-cwd=wp-content/plugins/wp-approve-user ./vendor/bin/phpcs",
@@ -59,6 +62,8 @@
 		"test:e2e": "playwright test",
 		"test:e2e:ui": "playwright test --ui",
 		"test:e2e:install": "playwright install --with-deps chromium",
+		"test:e2e:multisite": "playwright test --config=playwright.multisite.config.js",
+		"test:e2e:multisite:ui": "playwright test --config=playwright.multisite.config.js --ui",
 		"screenshot": "node scripts/screenshot.js"
 	}
 }
