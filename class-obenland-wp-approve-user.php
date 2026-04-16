@@ -372,7 +372,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 		return new WP_Error(
 			'wpau_confirmation_error',
-			wp_kses_post( __( '<strong>ERROR:</strong> Your account has to be confirmed by an administrator before you can log in.', 'wp-approve-user' ) )
+			wp_kses_post( __( 'Your account must be confirmed before you can log in.', 'wp-approve-user' ) )
 		);
 	}
 
@@ -543,7 +543,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 */
 	public function wp_login_errors( $errors ) {
 		if ( in_array( 'registered', $errors->get_error_codes(), true ) ) {
-			$message = __( 'Registration complete. You will receive an email once your registration was confirmed by an administrator.', 'wp-approve-user' );
+			$message = __( 'Registration complete. You will receive an email once your registration is approved.', 'wp-approve-user' );
 			$errors->remove( 'registered' );
 			$errors->add( 'registered', $message, 'message' );
 		}
