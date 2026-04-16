@@ -34,8 +34,13 @@ function setWpauOption( value ) {
 }
 
 function getWpauOption() {
-	const raw = wp( 'option get wp-approve-user --format=json' );
-	return JSON.parse( raw );
+	try {
+		const raw = wp( 'option get wp-approve-user --format=json' );
+		return JSON.parse( raw );
+	} catch {
+		// Option may not exist in the DB yet (plugin defaults are lazy).
+		return null;
+	}
 }
 
 async function loginAs( page, username, password ) {
@@ -95,7 +100,11 @@ test.describe.serial( 'WP Approve User — settings persistence', () => {
 
 	test.afterAll( () => {
 		try {
-			setWpauOption( original );
+			if ( original ) {
+				setWpauOption( original );
+			} else {
+				wp( 'option delete wp-approve-user' );
+			}
 		} catch {
 			// Best-effort restore.
 		}
@@ -167,7 +176,11 @@ test.describe.serial( 'WP Approve User — approval email dispatch flag', () => 
 			// Best-effort.
 		}
 		try {
-			setWpauOption( original );
+			if ( original ) {
+				setWpauOption( original );
+			} else {
+				wp( 'option delete wp-approve-user' );
+			}
 		} catch {
 			// Best-effort.
 		}
