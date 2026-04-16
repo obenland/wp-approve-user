@@ -615,7 +615,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Rewrites the post-registration login message to explain that administrator approval is pending.
+	 * Rewrites the post-registration login message to explain that approval is pending.
 	 *
 	 * @covers ::wp_login_errors
 	 */
@@ -625,7 +625,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 
 		$instance = new Obenland_Wp_Approve_User();
 		$result   = $instance->wp_login_errors( $errors );
-		$this->assertStringContainsString( 'administrator', $result->get_error_message( 'registered' ) );
+		$this->assertStringContainsString( 'once your registration is approved', $result->get_error_message( 'registered' ) );
 	}
 
 	/**
