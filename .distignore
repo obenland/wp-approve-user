@@ -17,6 +17,7 @@
 .editorconfig
 .eslintignore
 .gitignore
+.nvmrc
 .phpunit.result.cache
 .wp-env.json
 .wp-env.multisite.json
