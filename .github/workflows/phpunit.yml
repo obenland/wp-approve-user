@@ -67,23 +67,8 @@ jobs:
       - name: npm install
         run: npm ci
 
-      - name: Cache Docker images
-        uses: actions/cache@v4
-        id: docker-cache
-        with:
-          path: /tmp/docker-images.tar
-          key: docker-${{ matrix.php }}-${{ hashFiles('.wp-env.json', 'package-lock.json') }}
-
-      - name: Load cached Docker images
-        if: steps.docker-cache.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/docker-images.tar
-
       - name: Install WordPress
         run: npm run wp-env start
-
-      - name: Save Docker images
-        if: steps.docker-cache.outputs.cache-hit != 'true'
-        run: docker save -o /tmp/docker-images.tar $(docker image list --format '{{.Repository}}:{{.Tag}}' | grep -v '<none>')
 
       - name: Running single site unit tests
         run: npm run test-php
