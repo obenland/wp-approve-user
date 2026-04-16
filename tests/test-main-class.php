@@ -1277,6 +1277,67 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * RESETLINK is replaced with a wp-login.php password-reset URL that includes the user login.
+	 *
+	 * @covers ::populate_message
+	 */
+	public function test_populate_message_replaces_resetlink() {
+		$instance = new Obenland_Wp_Approve_User();
+		$reflect  = new ReflectionObject( $instance );
+		$method   = $reflect->getMethod( 'populate_message' );
+		$method->setAccessible( true );
+
+		$result = $method->invoke( $instance, 'Reset: RESETLINK', self::$subscriber );
+
+		$this->assertStringStartsWith( 'Reset: ', $result );
+		$this->assertStringContainsString( 'wp-login.php', $result );
+		$this->assertStringContainsString( 'action=rp', $result );
+		$this->assertStringContainsString( 'key=', $result );
+		$this->assertStringContainsString( 'login=' . rawurlencode( self::$subscriber->user_login ), $result );
+		$this->assertStringNotContainsString( 'RESETLINK', $result );
+	}
+
+	/**
+	 * Messages without RESETLINK do not generate a password-reset key (no user_activation_key side effect).
+	 *
+	 * @covers ::populate_message
+	 */
+	public function test_populate_message_without_resetlink_skips_key_generation() {
+		global $wpdb;
+
+		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		$user    = get_userdata( $user_id );
+
+		// phpcs:disable WordPress.DB
+		$this->assertEmpty( $wpdb->get_var( $wpdb->prepare( "SELECT user_activation_key FROM {$wpdb->users} WHERE ID = %d", $user_id ) ) );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$reflect  = new ReflectionObject( $instance );
+		$method   = $reflect->getMethod( 'populate_message' );
+		$method->setAccessible( true );
+
+		$method->invoke( $instance, 'Hello USERNAME', $user );
+
+		$this->assertEmpty( $wpdb->get_var( $wpdb->prepare( "SELECT user_activation_key FROM {$wpdb->users} WHERE ID = %d", $user_id ) ) );
+		// phpcs:enable WordPress.DB
+	}
+
+	/**
+	 * The settings section description lists RESETLINK as a supported placeholder.
+	 *
+	 * @covers ::section_description_cb
+	 */
+	public function test_section_description_advertises_resetlink() {
+		$instance = new Obenland_Wp_Approve_User();
+
+		ob_start();
+		$instance->section_description_cb();
+		$section = ob_get_clean();
+
+		$this->assertStringContainsString( 'RESETLINK', $section );
+	}
+
+	/**
 	 * Deprecated update_option_users_can_register() emits a _deprecated_function notice.
 	 *
 	 * @covers ::update_option_users_can_register

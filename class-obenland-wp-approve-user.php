@@ -714,7 +714,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @access public
 	 */
 	public function section_description_cb() {
-		$tags = array( 'USERNAME', 'BLOG_TITLE', 'BLOG_URL', 'LOGINLINK' );
+		$tags = array( 'USERNAME', 'BLOG_TITLE', 'BLOG_URL', 'LOGINLINK', 'RESETLINK' );
 		if ( is_multisite() ) {
 			$tags[] = 'SITE_NAME';
 		}
@@ -1031,6 +1031,22 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			'LOGINLINK'  => wp_login_url(),
 			'USERNAME'   => $user->user_nicename,
 		);
+
+		if ( false !== strpos( $message, 'RESETLINK' ) ) {
+			$key = get_password_reset_key( $user );
+			if ( ! is_wp_error( $key ) ) {
+				$placeholders['RESETLINK'] = add_query_arg(
+					array(
+						'action' => 'rp',
+						'key'    => $key,
+						'login'  => rawurlencode( $user->user_login ),
+					),
+					network_site_url( 'wp-login.php', 'login' )
+				);
+			} else {
+				$placeholders['RESETLINK'] = wp_login_url();
+			}
+		}
 
 		if ( is_multisite() ) {
 			$placeholders['SITE_NAME'] = $GLOBALS['current_site']->site_name;
