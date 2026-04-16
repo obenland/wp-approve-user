@@ -55,6 +55,37 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Bails when db_version comes back from the database as a string.
+	 *
+	 * Regression test for https://github.com/obenland/wp-approve-user/issues/54.
+	 *
+	 * @covers ::wpau_upgrade_all
+	 */
+	public function test_upgrade_all_bails_when_version_is_string_from_db() {
+		global $wpau_db_version;
+
+		update_site_option( 'wpau_db_version', $wpau_db_version );
+		wp_cache_flush();
+
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'wp-approve-user', true );
+
+		$filter = function ( $value, $option ) {
+			if ( 'wpau_db_version' === $option ) {
+				$this->fail( 'update_site_option should not be called when already up to date.' );
+			}
+			return $value;
+		};
+		add_filter( 'pre_update_option', $filter, 10, 2 );
+
+		wpau_upgrade_all();
+
+		remove_filter( 'pre_update_option', $filter );
+
+		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
+	}
+
+	/**
 	 * Migrates legacy boolean-false meta to the string "pending".
 	 *
 	 * @covers ::wpau_upgrade_to_12

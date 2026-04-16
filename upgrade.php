@@ -13,7 +13,7 @@ function wpau_upgrade_all() {
 
 	$wpau_current_db_version = get_site_option( 'wpau_db_version', 0 );
 
-	if ( $wpau_current_db_version === $wpau_db_version ) {
+	if ( (int) $wpau_current_db_version === $wpau_db_version ) {
 		return;
 	}
 
