@@ -660,6 +660,9 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 */
 	public function test_admin_menu_appends_count_and_submenu() {
 		global $menu, $submenu;
+		$prev_menu    = $menu;
+		$prev_submenu = $submenu;
+
 		$menu    = array();
 		$submenu = array();
 		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
@@ -672,6 +675,10 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'plugin-count">4', $menu[70][0] );
 		$parent_slug = is_multisite() ? 'settings.php' : 'options-general.php';
 		$this->assertArrayHasKey( $parent_slug, $submenu );
+
+		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		$menu    = $prev_menu;
+		$submenu = $prev_submenu;
 	}
 
 	/**
@@ -684,8 +691,14 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * @covers ::admin_init
 	 */
 	public function test_admin_init_wires_sanitize_callback_for_option() {
-		global $wp_registered_settings;
+		global $wp_registered_settings, $wp_settings_sections, $wp_settings_fields;
+		$prev_settings = $wp_registered_settings;
+		$prev_sections = $wp_settings_sections;
+		$prev_fields   = $wp_settings_fields;
+
 		$wp_registered_settings = array();
+		$wp_settings_sections   = array();
+		$wp_settings_fields     = array();
 
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->admin_init();
@@ -700,6 +713,10 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$sanitized = call_user_func( $callback, array( 'wpau-send-approve-email' => '1' ) );
 		$this->assertTrue( $sanitized['wpau-send-approve-email'] );
 		$this->assertFalse( $sanitized['wpau-send-unapprove-email'] );
+
+		$wp_registered_settings = $prev_settings;
+		$wp_settings_sections   = $prev_sections;
+		$wp_settings_fields     = $prev_fields;
 	}
 
 	/**
