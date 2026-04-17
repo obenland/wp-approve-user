@@ -107,7 +107,8 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::wp_authenticate_user
 	 */
 	public function test_wp_authenticate_user() {
-		$user  = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
 		$class = new Obenland_Wp_Approve_User();
 
 		// Returns WP_Error if there's an error.
@@ -118,6 +119,43 @@ class User_Meta extends WP_UnitTestCase {
 
 		// Returns WP_Error if they're not approved.
 		$result = $class->wp_authenticate_user( $user );
+		$this->assertWPError( $result );
+		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
+	}
+
+	/**
+	 * Tests that users with no wp-approve-user meta at all can log in.
+	 *
+	 * Covers the regression from https://github.com/obenland/wp-approve-user/issues/60
+	 * item 10 — pre-plugin-install users or users orphaned by an
+	 * incomplete activation cron were silently locked out.
+	 *
+	 * @covers ::wp_authenticate_user
+	 */
+	public function test_wp_authenticate_user_missing_meta_is_treated_as_approved() {
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		// No meta set at all — this is the pre-plugin-install state.
+		$this->assertSame( '', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+
+		$class  = new Obenland_Wp_Approve_User();
+		$result = $class->wp_authenticate_user( $user );
+
+		$this->assertSame( $user, $result );
+	}
+
+	/**
+	 * Unapproved users remain blocked — the missing-meta fix must not
+	 * accidentally unblock users who were explicitly unapproved.
+	 *
+	 * @covers ::wp_authenticate_user
+	 */
+	public function test_wp_authenticate_user_unapproved_is_still_blocked() {
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		update_user_meta( $user->ID, 'wp-approve-user', 'unapproved' );
+
+		$class  = new Obenland_Wp_Approve_User();
+		$result = $class->wp_authenticate_user( $user );
+
 		$this->assertWPError( $result );
 		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
 	}
