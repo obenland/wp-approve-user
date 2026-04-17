@@ -80,7 +80,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 == Upgrade Notice ==
 
 = 12 =
-Migrates user approval data to a three-state system, adds a RESETLINK email placeholder, and now requires PHP 7.4+. Back up before upgrading large installs.
+Migrates user approval data to a three-state system and adds a RESETLINK email placeholder. Back up before upgrading large installs.
 
 
 == Changelog ==
