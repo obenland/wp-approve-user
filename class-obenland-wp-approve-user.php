@@ -368,9 +368,11 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 		$status = get_user_meta( $userdata->ID, 'wp-approve-user', true );
 
-		// An empty meta value means the user predates the plugin (or its
-		// activation hook never finished). Treat them as approved rather
-		// than silently locking them out.
+		/*
+		 * An empty meta value means the user predates the plugin (or its
+		 * activation hook never finished). Treat them as approved rather
+		 * than silently locking them out.
+		 */
 		if ( 'approved' === $status || '' === $status ) {
 			return $userdata;
 		}

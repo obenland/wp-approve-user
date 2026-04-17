@@ -42,10 +42,10 @@ test.describe.serial( 'WP Approve User — login gate', () => {
 		);
 		wp( `user meta update ${ pendingUser } wp-approve-user pending` );
 
-		// Create a user and explicitly strip any wp-approve-user meta so the
-		// login path has to hit the empty-meta branch in wp_authenticate_user.
-		// Covers the silent-lockout regression from
-		// https://github.com/obenland/wp-approve-user/issues/60 item 10.
+		/*
+		 * Create a user and explicitly strip any wp-approve-user meta so the
+		 * login path has to hit the empty-meta branch in wp_authenticate_user.
+		 */
 		wp(
 			`user create ${ noMetaUser } ${ noMetaUser }@example.test --role=subscriber --user_pass=${ password } --porcelain`
 		);
@@ -88,9 +88,6 @@ test.describe.serial( 'WP Approve User — login gate', () => {
 	} ) => {
 		await attemptLogin( page, noMetaUser, password );
 
-		// Successful login lands in wp-admin — the empty-meta branch is the
-		// only thing that lets this request through, since the user has no
-		// 'approved' meta to match the pre-fix condition.
 		await expect( page ).toHaveURL( /wp-admin/ );
 	} );
 } );

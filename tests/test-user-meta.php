@@ -124,11 +124,9 @@ class User_Meta extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Tests that users with no wp-approve-user meta at all can log in.
-	 *
-	 * Covers the regression from https://github.com/obenland/wp-approve-user/issues/60
-	 * item 10 — pre-plugin-install users or users orphaned by an
-	 * incomplete activation cron were silently locked out.
+	 * Tests that users with no wp-approve-user meta at all can log in —
+	 * i.e. pre-plugin-install users or users orphaned by an incomplete
+	 * activation cron.
 	 *
 	 * @covers ::wp_authenticate_user
 	 */
