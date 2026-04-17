@@ -4,7 +4,9 @@
 /.github
 /.idea
 /.wordpress-org
+/.worktrees
 /bin
+/docs
 /node_modules
 /playwright-report
 /scripts

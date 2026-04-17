@@ -7,3 +7,4 @@
 /test-results/
 /tests/e2e/.auth/
 /vendor/
+/.worktrees/
