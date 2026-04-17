@@ -1,4 +1,5 @@
 /.claude/
+/.playwright-mcp
 /.phpunit.result.cache
 /coverage.xml
 /node_modules/
