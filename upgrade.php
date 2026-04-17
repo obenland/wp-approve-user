@@ -62,25 +62,24 @@ function wpau_upgrade_to_12() {
  * Covers users who existed before the plugin was installed (or before
  * the activation cron finished) — without this they're invisible to the
  * pending/unapproved admin views and can no longer log in.
+ *
+ * Uses a single INSERT…SELECT so sites with 100k+ users don't block
+ * admin_init on an equivalent number of individual update_user_meta()
+ * calls. The cache is flushed afterwards because we bypassed the meta
+ * API and any already-populated 'user_meta' cache entries are now stale.
  */
 function wpau_upgrade_to_13() {
-	$user_ids = get_users(
-		array(
-			'fields'      => 'ID',
-			'blog_id'     => 0,
-			'number'      => -1,
-			'count_total' => false,
-			// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
-			'meta_query'  => array(
-				array(
-					'key'     => 'wp-approve-user',
-					'compare' => 'NOT EXISTS',
-				),
-			),
-		)
+	global $wpdb;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	$wpdb->query(
+		"INSERT INTO {$wpdb->usermeta} (user_id, meta_key, meta_value)
+			SELECT u.ID, 'wp-approve-user', 'approved'
+			FROM {$wpdb->users} u
+			LEFT JOIN {$wpdb->usermeta} um
+				ON u.ID = um.user_id AND um.meta_key = 'wp-approve-user'
+			WHERE um.umeta_id IS NULL"
 	);
 
-	foreach ( $user_ids as $user_id ) {
-		update_user_meta( $user_id, 'wp-approve-user', 'approved' );
-	}
+	wp_cache_flush();
 }
