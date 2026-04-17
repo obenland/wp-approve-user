@@ -132,6 +132,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		$this->hook( 'ms_user_row_actions', 'user_row_actions' );
 		$this->hook( 'wp_authenticate_user' );
 		$this->hook( 'user_register' );
+		$this->hook( 'user_register', 20, 'auto_approve_user' );
 		$this->hook( 'register_new_user', 0 );
 		$this->hook( 'wp_login_errors' );
 		$this->hook( 'shake_error_codes' );
@@ -211,6 +212,23 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			plugins_url( "/css/settings-page{$suffix}.css", __FILE__ ),
 			array(),
 			$plugin_data['Version']
+		);
+
+		wp_enqueue_script(
+			'wpau-auto-approval-rules',
+			plugins_url( "/js/auto-approval-rules{$suffix}.js", __FILE__ ),
+			array(),
+			$plugin_data['Version'],
+			true
+		);
+
+		wp_localize_script(
+			'wpau-auto-approval-rules',
+			'wpauAutoApprovalRules',
+			array(
+				'removeLabel' => __( 'Remove', 'wp-approve-user' ),
+				'types'       => $this->auto_approve_rule_types(),
+			)
 		);
 	}
 
@@ -399,6 +417,99 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 		update_user_meta( $id, 'wp-approve-user', $status );
 		update_user_meta( $id, 'wp-approve-user-new-registration', true );
+	}
+
+	/**
+	 * Auto-approves newly registered users when an auto-approval rule matches.
+	 *
+	 * Runs on `user_register` at priority 20, after `user_register()` has
+	 * written the initial `'pending'` status. Admin-created users are left
+	 * alone because they already have `'approved'` meta.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param int $user_id ID of the newly registered user.
+	 */
+	public function auto_approve_user( $user_id ) {
+		if ( 'pending' !== get_user_meta( $user_id, 'wp-approve-user', true ) ) {
+			return;
+		}
+
+		$stored = isset( $this->options['auto_approve_rules'] ) && is_array( $this->options['auto_approve_rules'] )
+			? $this->options['auto_approve_rules']
+			: array();
+
+		/**
+		 * Filters the auto-approval rules evaluated against new registrations.
+		 *
+		 * Developers can add rules programmatically without touching the
+		 * stored option.
+		 *
+		 * @since 13
+		 *
+		 * @param array $rules   List of rule arrays (`type`, `value`).
+		 * @param int   $user_id ID of the newly registered user.
+		 */
+		$rules = apply_filters( 'wpau_auto_approve_rules', $stored, $user_id );
+
+		if ( empty( $rules ) || ! is_array( $rules ) ) {
+			return;
+		}
+
+		$user = get_userdata( $user_id );
+		if ( ! $user || empty( $user->user_email ) ) {
+			return;
+		}
+
+		foreach ( $rules as $rule ) {
+			if ( ! is_array( $rule ) || empty( $rule['type'] ) || ! isset( $rule['value'] ) ) {
+				continue;
+			}
+
+			if ( $this->auto_approve_rule_matches( $rule, $user ) ) {
+				update_user_meta( $user_id, 'wp-approve-user', 'approved' );
+
+				/**
+				 * Fires after a user has been approved.
+				 *
+				 * @since 1.1.0
+				 *
+				 * @param int $user_id User ID.
+				 */
+				do_action( 'wpau_approve', $user_id );
+
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Evaluates a single auto-approval rule against a user.
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param array   $rule Rule with `type` and `value` keys.
+	 * @param WP_User $user User being evaluated.
+	 * @return bool True when the rule matches, false otherwise.
+	 */
+	protected function auto_approve_rule_matches( $rule, $user ) {
+		if ( 'email_domain' === $rule['type'] ) {
+			$domain = strtolower( (string) $rule['value'] );
+
+			if ( '' === $domain ) {
+				return false;
+			}
+
+			$email     = strtolower( (string) $user->user_email );
+			$at_pos    = strrpos( $email, '@' );
+			$user_host = false === $at_pos ? '' : substr( $email, $at_pos + 1 );
+
+			return '' !== $user_host && $user_host === $domain;
+		}
+
+		return false;
 	}
 
 	/**
@@ -676,6 +787,21 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				'setting'   => 'wpau-send-unapprove-email',
 			)
 		);
+
+		add_settings_section(
+			'wpau-auto-approve',
+			esc_html__( 'Auto-approval rules', 'wp-approve-user' ),
+			array( $this, 'auto_approve_section_description_cb' ),
+			$this->textdomain
+		);
+
+		add_settings_field(
+			'wp-approve-user[auto-approve-rules]',
+			esc_html__( 'Rules', 'wp-approve-user' ),
+			array( $this, 'auto_approve_rules_cb' ),
+			$this->textdomain,
+			'wpau-auto-approve'
+		);
 	}
 
 	/**
@@ -771,6 +897,113 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	}
 
 	/**
+	 * Prints the description for the auto-approval rules section.
+	 *
+	 * @since 13
+	 * @access public
+	 */
+	public function auto_approve_section_description_cb() {
+		echo '<p>';
+		esc_html_e(
+			'Matching new registrations will be approved automatically instead of waiting for admin review. Rules are evaluated in order and the first match wins.',
+			'wp-approve-user'
+		);
+		echo '</p>';
+	}
+
+	/**
+	 * Renders the repeatable list of auto-approval rule rows.
+	 *
+	 * The list always includes one blank row so an admin without JavaScript
+	 * can still add a rule by filling it in and clicking "Add rule".
+	 *
+	 * @since 13
+	 * @access public
+	 */
+	public function auto_approve_rules_cb() {
+		$rules = isset( $this->options['auto_approve_rules'] ) && is_array( $this->options['auto_approve_rules'] )
+			? $this->options['auto_approve_rules']
+			: array();
+
+		// Always include one blank row at the end so the no-JS fallback works
+		// (submit the form once to persist the list, then add another row).
+		$display_rules   = $rules;
+		$display_rules[] = array(
+			'type'  => 'email_domain',
+			'value' => '',
+		);
+
+		?>
+		<div class="wpau-auto-approve-rules" aria-describedby="wpau-auto-approve-rules-help">
+			<p class="description" id="wpau-auto-approve-rules-help">
+				<?php esc_html_e( 'Example: add "example.com" to auto-approve everyone who registers with an @example.com address.', 'wp-approve-user' ); ?>
+			</p>
+			<ul class="wpau-auto-approve-rules-list">
+				<?php foreach ( $display_rules as $index => $rule ) : ?>
+					<?php $this->render_auto_approve_rule_row( $index, $rule ); ?>
+				<?php endforeach; ?>
+			</ul>
+			<p>
+				<button type="submit" class="button" name="wpau_auto_approve_add_row" value="1">
+					<?php esc_html_e( 'Add rule', 'wp-approve-user' ); ?>
+				</button>
+			</p>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Renders a single auto-approval rule row.
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param int   $index Row index, used to scope form field names.
+	 * @param array $rule  Stored rule data (expects `type` and `value` keys).
+	 */
+	protected function render_auto_approve_rule_row( $index, $rule ) {
+		$types = $this->auto_approve_rule_types();
+		$type  = isset( $rule['type'] ) ? $rule['type'] : 'email_domain';
+		$value = isset( $rule['value'] ) ? $rule['value'] : '';
+
+		$name_type  = sprintf( 'wp-approve-user[auto_approve_rules][%d][type]', (int) $index );
+		$name_value = sprintf( 'wp-approve-user[auto_approve_rules][%d][value]', (int) $index );
+		?>
+		<li class="wpau-auto-approve-rule">
+			<label class="screen-reader-text" for="wpau-auto-approve-rule-type-<?php echo esc_attr( (int) $index ); ?>">
+				<?php esc_html_e( 'Rule type', 'wp-approve-user' ); ?>
+			</label>
+			<select
+				id="wpau-auto-approve-rule-type-<?php echo esc_attr( (int) $index ); ?>"
+				name="<?php echo esc_attr( $name_type ); ?>"
+			>
+				<?php foreach ( $types as $type_key => $type_label ) : ?>
+					<option value="<?php echo esc_attr( $type_key ); ?>" <?php selected( $type_key, $type ); ?>>
+						<?php echo esc_html( $type_label ); ?>
+					</option>
+				<?php endforeach; ?>
+			</select>
+
+			<label class="screen-reader-text" for="wpau-auto-approve-rule-value-<?php echo esc_attr( (int) $index ); ?>">
+				<?php esc_html_e( 'Rule value', 'wp-approve-user' ); ?>
+			</label>
+			<input
+				type="text"
+				class="regular-text"
+				id="wpau-auto-approve-rule-value-<?php echo esc_attr( (int) $index ); ?>"
+				name="<?php echo esc_attr( $name_value ); ?>"
+				value="<?php echo esc_attr( $value ); ?>"
+				placeholder="<?php esc_attr_e( 'example.com', 'wp-approve-user' ); ?>"
+			/>
+
+			<button type="button" class="button-link wpau-remove-auto-approve-rule">
+				<?php esc_html_e( 'Remove', 'wp-approve-user' ); ?>
+			</button>
+		</li>
+		<?php
+	}
+
+	/**
 	 * Sanitizes the settings input.
 	 *
 	 * @author Konstantin Obenland
@@ -787,6 +1020,135 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			'wpau-send-unapprove-email' => isset( $input['wpau-send-unapprove-email'] ),
 			'wpau-approve-email'        => isset( $input['wpau-approve-email'] ) ? trim( $input['wpau-approve-email'] ) : '',
 			'wpau-unapprove-email'      => isset( $input['wpau-unapprove-email'] ) ? trim( $input['wpau-unapprove-email'] ) : '',
+			'auto_approve_rules'        => $this->sanitize_auto_approve_rules(
+				isset( $input['auto_approve_rules'] ) ? $input['auto_approve_rules'] : array()
+			),
+		);
+	}
+
+	/**
+	 * Sanitizes auto-approval rules.
+	 *
+	 * Empty rows are dropped silently. Rows whose values cannot be validated
+	 * for the given rule type are dropped with a `settings_error` notice so
+	 * the admin knows why the rule didn't make it through.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param  mixed $rules Raw rules submitted from the settings form.
+	 * @return array Validated list of rules in the canonical storage shape.
+	 */
+	public function sanitize_auto_approve_rules( $rules ) {
+		if ( ! is_array( $rules ) ) {
+			return array();
+		}
+
+		$sanitized      = array();
+		$allowed_types  = array_keys( $this->auto_approve_rule_types() );
+		$invalid_values = array();
+
+		foreach ( $rules as $rule ) {
+			if ( ! is_array( $rule ) ) {
+				continue;
+			}
+
+			$type  = isset( $rule['type'] ) ? sanitize_key( $rule['type'] ) : '';
+			$value = isset( $rule['value'] ) ? (string) $rule['value'] : '';
+			$value = trim( $value );
+
+			// Drop empty rows silently; admins routinely add/remove rows.
+			if ( '' === $value ) {
+				continue;
+			}
+
+			if ( ! in_array( $type, $allowed_types, true ) ) {
+				$invalid_values[] = $value;
+				continue;
+			}
+
+			if ( 'email_domain' === $type ) {
+				$domain = $this->sanitize_email_domain( $value );
+
+				if ( '' === $domain ) {
+					$invalid_values[] = $value;
+					continue;
+				}
+
+				$sanitized[] = array(
+					'type'  => 'email_domain',
+					'value' => $domain,
+				);
+			}
+		}
+
+		if ( ! empty( $invalid_values ) ) {
+			add_settings_error(
+				$this->textdomain,
+				'wpau_auto_approve_invalid',
+				sprintf(
+					/* translators: %s: Comma-separated list of rejected rule values. */
+					esc_html__( 'The following auto-approval rules were ignored because they are not valid: %s', 'wp-approve-user' ),
+					esc_html( implode( ', ', $invalid_values ) )
+				),
+				'error'
+			);
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Normalizes and validates an email-domain rule value.
+	 *
+	 * Strips a leading `@`, lowercases, and rejects anything that still
+	 * contains whitespace or `@`, or that doesn't look like a domain
+	 * (needs at least one dot).
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param  string $value Raw domain value.
+	 * @return string Normalized domain, or empty string when the value is invalid.
+	 */
+	protected function sanitize_email_domain( $value ) {
+		$domain = ltrim( trim( $value ), '@' );
+		$domain = strtolower( $domain );
+
+		if ( '' === $domain ) {
+			return '';
+		}
+
+		if ( preg_match( '/\s/', $domain ) ) {
+			return '';
+		}
+
+		if ( false !== strpos( $domain, '@' ) ) {
+			return '';
+		}
+
+		if ( false === strpos( $domain, '.' ) ) {
+			return '';
+		}
+
+		return $domain;
+	}
+
+	/**
+	 * Returns the list of supported auto-approval rule types.
+	 *
+	 * Keys are machine-readable identifiers stored in the option; values are
+	 * the human-readable labels shown in the settings UI. Kept as a method so
+	 * future releases can register more rule types without changing storage.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @return array<string, string>
+	 */
+	public function auto_approve_rule_types() {
+		return array(
+			'email_domain' => __( 'Email domain', 'wp-approve-user' ),
 		);
 	}
 
@@ -1105,6 +1467,7 @@ Company,
 Contact details',
 			'wpau-send-unapprove-email' => false,
 			'wpau-unapprove-email'      => '',
+			'auto_approve_rules'        => array(),
 		);
 
 		return apply_filters( 'wpau_default_options', $options );

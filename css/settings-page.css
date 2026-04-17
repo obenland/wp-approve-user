@@ -68,3 +68,30 @@ label.image-radio-option input {
 		float: none !important;
 	}
 }
+
+.wpau-auto-approve-rules-list {
+	list-style: none;
+	margin: 0 0 1em;
+	padding: 0;
+}
+
+.wpau-auto-approve-rule {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.wpau-auto-approve-rule select,
+.wpau-auto-approve-rule input[type="text"] {
+	margin: 0;
+}
+
+.wpau-remove-auto-approve-rule {
+	color: #b32d2e;
+}
+
+.wpau-remove-auto-approve-rule:hover {
+	color: #8a1f20;
+}
