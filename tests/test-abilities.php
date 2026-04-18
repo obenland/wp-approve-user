@@ -46,9 +46,11 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Abilities API is not available on this WordPress version.' );
 		}
 
-		// Ensure abilities.php is loaded — tests/bootstrap.php requires wp-approve-user.php,
-		// which in turn requires abilities.php when the Abilities API is present, but
-		// load it directly here for safety in case the gate short-circuits in the harness.
+		/*
+		 * Ensure abilities.php is loaded — tests/bootstrap.php requires wp-approve-user.php,
+		 * which in turn requires abilities.php when the Abilities API is present, but
+		 * load it directly here for safety in case the gate short-circuits in the harness.
+		 */
 		if ( ! function_exists( 'wpau_register_abilities' ) ) {
 			require_once dirname( __DIR__ ) . '/abilities.php';
 		}
