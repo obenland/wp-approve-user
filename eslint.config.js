@@ -19,9 +19,15 @@ module.exports = [
 			},
 		},
 		rules: {
-			// `wp_approve_user` is the snake_case handle registered via
-			// wp_localize_script(); allow it without triggering camelcase.
-			camelcase: [ 'error', { allow: [ '^wp_approve_user$' ] } ],
+			/*
+			 * Snake_case identifiers that cross the PHP boundary:
+			 * - `wp_approve_user`: script handle registered via wp_localize_script().
+			 * - `user_id`: input/output key on the Abilities REST schema.
+			 */
+			camelcase: [
+				'error',
+				{ allow: [ '^wp_approve_user$', '^user_id$' ] },
+			],
 		},
 	},
 	{

@@ -73,7 +73,7 @@ test.describe.serial( 'Abilities API', () => {
 		const result = await page.evaluate(
 			async ( { id, restNonce } ) => {
 				const response = await fetch(
-					'/wp-json/wp-abilities/v1/wp-approve-user/approve/run',
+					'/wp-json/wp-abilities/v1/abilities/wp-approve-user/approve/run',
 					{
 						method: 'POST',
 						credentials: 'same-origin',
@@ -81,8 +81,9 @@ test.describe.serial( 'Abilities API', () => {
 							'Content-Type': 'application/json',
 							'X-WP-Nonce': restNonce,
 						},
-						// eslint-disable-next-line camelcase -- REST body key matches ability input schema.
-						body: JSON.stringify( { user_id: id } ),
+						body: JSON.stringify( {
+							input: { user_id: id },
+						} ),
 					}
 				);
 				return {
@@ -96,7 +97,6 @@ test.describe.serial( 'Abilities API', () => {
 		expect( result.status ).toBe( 200 );
 		expect( result.body ).toMatchObject( {
 			success: true,
-			// eslint-disable-next-line camelcase -- Response key matches ability output schema.
 			user_id: userId,
 			status: 'approved',
 		} );
