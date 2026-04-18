@@ -40,7 +40,7 @@ class WPAU_Settings {
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		}
 		add_action( 'admin_init', array( $this, 'register_sections_and_fields' ) );
-		add_action( 'admin_print_styles-settings_page_wp-approve-user', array( $this, 'print_styles' ) );
+		add_action( 'admin_print_styles-settings_page_' . self::SLUG, array( $this, 'print_styles' ) );
 	}
 
 	/**
