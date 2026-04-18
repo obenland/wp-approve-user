@@ -56,15 +56,17 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		}
 
 		/*
-		 * Requiring abilities.php only attaches wpau_register_abilities() to the
-		 * wp_abilities_api_init hook. If that hook already fired during the test
-		 * harness bootstrap, re-fire it so wp_register_ability() runs within the
-		 * action context the API requires in WordPress 6.9+.
+		 * abilities.php attaches its registration callbacks to
+		 * wp_abilities_api_categories_init and wp_abilities_api_init. If those
+		 * hooks already fired during the test harness bootstrap, re-fire them so
+		 * wp_register_ability_category() and wp_register_ability() run within
+		 * the action context the API requires in WordPress 6.9+.
 		 */
 		if (
 			! wp_has_ability( 'wp-approve-user/approve' )
 			|| ! wp_has_ability( 'wp-approve-user/unapprove' )
 		) {
+			do_action( 'wp_abilities_api_categories_init' );
 			do_action( 'wp_abilities_api_init' );
 		}
 	}
@@ -210,9 +212,11 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 	public function test_permission_callback_rejects_when_cannot_edit_target() {
 		wp_set_current_user( static::$admin_id );
 
-		if ( is_multisite() ) {
-			grant_super_admin( static::$admin_id );
-		}
+		/*
+		 * Deliberately skip grant_super_admin() on multisite — super admins short-circuit
+		 * WP_User::has_cap() before the user_has_cap filter runs, which would make the
+		 * blocker below a no-op.
+		 */
 
 		$blocker = function ( $allcaps, $caps, $args ) {
 			if ( isset( $args[0], $args[2] ) && 'edit_user' === $args[0] && (int) $args[2] === static::$subscriber_id ) {

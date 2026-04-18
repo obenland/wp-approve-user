@@ -12,6 +12,22 @@
  */
 
 /**
+ * Registers the category the approve/unapprove abilities live under.
+ *
+ * @since 13
+ */
+function wpau_register_ability_categories() {
+	wp_register_ability_category(
+		'user-management',
+		array(
+			'label'       => 'User management',
+			'description' => 'Abilities for managing users and their access.',
+		)
+	);
+}
+add_action( 'wp_abilities_api_categories_init', 'wpau_register_ability_categories' );
+
+/**
  * Registers the approve/unapprove abilities with the core registry.
  *
  * @since 13
@@ -22,7 +38,7 @@ function wpau_register_abilities() {
 		'properties' => array(
 			'user_id' => array(
 				'type'        => 'integer',
-				'description' => __( 'The ID of the user to update.', 'wp-approve-user' ),
+				'description' => 'The ID of the user to update.',
 				'minimum'     => 1,
 			),
 		),
@@ -34,15 +50,15 @@ function wpau_register_abilities() {
 		'properties' => array(
 			'success' => array(
 				'type'        => 'boolean',
-				'description' => __( 'Whether the operation completed successfully.', 'wp-approve-user' ),
+				'description' => 'Whether the operation completed successfully.',
 			),
 			'user_id' => array(
 				'type'        => 'integer',
-				'description' => __( 'The ID of the user that was updated.', 'wp-approve-user' ),
+				'description' => 'The ID of the user that was updated.',
 			),
 			'status'  => array(
 				'type'        => 'string',
-				'description' => __( 'The resulting approval status for the user.', 'wp-approve-user' ),
+				'description' => 'The resulting approval status for the user.',
 				'enum'        => array( 'approved', 'unapproved', 'pending' ),
 			),
 		),
@@ -52,8 +68,8 @@ function wpau_register_abilities() {
 	wp_register_ability(
 		'wp-approve-user/approve',
 		array(
-			'label'               => __( 'Approve user', 'wp-approve-user' ),
-			'description'         => __( 'Marks a user as approved so they can log in to the site.', 'wp-approve-user' ),
+			'label'               => 'Approve user',
+			'description'         => 'Marks a user as approved so they can log in to the site.',
 			'category'            => 'user-management',
 			'input_schema'        => $input_schema,
 			'output_schema'       => $output_schema,
@@ -68,8 +84,8 @@ function wpau_register_abilities() {
 	wp_register_ability(
 		'wp-approve-user/unapprove',
 		array(
-			'label'               => __( 'Unapprove user', 'wp-approve-user' ),
-			'description'         => __( 'Marks a user as unapproved so they can no longer log in to the site.', 'wp-approve-user' ),
+			'label'               => 'Unapprove user',
+			'description'         => 'Marks a user as unapproved so they can no longer log in to the site.',
 			'category'            => 'user-management',
 			'input_schema'        => $input_schema,
 			'output_schema'       => $output_schema,
