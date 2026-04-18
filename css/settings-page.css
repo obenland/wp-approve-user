@@ -88,6 +88,19 @@ label.image-radio-option input {
 	margin: 0;
 }
 
+.wpau-auto-approve-rule-handle {
+	color: #646970;
+	cursor: grab;
+	font-size: 16px;
+	line-height: 1;
+	padding: 0 4px;
+	user-select: none;
+}
+
+.wpau-auto-approve-rule.is-dragging {
+	opacity: 0.5;
+}
+
 .wpau-remove-auto-approve-rule {
 	color: #b32d2e;
 }

@@ -313,10 +313,7 @@ class WPAU_Settings {
 		);
 
 		?>
-		<div class="wpau-auto-approve-rules" aria-describedby="wpau-auto-approve-rules-help">
-			<p class="description" id="wpau-auto-approve-rules-help">
-				<?php esc_html_e( 'Example: add "example.com" to auto-approve everyone who registers with an @example.com address.', 'wp-approve-user' ); ?>
-			</p>
+		<div class="wpau-auto-approve-rules">
 			<ul class="wpau-auto-approve-rules-list">
 				<?php foreach ( $display_rules as $index => $rule ) : ?>
 					<?php $this->render_auto_approve_rule_row( $index, $rule ); ?>
@@ -340,23 +337,32 @@ class WPAU_Settings {
 	 * @param array $rule  Stored rule data (expects `type` and `value` keys).
 	 */
 	protected function render_auto_approve_rule_row( $index, $rule ) {
-		$types = $this->auto_approve_rule_types();
-		$type  = isset( $rule['type'] ) ? $rule['type'] : 'email_domain';
-		$value = isset( $rule['value'] ) ? $rule['value'] : '';
+		$types        = $this->auto_approve_rule_types();
+		$placeholders = $this->auto_approve_rule_placeholders();
+		$type         = isset( $rule['type'] ) && isset( $types[ $rule['type'] ] ) ? $rule['type'] : 'email_domain';
+		$value        = isset( $rule['value'] ) ? $rule['value'] : '';
+		$placeholder  = isset( $placeholders[ $type ] ) ? $placeholders[ $type ] : '';
 
 		$name_type  = sprintf( 'wp-approve-user[auto_approve_rules][%d][type]', (int) $index );
 		$name_value = sprintf( 'wp-approve-user[auto_approve_rules][%d][value]', (int) $index );
 		?>
-		<li class="wpau-auto-approve-rule">
+		<li class="wpau-auto-approve-rule" draggable="true">
+			<span class="wpau-auto-approve-rule-handle" aria-hidden="true" title="<?php esc_attr_e( 'Drag to reorder', 'wp-approve-user' ); ?>">&#x2630;</span>
+
 			<label class="screen-reader-text" for="wpau-auto-approve-rule-type-<?php echo esc_attr( (int) $index ); ?>">
 				<?php esc_html_e( 'Rule type', 'wp-approve-user' ); ?>
 			</label>
 			<select
 				id="wpau-auto-approve-rule-type-<?php echo esc_attr( (int) $index ); ?>"
 				name="<?php echo esc_attr( $name_type ); ?>"
+				class="wpau-auto-approve-rule-type"
 			>
 				<?php foreach ( $types as $type_key => $type_label ) : ?>
-					<option value="<?php echo esc_attr( $type_key ); ?>" <?php selected( $type_key, $type ); ?>>
+					<option
+						value="<?php echo esc_attr( $type_key ); ?>"
+						data-placeholder="<?php echo esc_attr( isset( $placeholders[ $type_key ] ) ? $placeholders[ $type_key ] : '' ); ?>"
+						<?php selected( $type_key, $type ); ?>
+					>
 						<?php echo esc_html( $type_label ); ?>
 					</option>
 				<?php endforeach; ?>
@@ -367,11 +373,11 @@ class WPAU_Settings {
 			</label>
 			<input
 				type="text"
-				class="regular-text"
+				class="regular-text wpau-auto-approve-rule-value"
 				id="wpau-auto-approve-rule-value-<?php echo esc_attr( (int) $index ); ?>"
 				name="<?php echo esc_attr( $name_value ); ?>"
 				value="<?php echo esc_attr( $value ); ?>"
-				placeholder="<?php esc_attr_e( 'example.com', 'wp-approve-user' ); ?>"
+				placeholder="<?php echo esc_attr( $placeholder ); ?>"
 			/>
 
 			<button type="button" class="button-link wpau-remove-auto-approve-rule">
@@ -395,6 +401,26 @@ class WPAU_Settings {
 	public function auto_approve_rule_types() {
 		return array(
 			'email_domain' => __( 'Email domain', 'wp-approve-user' ),
+			'email_suffix' => __( 'Email ends with', 'wp-approve-user' ),
+			'ip_range'     => __( 'IP address or range', 'wp-approve-user' ),
+		);
+	}
+
+	/**
+	 * Returns the input placeholder for each rule type.
+	 *
+	 * Keeps the UI-only copy next to the type list so render_auto_approve_rule_row()
+	 * can swap the placeholder text as the admin changes the dropdown.
+	 *
+	 * @since 13
+	 *
+	 * @return array<string, string>
+	 */
+	public function auto_approve_rule_placeholders() {
+		return array(
+			'email_domain' => __( 'example.com', 'wp-approve-user' ),
+			'email_suffix' => __( '.edu', 'wp-approve-user' ),
+			'ip_range'     => __( '192.168.1.0/24', 'wp-approve-user' ),
 		);
 	}
 
@@ -462,19 +488,16 @@ class WPAU_Settings {
 				continue;
 			}
 
-			if ( 'email_domain' === $type ) {
-				$domain = Obenland_Wp_Approve_User::sanitize_email_domain( $value );
-
-				if ( '' === $domain ) {
-					$invalid_values[] = $value;
-					continue;
-				}
-
-				$sanitized[] = array(
-					'type'  => 'email_domain',
-					'value' => $domain,
-				);
+			$normalized = $this->sanitize_rule_value( $type, $value );
+			if ( '' === $normalized ) {
+				$invalid_values[] = $value;
+				continue;
 			}
+
+			$sanitized[] = array(
+				'type'  => $type,
+				'value' => $normalized,
+			);
 		}
 
 		if ( ! empty( $invalid_values ) ) {
@@ -491,5 +514,32 @@ class WPAU_Settings {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Dispatches to the per-type sanitizer for a single rule value.
+	 *
+	 * Returns an empty string when the value doesn't validate for the given
+	 * type, so callers can treat that as the "reject" signal without caring
+	 * which sanitizer ran.
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param string $type  Rule type (already whitelisted by the caller).
+	 * @param string $value Raw rule value.
+	 * @return string Normalized value, or empty string when the value is invalid.
+	 */
+	protected function sanitize_rule_value( $type, $value ) {
+		switch ( $type ) {
+			case 'email_domain':
+				return Obenland_Wp_Approve_User::sanitize_email_domain( $value );
+			case 'email_suffix':
+				return Obenland_Wp_Approve_User::sanitize_email_suffix( $value );
+			case 'ip_range':
+				return Obenland_Wp_Approve_User::sanitize_ip_range( $value );
+		}
+
+		return '';
 	}
 }

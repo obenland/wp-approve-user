@@ -377,7 +377,42 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		$types = ( new WPAU_Settings() )->auto_approve_rule_types();
 
 		$this->assertArrayHasKey( 'email_domain', $types );
+		$this->assertArrayHasKey( 'email_suffix', $types );
+		$this->assertArrayHasKey( 'ip_range', $types );
 		$this->assertNotEmpty( $types['email_domain'] );
+	}
+
+	/**
+	 * Auto_approve_rule_placeholders() returns a matching placeholder for every rule type.
+	 *
+	 * @covers ::auto_approve_rule_placeholders
+	 */
+	public function test_auto_approve_rule_placeholders_covers_every_type() {
+		$settings     = new WPAU_Settings();
+		$types        = $settings->auto_approve_rule_types();
+		$placeholders = $settings->auto_approve_rule_placeholders();
+
+		foreach ( array_keys( $types ) as $type_key ) {
+			$this->assertArrayHasKey( $type_key, $placeholders );
+			$this->assertNotEmpty( $placeholders[ $type_key ] );
+		}
+	}
+
+	/**
+	 * Sanitize_rule_value() dispatches to the per-type sanitizer and rejects unknown types.
+	 *
+	 * @covers ::sanitize_rule_value
+	 */
+	public function test_sanitize_rule_value_dispatches_per_type() {
+		$settings = new WPAU_Settings();
+
+		$method = new ReflectionMethod( $settings, 'sanitize_rule_value' );
+		$method->setAccessible( true );
+
+		$this->assertSame( 'example.com', $method->invoke( $settings, 'email_domain', '@Example.COM' ) );
+		$this->assertSame( '.edu', $method->invoke( $settings, 'email_suffix', '.EDU' ) );
+		$this->assertSame( '192.168.1.0/24', $method->invoke( $settings, 'ip_range', '192.168.1.0/24' ) );
+		$this->assertSame( '', $method->invoke( $settings, 'not_a_real_type', 'whatever' ) );
 	}
 
 	/**

@@ -513,6 +513,278 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	 *
 	 * @covers ::auto_approve_user
 	 */
+	/**
+	 * Sanitize_ip_range() accepts IPv4/IPv6 single addresses and IPv4 CIDR blocks.
+	 *
+	 * @covers ::sanitize_ip_range
+	 */
+	public function test_sanitize_ip_range_accepts_valid_inputs() {
+		$this->assertSame( '203.0.113.7', Obenland_Wp_Approve_User::sanitize_ip_range( '203.0.113.7' ) );
+		$this->assertSame( '203.0.113.7', Obenland_Wp_Approve_User::sanitize_ip_range( ' 203.0.113.7 ' ) );
+		$this->assertSame( '192.168.1.0/24', Obenland_Wp_Approve_User::sanitize_ip_range( '192.168.1.0/24' ) );
+		$this->assertSame( '2001:db8::1', Obenland_Wp_Approve_User::sanitize_ip_range( '2001:db8::1' ) );
+		$this->assertSame( '0.0.0.0/0', Obenland_Wp_Approve_User::sanitize_ip_range( '0.0.0.0/0' ) );
+	}
+
+	/**
+	 * Sanitize_ip_range() rejects malformed addresses, non-numeric prefixes, and out-of-range prefixes.
+	 *
+	 * @covers ::sanitize_ip_range
+	 */
+	public function test_sanitize_ip_range_rejects_invalid_inputs() {
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_ip_range( '' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_ip_range( 'not an ip' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_ip_range( '999.999.999.999' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_ip_range( '192.168.1.0/abc' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_ip_range( '192.168.1.0/33' ) );
+		/* IPv6 CIDR is not supported in v13. */
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_ip_range( '2001:db8::/32' ) );
+	}
+
+	/**
+	 * Ip_in_range() matches single IPs exactly and CIDR blocks via prefix math.
+	 *
+	 * @covers ::ip_in_range
+	 */
+	public function test_ip_in_range_matches_expected_cases() {
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '203.0.113.7', '203.0.113.7' ) );
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '203.0.113.8', '203.0.113.7' ) );
+
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '192.168.1.1', '192.168.1.0/24' ) );
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '192.168.1.255', '192.168.1.0/24' ) );
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '192.168.2.1', '192.168.1.0/24' ) );
+
+		/* Prefix 0 matches every IPv4 address. */
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '8.8.8.8', '0.0.0.0/0' ) );
+
+		/* IPv6 tested against a CIDR range returns false (IPv4-only matcher). */
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '2001:db8::1', '192.168.1.0/24' ) );
+	}
+
+	/**
+	 * An ip_range rule approves the user when their captured IP matches the range.
+	 *
+	 * @covers ::auto_approve_user
+	 * @covers ::auto_approve_rule_matches
+	 */
+	public function test_ip_range_rule_approves_matching_user() {
+		$this->store_rules(
+			array(
+				array(
+					'type'  => 'ip_range',
+					'value' => '192.168.1.0/24',
+				),
+			)
+		);
+
+		$user = $this->make_subscriber( 'inside@example.test' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+		update_user_meta( $user->ID, 'wp-approve-user-ip', '192.168.1.42' );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->auto_approve_user( $user->ID );
+
+		$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * An ip_range rule leaves the user pending when no captured IP exists.
+	 *
+	 * @covers ::auto_approve_rule_matches
+	 */
+	public function test_ip_range_rule_without_captured_ip_does_not_match() {
+		$this->store_rules(
+			array(
+				array(
+					'type'  => 'ip_range',
+					'value' => '192.168.1.0/24',
+				),
+			)
+		);
+
+		$user = $this->make_subscriber( 'no-ip@example.test' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->auto_approve_user( $user->ID );
+
+		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * An email_suffix rule catches any address ending in the normalized suffix.
+	 *
+	 * @covers ::auto_approve_user
+	 * @covers ::auto_approve_rule_matches
+	 * @covers ::sanitize_email_suffix
+	 */
+	public function test_email_suffix_rule_approves_matching_user() {
+		$this->store_rules(
+			array(
+				array(
+					'type'  => 'email_suffix',
+					'value' => '.edu',
+				),
+			)
+		);
+
+		$user = $this->make_subscriber( 'student@mit.edu' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->auto_approve_user( $user->ID );
+
+		$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Sanitize_email_suffix() rejects values without a leading `.` or `@`.
+	 *
+	 * @covers ::sanitize_email_suffix
+	 */
+	public function test_sanitize_email_suffix_validates_leading_anchor() {
+		$this->assertSame( '.edu', Obenland_Wp_Approve_User::sanitize_email_suffix( '.edu' ) );
+		$this->assertSame( '@example.com', Obenland_Wp_Approve_User::sanitize_email_suffix( '@example.com' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_suffix( 'edu' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_suffix( 'example.com' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_suffix( '.bad suffix' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_suffix( '' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_suffix( '.' ) );
+	}
+
+	/**
+	 * Capture_registration_ip() stores a valid REMOTE_ADDR as user meta.
+	 *
+	 * @covers ::capture_registration_ip
+	 */
+	public function test_capture_registration_ip_stores_valid_ip() {
+		$user     = $this->make_subscriber( 'capture@example.test' );
+		$original = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : null;
+
+		try {
+			$_SERVER['REMOTE_ADDR'] = '203.0.113.7';
+			$instance               = new Obenland_Wp_Approve_User();
+			$instance->capture_registration_ip( $user->ID );
+
+			$this->assertSame( '203.0.113.7', get_user_meta( $user->ID, 'wp-approve-user-ip', true ) );
+		} finally {
+			if ( null === $original ) {
+				unset( $_SERVER['REMOTE_ADDR'] );
+			} else {
+				$_SERVER['REMOTE_ADDR'] = $original;
+			}
+		}
+	}
+
+	/**
+	 * Capture_registration_ip() ignores an invalid or missing REMOTE_ADDR.
+	 *
+	 * @covers ::capture_registration_ip
+	 */
+	public function test_capture_registration_ip_ignores_invalid_ip() {
+		$user     = $this->make_subscriber( 'noip@example.test' );
+		$original = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : null;
+
+		try {
+			$_SERVER['REMOTE_ADDR'] = 'not-an-ip';
+			$instance               = new Obenland_Wp_Approve_User();
+			$instance->capture_registration_ip( $user->ID );
+
+			$this->assertSame( '', get_user_meta( $user->ID, 'wp-approve-user-ip', true ) );
+		} finally {
+			if ( null === $original ) {
+				unset( $_SERVER['REMOTE_ADDR'] );
+			} else {
+				$_SERVER['REMOTE_ADDR'] = $original;
+			}
+		}
+	}
+
+	/**
+	 * Capture_registration_ip() silently no-ops when REMOTE_ADDR is absent (e.g., CLI).
+	 *
+	 * @covers ::capture_registration_ip
+	 */
+	public function test_capture_registration_ip_skips_when_remote_addr_missing() {
+		$user     = $this->make_subscriber( 'cli@example.test' );
+		$original = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : null;
+
+		unset( $_SERVER['REMOTE_ADDR'] );
+
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+			$instance->capture_registration_ip( $user->ID );
+
+			$this->assertSame( '', get_user_meta( $user->ID, 'wp-approve-user-ip', true ) );
+		} finally {
+			if ( null !== $original ) {
+				$_SERVER['REMOTE_ADDR'] = $original;
+			}
+		}
+	}
+
+	/**
+	 * Rule matcher rejects an `email_suffix` rule whose value can't be sanitized.
+	 *
+	 * @covers ::auto_approve_rule_matches
+	 */
+	public function test_email_suffix_rule_with_invalid_value_does_not_match() {
+		$filter = function () {
+			return array(
+				array(
+					'type'  => 'email_suffix',
+					'value' => 'edu', /* Missing leading . or @. */
+				),
+			);
+		};
+		add_filter( 'wpau_auto_approve_rules', $filter );
+
+		$user = $this->make_subscriber( 'student@mit.edu' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+			$instance->auto_approve_user( $user->ID );
+			$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		} finally {
+			remove_filter( 'wpau_auto_approve_rules', $filter );
+		}
+	}
+
+	/**
+	 * Rule matcher rejects an `ip_range` rule whose value can't be sanitized.
+	 *
+	 * @covers ::auto_approve_rule_matches
+	 */
+	public function test_ip_range_rule_with_invalid_value_does_not_match() {
+		$filter = function () {
+			return array(
+				array(
+					'type'  => 'ip_range',
+					'value' => '999.999.999.999',
+				),
+			);
+		};
+		add_filter( 'wpau_auto_approve_rules', $filter );
+
+		$user = $this->make_subscriber( 'garbage-ip@example.test' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+		update_user_meta( $user->ID, 'wp-approve-user-ip', '192.168.1.1' );
+
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+			$instance->auto_approve_user( $user->ID );
+			$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		} finally {
+			remove_filter( 'wpau_auto_approve_rules', $filter );
+		}
+	}
+
+	/**
+	 * Auto_approve_user coerces a non-array stored rules value to an empty list.
+	 *
+	 * @covers ::auto_approve_user
+	 */
 	public function test_auto_approve_user_handles_non_array_rules() {
 		$filter = function ( $defaults ) {
 			unset( $defaults['auto_approve_rules'] );

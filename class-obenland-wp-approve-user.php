@@ -164,6 +164,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		$this->hook( 'user_row_actions' );
 		$this->hook( 'ms_user_row_actions', 'user_row_actions' );
 		$this->hook( 'wp_authenticate_user' );
+		$this->hook( 'user_register', 5, 'capture_registration_ip' );
 		$this->hook( 'user_register' );
 		$this->hook( 'user_register', 20, 'auto_approve_user' );
 		$this->hook( 'register_new_user', 0 );
@@ -418,6 +419,30 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	}
 
 	/**
+	 * Captures the registering user's IP for later rule evaluation.
+	 *
+	 * Runs on `user_register` at priority 5, before `user_register()` writes
+	 * the three-state meta and before `auto_approve_user()` evaluates rules
+	 * at priority 20, so the IP is available when a rule matcher looks it up.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param int $user_id ID of the newly registered user.
+	 */
+	public function capture_registration_ip( $user_id ) {
+		$ip = isset( $_SERVER['REMOTE_ADDR'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+			: '';
+
+		if ( '' === $ip || false === filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			return;
+		}
+
+		update_user_meta( $user_id, 'wp-approve-user-ip', $ip );
+	}
+
+	/**
 	 * Auto-approves newly registered users when an auto-approval rule matches.
 	 *
 	 * Runs on `user_register` at priority 20, after `user_register()` has
@@ -533,23 +558,45 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @return bool True when the rule matches, false otherwise.
 	 */
 	protected function auto_approve_rule_matches( $rule, $user ) {
-		$type = sanitize_key( (string) $rule['type'] );
+		$type  = sanitize_key( (string) $rule['type'] );
+		$email = strtolower( (string) $user->user_email );
 
 		if ( 'email_domain' === $type ) {
-			// Normalize the rule value defensively: filter-injected rules bypass
-			// the settings sanitize pass, so the matcher can't assume lowercase
-			// or `@`-stripped input.
+			/*
+			 * Normalize the rule value defensively: filter-injected rules bypass
+			 * the settings sanitize pass, so the matcher can't assume lowercase
+			 * or `@`-stripped input.
+			 */
 			$domain = self::sanitize_email_domain( (string) $rule['value'] );
-
 			if ( '' === $domain ) {
 				return false;
 			}
 
-			$email     = strtolower( (string) $user->user_email );
 			$at_pos    = strrpos( $email, '@' );
 			$user_host = false === $at_pos ? '' : substr( $email, $at_pos + 1 );
 
 			return '' !== $user_host && $user_host === $domain;
+		}
+
+		if ( 'email_suffix' === $type ) {
+			$suffix = self::sanitize_email_suffix( (string) $rule['value'] );
+			if ( '' === $suffix ) {
+				return false;
+			}
+
+			/* A bare ".edu" matches "alice@mit.edu" but not "bob@studyedu.com". */
+			return '' !== $email && substr( $email, -strlen( $suffix ) ) === $suffix;
+		}
+
+		if ( 'ip_range' === $type ) {
+			$range = self::sanitize_ip_range( (string) $rule['value'] );
+			if ( '' === $range ) {
+				return false;
+			}
+
+			$user_ip = (string) get_user_meta( $user->ID, 'wp-approve-user-ip', true );
+
+			return '' !== $user_ip && self::ip_in_range( $user_ip, $range );
 		}
 
 		return false;
@@ -805,6 +852,130 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		}
 
 		return $domain;
+	}
+
+	/**
+	 * Normalizes and validates an email-suffix rule value.
+	 *
+	 * Suffix rules match any email whose address ends with the given string,
+	 * so `.edu` catches every university email and `@acme.co.uk` catches every
+	 * address at that specific host. The suffix must begin with `.` or `@` so
+	 * it can't accidentally swallow a lookalike substring (`edu` alone would
+	 * false-match `alice@studyedu.com`).
+	 *
+	 * @since 13
+	 * @access public
+	 * @static
+	 *
+	 * @param  string $value Raw suffix value.
+	 * @return string Normalized suffix, or empty string when the value is invalid.
+	 */
+	public static function sanitize_email_suffix( $value ) {
+		$suffix = strtolower( trim( $value ) );
+
+		/* Must carry the leading anchor plus at least one domain character. */
+		if ( strlen( $suffix ) < 2 ) {
+			return '';
+		}
+
+		if ( preg_match( '/\s/', $suffix ) ) {
+			return '';
+		}
+
+		if ( '.' !== $suffix[0] && '@' !== $suffix[0] ) {
+			return '';
+		}
+
+		return $suffix;
+	}
+
+	/**
+	 * Normalizes and validates an IP-address rule value.
+	 *
+	 * Accepts either a single IP (IPv4 or IPv6) or an IPv4 CIDR block like
+	 * `192.168.1.0/24`. IPv6 ranges are not supported in v13 because the
+	 * matcher's prefix math uses `ip2long`, which is IPv4-only.
+	 *
+	 * @since 13
+	 * @access public
+	 * @static
+	 *
+	 * @param  string $value Raw IP or CIDR.
+	 * @return string Normalized value, or empty string when the value is invalid.
+	 */
+	public static function sanitize_ip_range( $value ) {
+		$value = trim( $value );
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( false !== strpos( $value, '/' ) ) {
+			list( $ip, $prefix ) = explode( '/', $value, 2 );
+
+			if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+				return '';
+			}
+
+			if ( ! ctype_digit( $prefix ) ) {
+				return '';
+			}
+
+			$prefix = (int) $prefix;
+			if ( $prefix < 0 || $prefix > 32 ) {
+				return '';
+			}
+
+			return $ip . '/' . $prefix;
+		}
+
+		$validated = filter_var( $value, FILTER_VALIDATE_IP );
+
+		return false === $validated ? '' : $validated;
+	}
+
+	/**
+	 * Tests whether an IP falls inside a range produced by sanitize_ip_range().
+	 *
+	 * Single-value ranges use string equality. CIDR ranges (IPv4 only) compare
+	 * the masked subnet bits via `ip2long`.
+	 *
+	 * @since 13
+	 * @access public
+	 * @static
+	 *
+	 * @param  string $ip    IP to test (already validated upstream).
+	 * @param  string $range Normalized range from sanitize_ip_range().
+	 * @return bool
+	 */
+	public static function ip_in_range( $ip, $range ) {
+		if ( false === strpos( $range, '/' ) ) {
+			return $ip === $range;
+		}
+
+		list( $subnet, $prefix ) = explode( '/', $range, 2 );
+
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return false;
+		}
+
+		/*
+		 * Both `$ip` and `$subnet` have already been validated through
+		 * FILTER_VALIDATE_IP + FILTER_FLAG_IPV4 (here for `$ip`, and upstream
+		 * in sanitize_ip_range() for `$subnet`), so ip2long() cannot fail.
+		 */
+		$ip_long     = ip2long( $ip );
+		$subnet_long = ip2long( $subnet );
+
+		$prefix = (int) $prefix;
+		/* Prefix 0 matches every address; avoid PHP's negative-shift quirk. */
+		if ( 0 === $prefix ) {
+			return true;
+		}
+
+		$mask = ( -1 << ( 32 - $prefix ) ) & 0xFFFFFFFF;
+
+		return ( $ip_long & $mask ) === ( $subnet_long & $mask );
 	}
 
 	/**
