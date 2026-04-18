@@ -540,6 +540,10 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			return;
 		}
 
+		if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/dashboard.php';
+		}
+
 		wp_add_dashboard_widget(
 			'wpau_pending_users',
 			esc_html__( 'Pending User Approvals', 'wp-approve-user' ),
