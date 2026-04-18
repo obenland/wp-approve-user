@@ -233,10 +233,15 @@ class WPAU_Dashboard_Widget {
 	public function render_row( WP_User $user ) {
 		$display = '' !== $user->display_name ? $user->display_name : $user->user_login;
 
+		/*
+		 * `user_registered` is stored in site-local time (WP writes it with
+		 * current_time( 'mysql' )), so force interpretation through mysql2date()
+		 * — appending ' UTC' would skew the difference by the site offset.
+		 */
 		$time_label = sprintf(
 			/* translators: %s: Human-readable time difference (e.g. "2 hours"). */
 			__( 'Registered %s ago', 'wp-approve-user' ),
-			human_time_diff( strtotime( $user->user_registered . ' UTC' ) )
+			human_time_diff( mysql2date( 'U', $user->user_registered ) )
 		);
 
 		$approve_nonce   = wp_create_nonce( 'wpau-dashboard-approve-' . $user->ID );
