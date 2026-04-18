@@ -127,13 +127,10 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Stamps all missing-meta users in a single set-based migration, even
-	 * across a larger user population.
+	 * Stamps missing-meta users as approved across a larger user population.
 	 *
-	 * Protects the INSERT…SELECT implementation against someone replacing
-	 * it with a per-user update_user_meta loop — 50 users is a low ceiling
-	 * but high enough to make a naive per-row implementation observably
-	 * slow, and serves as a regression smoke for unbounded completion.
+	 * Verifies correctness for a bulk set of users and serves as a regression
+	 * smoke that the migration completes and updates every missing-meta user.
 	 *
 	 * @covers ::wpau_upgrade_to_13
 	 */

@@ -250,14 +250,16 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$previous = $prop->getValue();
 		$prop->setValue( null, null );
 
-		$first  = Obenland_Wp_Approve_User::get_instance();
-		$second = Obenland_Wp_Approve_User::get_instance();
+		try {
+			$first  = Obenland_Wp_Approve_User::get_instance();
+			$second = Obenland_Wp_Approve_User::get_instance();
 
-		/* Restore the original singleton so subsequent tests in the run reuse it. */
-		$prop->setValue( null, $previous );
-
-		$this->assertInstanceOf( Obenland_Wp_Approve_User::class, $first );
-		$this->assertSame( $first, $second );
+			$this->assertInstanceOf( Obenland_Wp_Approve_User::class, $first );
+			$this->assertSame( $first, $second );
+		} finally {
+			/* Restore the original singleton so subsequent tests in the run reuse it. */
+			$prop->setValue( null, $previous );
+		}
 	}
 
 
