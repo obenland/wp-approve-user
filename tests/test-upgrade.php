@@ -72,6 +72,11 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		$user_id = self::factory()->user->create();
 		update_user_meta( $user_id, 'wp-approve-user', true );
 
+		/*
+		 * On single-site, update_site_option() delegates to update_option() and
+		 * fires pre_update_option. On multisite, it uses the network-option
+		 * path, so pre_update_site_option_{$option} must also be guarded below.
+		 */
 		$guard = static function ( $value, $option ) {
 			if ( 'wpau_db_version' === $option ) {
 				self::fail( 'update_site_option should not be called when already up to date.' );
@@ -80,8 +85,14 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		};
 		add_filter( 'pre_update_option', $guard, 10, 2 );
 
+		$guard_network = static function () {
+			self::fail( 'update_site_option should not be called when already up to date.' );
+		};
+		add_filter( 'pre_update_site_option_wpau_db_version', $guard_network );
+
 		wpau_upgrade_all();
 
+		remove_filter( 'pre_update_site_option_wpau_db_version', $guard_network );
 		remove_filter( 'pre_update_option', $guard );
 		remove_filter( 'pre_site_option_wpau_db_version', $stringify );
 

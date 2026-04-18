@@ -243,12 +243,8 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * @covers ::get_instance
 	 */
 	public function test_get_instance_returns_same_instance() {
-		/* Reset the static so the lazy-construction branch executes. */
-		$reflect = new ReflectionClass( Obenland_Wp_Approve_User::class );
-		$prop    = $reflect->getProperty( 'instance' );
-		$prop->setAccessible( true );
-		$previous = $prop->getValue();
-		$prop->setValue( null, null );
+		$previous                           = Obenland_Wp_Approve_User::$instance;
+		Obenland_Wp_Approve_User::$instance = null;
 
 		try {
 			$first  = Obenland_Wp_Approve_User::get_instance();
@@ -258,7 +254,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 			$this->assertSame( $first, $second );
 		} finally {
 			/* Restore the original singleton so subsequent tests in the run reuse it. */
-			$prop->setValue( null, $previous );
+			Obenland_Wp_Approve_User::$instance = $previous;
 		}
 	}
 
