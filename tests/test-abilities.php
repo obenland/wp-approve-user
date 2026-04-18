@@ -54,6 +54,22 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		if ( ! function_exists( 'wpau_register_abilities' ) ) {
 			require_once dirname( __DIR__ ) . '/abilities.php';
 		}
+
+		/*
+		 * Requiring abilities.php only attaches wpau_register_abilities() to the
+		 * wp_abilities_api_init hook. If that hook already fired during the test
+		 * harness bootstrap, register the abilities directly so the assertions do
+		 * not depend on hook timing.
+		 */
+		if (
+			function_exists( 'wpau_register_abilities' )
+			&& (
+				! wp_has_ability( 'wp-approve-user/approve' )
+				|| ! wp_has_ability( 'wp-approve-user/unapprove' )
+			)
+		) {
+			wpau_register_abilities();
+		}
 	}
 
 	/**
@@ -151,6 +167,56 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		$result = wpau_ability_approve_callback( array( 'user_id' => 9_999_999 ) );
 		$this->assertWPError( $result );
 		$this->assertSame( 'wpau_invalid_user', $result->get_error_code() );
+	}
+
+	/**
+	 * The callbacks refuse to modify the admin_email account to avoid accidental lockouts.
+	 */
+	public function test_callbacks_reject_admin_email_user() {
+		$admin_email = get_bloginfo( 'admin_email' );
+		$target_id   = self::factory()->user->create(
+			array(
+				'role'       => 'subscriber',
+				'user_email' => $admin_email,
+			)
+		);
+
+		$approve = wpau_ability_approve_callback( array( 'user_id' => $target_id ) );
+		$this->assertWPError( $approve );
+		$this->assertSame( 'wpau_cannot_edit_admin_email', $approve->get_error_code() );
+
+		$unapprove = wpau_ability_unapprove_callback( array( 'user_id' => $target_id ) );
+		$this->assertWPError( $unapprove );
+		$this->assertSame( 'wpau_cannot_edit_admin_email', $unapprove->get_error_code() );
+	}
+
+	/**
+	 * The permission callback denies edits when the current user can promote but not edit the target.
+	 */
+	public function test_permission_callback_rejects_when_cannot_edit_target() {
+		wp_set_current_user( static::$admin_id );
+
+		if ( is_multisite() ) {
+			grant_super_admin( static::$admin_id );
+		}
+
+		$blocker = function ( $allcaps, $caps, $args ) {
+			if ( isset( $args[0], $args[2] ) && 'edit_user' === $args[0] && (int) $args[2] === static::$subscriber_id ) {
+				$allcaps['edit_users'] = false;
+				foreach ( $caps as $cap ) {
+					$allcaps[ $cap ] = false;
+				}
+			}
+			return $allcaps;
+		};
+		add_filter( 'user_has_cap', $blocker, 10, 3 );
+
+		$result = wpau_ability_permission_callback( array( 'user_id' => static::$subscriber_id ) );
+
+		remove_filter( 'user_has_cap', $blocker, 10 );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wpau_rest_forbidden', $result->get_error_code() );
 	}
 
 	/**

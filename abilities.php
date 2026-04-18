@@ -92,18 +92,29 @@ add_action( 'wp_abilities_api_init', 'wpau_register_abilities' );
  *
  * @since 13
  *
- * @return true|WP_Error True when the current user may promote users, WP_Error otherwise.
+ * @param array $input Input arguments validated against the input schema.
+ * @return true|WP_Error True when the current user may promote and edit the target user, WP_Error otherwise.
  */
-function wpau_ability_permission_callback() {
-	if ( current_user_can( 'promote_users' ) ) {
-		return true;
+function wpau_ability_permission_callback( $input = array() ) {
+	if ( ! current_user_can( 'promote_users' ) ) {
+		return new WP_Error(
+			'wpau_rest_forbidden',
+			__( 'Sorry, you are not allowed to change user approval status.', 'wp-approve-user' ),
+			array( 'status' => rest_authorization_required_code() )
+		);
 	}
 
-	return new WP_Error(
-		'wpau_rest_forbidden',
-		__( 'Sorry, you are not allowed to change user approval status.', 'wp-approve-user' ),
-		array( 'status' => rest_authorization_required_code() )
-	);
+	$user_id = isset( $input['user_id'] ) ? (int) $input['user_id'] : 0;
+
+	if ( $user_id > 0 && ! current_user_can( 'edit_user', $user_id ) ) {
+		return new WP_Error(
+			'wpau_rest_forbidden',
+			__( 'Sorry, you are not allowed to edit this user.', 'wp-approve-user' ),
+			array( 'status' => rest_authorization_required_code() )
+		);
+	}
+
+	return true;
 }
 
 /**
@@ -120,11 +131,25 @@ function wpau_ability_permission_callback() {
 function wpau_ability_approve_callback( $input ) {
 	$user_id = isset( $input['user_id'] ) ? (int) $input['user_id'] : 0;
 
-	if ( $user_id < 1 || ! get_userdata( $user_id ) ) {
+	$userdata = $user_id > 0 ? get_userdata( $user_id ) : false;
+
+	if ( ! $userdata ) {
 		return new WP_Error(
 			'wpau_invalid_user',
 			__( 'The specified user does not exist.', 'wp-approve-user' ),
 			array( 'status' => 404 )
+		);
+	}
+
+	/*
+	 * Mirror the admin UI safeguard from check_user(): never flip the approval state of
+	 * the site's admin_email account to avoid accidental lockouts via automation.
+	 */
+	if ( get_bloginfo( 'admin_email' ) === $userdata->user_email ) {
+		return new WP_Error(
+			'wpau_cannot_edit_admin_email',
+			__( 'The site admin email user cannot be modified through this ability.', 'wp-approve-user' ),
+			array( 'status' => 403 )
 		);
 	}
 
@@ -154,7 +179,9 @@ function wpau_ability_approve_callback( $input ) {
 function wpau_ability_unapprove_callback( $input ) {
 	$user_id = isset( $input['user_id'] ) ? (int) $input['user_id'] : 0;
 
-	if ( $user_id < 1 || ! get_userdata( $user_id ) ) {
+	$userdata = $user_id > 0 ? get_userdata( $user_id ) : false;
+
+	if ( ! $userdata ) {
 		return new WP_Error(
 			'wpau_invalid_user',
 			__( 'The specified user does not exist.', 'wp-approve-user' ),
@@ -162,7 +189,27 @@ function wpau_ability_unapprove_callback( $input ) {
 		);
 	}
 
+	/*
+	 * Mirror the admin UI safeguard from check_user(): never flip the approval state of
+	 * the site's admin_email account to avoid accidental lockouts via automation.
+	 */
+	if ( get_bloginfo( 'admin_email' ) === $userdata->user_email ) {
+		return new WP_Error(
+			'wpau_cannot_edit_admin_email',
+			__( 'The site admin email user cannot be modified through this ability.', 'wp-approve-user' ),
+			array( 'status' => 403 )
+		);
+	}
+
 	update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
+
+	/*
+	 * Mirror the admin UI's unapprove() behaviour — destroy all active sessions for the
+	 * user so that an unapproved user can no longer hit wp-admin with an existing cookie.
+	 */
+	if ( class_exists( 'WP_Session_Tokens' ) ) {
+		WP_Session_Tokens::get_instance( $user_id )->destroy_all();
+	}
 
 	/** This action is documented in class-obenland-wp-approve-user.php */
 	do_action( 'wpau_unapprove', $user_id );
