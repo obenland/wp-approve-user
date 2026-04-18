@@ -142,6 +142,28 @@ class User_Meta extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Legacy pre-v12 installs stored a `false` boolean (persisted as an
+	 * empty string) to represent pending users. Those rows still exist
+	 * in the database until wpau_upgrade_to_12() migrates them, so the
+	 * login gate must distinguish "meta row missing" (approved) from
+	 * "meta row present but empty" (still pending).
+	 *
+	 * @covers ::wp_authenticate_user
+	 */
+	public function test_wp_authenticate_user_empty_legacy_meta_is_still_blocked() {
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		update_user_meta( $user->ID, 'wp-approve-user', false );
+		$this->assertSame( '', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertTrue( metadata_exists( 'user', $user->ID, 'wp-approve-user' ) );
+
+		$class  = new Obenland_Wp_Approve_User();
+		$result = $class->wp_authenticate_user( $user );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
+	}
+
+	/**
 	 * Unapproved users remain blocked — the missing-meta fix must not
 	 * accidentally unblock users who were explicitly unapproved.
 	 *

@@ -146,7 +146,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * When we're already past v12, only the v13 migration runs — legacy
+	 * When we're already at v12, only the v13 migration runs — legacy
 	 * boolean values (which would normally be migrated in wpau_upgrade_to_12)
 	 * are left alone.
 	 *
