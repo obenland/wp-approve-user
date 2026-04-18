@@ -925,8 +925,10 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			? $this->options['auto_approve_rules']
 			: array();
 
-		// Always include one blank row at the end so the no-JS fallback works
-		// (submit the form once to persist the list, then add another row).
+		/*
+		 * Always include one blank row at the end so the no-JS fallback works
+		 * (submit the form once to persist the list, then add another row).
+		 */
 		$display_rules   = $rules;
 		$display_rules[] = array(
 			'type'  => 'email_domain',

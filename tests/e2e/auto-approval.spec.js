@@ -112,19 +112,17 @@ test.describe.serial( 'WP Approve User — auto-approval rules', () => {
 		const email = `${ username }@example.test`;
 
 		try {
-			// Drive the same registration path wp-login.php uses. Going through
-			// wp user create would fire `user_register` too, but using wp-login
-			// also exercises the front-end.
 			wp(
 				`user create ${ username } ${ email } --role=subscriber --user_pass=Correct-Horse-Battery-Staple-1 --porcelain`
 			);
 
-			// `wp user create` runs as the admin context inside wp-cli, which
-			// means user_register() sees `create_users` capabilities and writes
-			// 'approved' *before* our auto-approval handler runs. That is the
-			// documented admin-bypass path, so we explicitly reset the meta to
-			// 'pending' and invoke the auto-approval handler from scratch via
-			// `wp eval`, the same way e2e coverage exercises other handlers.
+			/*
+			 * `wp user create` runs as the admin context inside wp-cli, which means
+			 * user_register() sees `create_users` capabilities and writes 'approved'
+			 * *before* the auto-approval handler runs. That is the documented
+			 * admin-bypass path, so we explicitly reset the meta to 'pending' and
+			 * invoke the auto-approval handler from scratch via `wp eval`.
+			 */
 			wp( `user meta update ${ username } wp-approve-user pending` );
 
 			const php = `Obenland_Wp_Approve_User::get_instance()->auto_approve_user( (int) get_user_by('login', '${ username }')->ID );`;

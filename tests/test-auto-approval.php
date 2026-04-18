@@ -276,8 +276,10 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		);
 
 		$user = $this->make_subscriber( 'admin-hire@example.test' );
-		// Simulate the user_register() path for an admin-created user: meta is
-		// already 'approved', so auto_approve_user should bail out early.
+		/*
+		 * Simulate the user_register() path for an admin-created user: meta is
+		 * already 'approved', so auto_approve_user should bail out early.
+		 */
 		update_user_meta( $user->ID, 'wp-approve-user', 'approved' );
 
 		$fired    = 0;
