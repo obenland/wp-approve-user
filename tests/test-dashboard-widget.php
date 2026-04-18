@@ -164,23 +164,58 @@ class WPAU_Dashboard_Widget_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The pending link points at the network admin URL on multisite.
+	 * On the network admin dashboard the widget links to network URLs so
+	 * super admins reach the network-wide users screen.
 	 *
 	 * @covers ::render_dashboard_widget
 	 */
-	public function test_render_dashboard_widget_uses_network_url_on_multisite() {
+	public function test_render_dashboard_widget_uses_network_url_on_network_admin() {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Multisite only.' );
 		}
 
-		$instance = new Obenland_Wp_Approve_User();
-		$this->set_protected( $instance, 'pending_count', 2 );
+		set_current_screen( 'dashboard-network' );
 
-		ob_start();
-		$instance->render_dashboard_widget();
-		$html = ob_get_clean();
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+			$this->set_protected( $instance, 'pending_count', 2 );
 
-		$this->assertStringContainsString( 'network/users.php', $html );
+			ob_start();
+			$instance->render_dashboard_widget();
+			$html = ob_get_clean();
+
+			$this->assertStringContainsString( 'network/users.php', $html );
+		} finally {
+			set_current_screen( 'front' );
+		}
+	}
+
+	/**
+	 * On a multisite site dashboard the widget must link to the site's own
+	 * users screen, not network admin — site admins cannot reach the latter.
+	 *
+	 * @covers ::render_dashboard_widget
+	 */
+	public function test_render_dashboard_widget_uses_site_url_on_site_dashboard() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Multisite only.' );
+		}
+
+		set_current_screen( 'dashboard' );
+
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+			$this->set_protected( $instance, 'pending_count', 2 );
+
+			ob_start();
+			$instance->render_dashboard_widget();
+			$html = ob_get_clean();
+
+			$this->assertStringNotContainsString( 'network/users.php', $html );
+			$this->assertStringContainsString( 'users.php?role=wpau_pending', $html );
+		} finally {
+			set_current_screen( 'front' );
+		}
 	}
 
 	/**

@@ -185,16 +185,19 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	public function get_pending_count() {
 		if ( null === $this->pending_count ) {
 			$args = array(
-				'fields'     => 'ID',
-				'meta_key'   => 'wp-approve-user', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-				'meta_value' => 'pending', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				'fields'      => 'ID',
+				'number'      => 1,
+				'count_total' => true,
+				'meta_key'    => 'wp-approve-user', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_value'  => 'pending', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
 			);
 
 			if ( is_multisite() ) {
 				$args['blog_id'] = is_network_admin() ? 0 : get_current_blog_id();
 			}
 
-			$this->pending_count = count( get_users( $args ) );
+			$query               = new WP_User_Query( $args );
+			$this->pending_count = (int) $query->get_total();
 		}
 
 		return $this->pending_count;
@@ -557,12 +560,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @since 13
 	 */
 	public function render_dashboard_widget() {
-		$pending_url  = is_multisite()
-			? network_admin_url( 'users.php?role=wpau_pending' )
-			: admin_url( 'users.php?role=wpau_pending' );
-		$settings_url = is_multisite()
-			? network_admin_url( 'settings.php?page=wp-approve-user' )
-			: admin_url( 'options-general.php?page=wp-approve-user' );
+		if ( is_network_admin() ) {
+			$pending_url  = network_admin_url( 'users.php?role=wpau_pending' );
+			$settings_url = network_admin_url( 'settings.php?page=wp-approve-user' );
+		} else {
+			$pending_url  = admin_url( 'users.php?role=wpau_pending' );
+			$settings_url = admin_url( 'options-general.php?page=wp-approve-user' );
+		}
 
 		if ( $this->pending_count > 0 ) {
 			printf(
