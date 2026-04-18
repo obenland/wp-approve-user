@@ -21,14 +21,15 @@ module.exports = [
 		},
 		rules: {
 			/*
-			 * `wp_approve_user*` are snake_case handles registered via
-			 * wp_localize_script(), and `user_id` is a snake_case AJAX payload
-			 * key expected by the WP AJAX handlers.
+			 * Snake_case identifiers that cross the PHP boundary:
+			 * - `wp_approve_user*`: script handles registered via wp_localize_script().
+			 * - `user_id`: input/output key on the Abilities REST schema and
+			 *   payload key expected by the WP AJAX handlers.
 			 */
 			camelcase: [
 				'error',
 				{
-					allow: [ '^wp_approve_user' ],
+					allow: [ '^wp_approve_user', '^user_id$' ],
 					properties: 'never',
 				},
 			],

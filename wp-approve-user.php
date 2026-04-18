@@ -32,6 +32,7 @@ require_once __DIR__ . '/class-wpau-dashboard-widget.php';
 require_once __DIR__ . '/class-wpau-settings.php';
 require_once __DIR__ . '/cron-events.php';
 require_once __DIR__ . '/upgrade.php';
+require_once __DIR__ . '/abilities.php';
 
 /**
  * Instantiates Obenland_Wp_Approve_User.
