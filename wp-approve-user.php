@@ -30,11 +30,7 @@ if ( ! class_exists( 'Obenland_Wp_Plugins_V5' ) ) {
 require_once __DIR__ . '/class-obenland-wp-approve-user.php';
 require_once __DIR__ . '/cron-events.php';
 require_once __DIR__ . '/upgrade.php';
-
-// The Abilities API ships in WordPress 6.9+. Skip the require on older installs.
-if ( function_exists( 'wp_register_ability' ) ) {
-	require_once __DIR__ . '/abilities.php';
-}
+require_once __DIR__ . '/abilities.php';
 
 /**
  * Instantiates Obenland_Wp_Approve_User.

@@ -173,21 +173,38 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 	 * The callbacks refuse to modify the admin_email account to avoid accidental lockouts.
 	 */
 	public function test_callbacks_reject_admin_email_user() {
-		$admin_email = get_bloginfo( 'admin_email' );
-		$target_id   = self::factory()->user->create(
-			array(
-				'role'       => 'subscriber',
-				'user_email' => $admin_email,
-			)
-		);
+		$target       = get_userdata( static::$subscriber_id );
+		$original     = get_option( 'admin_email' );
+		$restore_mail = null;
+		update_option( 'admin_email', $target->user_email );
 
-		$approve = wpau_ability_approve_callback( array( 'user_id' => $target_id ) );
-		$this->assertWPError( $approve );
-		$this->assertSame( 'wpau_cannot_edit_admin_email', $approve->get_error_code() );
+		/*
+		 * update_option( 'admin_email' ) on multisite defers the change until
+		 * the user confirms via email, so force the change through for tests.
+		 */
+		if ( get_bloginfo( 'admin_email' ) !== $target->user_email ) {
+			$restore_mail = function () use ( $target ) {
+				return $target->user_email;
+			};
+			add_filter( 'pre_option_admin_email', $restore_mail );
+		}
 
-		$unapprove = wpau_ability_unapprove_callback( array( 'user_id' => $target_id ) );
-		$this->assertWPError( $unapprove );
-		$this->assertSame( 'wpau_cannot_edit_admin_email', $unapprove->get_error_code() );
+		try {
+			$this->assertSame( $target->user_email, get_bloginfo( 'admin_email' ) );
+
+			$approve = wpau_ability_approve_callback( array( 'user_id' => static::$subscriber_id ) );
+			$this->assertWPError( $approve );
+			$this->assertSame( 'wpau_cannot_edit_admin_email', $approve->get_error_code() );
+
+			$unapprove = wpau_ability_unapprove_callback( array( 'user_id' => static::$subscriber_id ) );
+			$this->assertWPError( $unapprove );
+			$this->assertSame( 'wpau_cannot_edit_admin_email', $unapprove->get_error_code() );
+		} finally {
+			if ( null !== $restore_mail ) {
+				remove_filter( 'pre_option_admin_email', $restore_mail );
+			}
+			update_option( 'admin_email', $original );
+		}
 	}
 
 	/**
