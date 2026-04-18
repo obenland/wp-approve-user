@@ -6,6 +6,7 @@
 /.wordpress-org
 /bin
 /node_modules
+/patches
 /playwright-report
 /scripts
 /test-results

@@ -23,6 +23,12 @@
 	"config": {
 		"allow-plugins": {
 			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"audit": {
+			"ignore": {
+				"PKSA-5jz8-6tcw-pbk4": "GHSA-qrr6-mg7r-m243: phpunit/phpunit <=12.5.21 (patched in 12.5.22). phpunit-polyfills ^1.0 requires PHPUnit ^9, and the WP test scaffold does not support PHPUnit 10+ yet.",
+				"PKSA-z3gr-8qht-p93v": "GHSA-qrr6-mg7r-m243: phpunit/phpunit >=13.0.0,<=13.1.5 (patched in 13.1.6). Same reason as above."
+			}
 		}
 	},
 	"autoload-dev": {
