@@ -7,8 +7,6 @@
 
 /**
  * Covers abilities.php registration and callbacks.
- *
- * @coversNothing
  */
 class WPAU_Abilities_Test extends WP_UnitTestCase {
 
@@ -83,6 +81,9 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 	/**
 	 * Both abilities should register into the core registry.
+	 *
+	 * @covers ::wpau_register_abilities
+	 * @covers ::wpau_register_ability_categories
 	 */
 	public function test_abilities_are_registered() {
 		$this->assertTrue( wp_has_ability( 'wp-approve-user/approve' ) );
@@ -91,6 +92,8 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 	/**
 	 * The permission callback denies users who can't promote_users.
+	 *
+	 * @covers ::wpau_ability_permission_callback
 	 */
 	public function test_permission_callback_rejects_subscriber() {
 		wp_set_current_user( static::$subscriber_id );
@@ -102,6 +105,8 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 	/**
 	 * The permission callback allows users who can promote_users (admins).
+	 *
+	 * @covers ::wpau_ability_permission_callback
 	 */
 	public function test_permission_callback_allows_admin() {
 		wp_set_current_user( static::$admin_id );
@@ -115,6 +120,8 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 	/**
 	 * The approve callback updates meta and fires wpau_approve.
+	 *
+	 * @covers ::wpau_ability_approve_callback
 	 */
 	public function test_approve_callback_updates_meta_and_fires_action() {
 		$fired = array();
@@ -137,6 +144,8 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 	/**
 	 * The unapprove callback updates meta and fires wpau_unapprove.
+	 *
+	 * @covers ::wpau_ability_unapprove_callback
 	 */
 	public function test_unapprove_callback_updates_meta_and_fires_action() {
 		update_user_meta( static::$subscriber_id, 'wp-approve-user', 'approved' );
@@ -160,16 +169,26 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The callbacks return a WP_Error for unknown user IDs.
+	 * Both callbacks return a WP_Error for unknown user IDs.
+	 *
+	 * @covers ::wpau_ability_approve_callback
+	 * @covers ::wpau_ability_unapprove_callback
 	 */
-	public function test_approve_callback_rejects_unknown_user() {
-		$result = wpau_ability_approve_callback( array( 'user_id' => 9_999_999 ) );
-		$this->assertWPError( $result );
-		$this->assertSame( 'wpau_invalid_user', $result->get_error_code() );
+	public function test_callbacks_reject_unknown_user() {
+		$approve = wpau_ability_approve_callback( array( 'user_id' => 9_999_999 ) );
+		$this->assertWPError( $approve );
+		$this->assertSame( 'wpau_invalid_user', $approve->get_error_code() );
+
+		$unapprove = wpau_ability_unapprove_callback( array( 'user_id' => 9_999_999 ) );
+		$this->assertWPError( $unapprove );
+		$this->assertSame( 'wpau_invalid_user', $unapprove->get_error_code() );
 	}
 
 	/**
 	 * The callbacks refuse to modify the admin_email account to avoid accidental lockouts.
+	 *
+	 * @covers ::wpau_ability_approve_callback
+	 * @covers ::wpau_ability_unapprove_callback
 	 */
 	public function test_callbacks_reject_admin_email_user() {
 		$target       = get_userdata( static::$subscriber_id );
@@ -208,6 +227,8 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 	/**
 	 * The permission callback denies edits when the current user can promote but not edit the target.
+	 *
+	 * @covers ::wpau_ability_permission_callback
 	 */
 	public function test_permission_callback_rejects_when_cannot_edit_target() {
 		wp_set_current_user( static::$admin_id );
@@ -239,6 +260,8 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 	/**
 	 * The registered input schema rejects non-integer user IDs via rest_validate_value_from_schema().
+	 *
+	 * @covers ::wpau_register_abilities
 	 */
 	public function test_input_schema_rejects_non_integer_user_id() {
 		$ability = wp_get_ability( 'wp-approve-user/approve' );
