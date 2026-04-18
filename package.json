@@ -26,7 +26,8 @@
 		"@playwright/test": "^1.47.0",
 		"@wordpress/env": "^11.4.0",
 		"@wordpress/eslint-plugin": "^25.0.0",
-		"@wordpress/scripts": "^32.0.0"
+		"@wordpress/scripts": "^32.0.0",
+		"patch-package": "^8.0.1"
 	},
 	"overrides": {
 		"serialize-javascript": "^7.0.5",
@@ -36,6 +37,7 @@
 		"js-yaml@<3.14.2": "^3.14.2"
 	},
 	"scripts": {
+		"postinstall": "patch-package",
 		"wp-env": "wp-env",
 		"start": "wp-env start",
 		"stop": "wp-env stop",
