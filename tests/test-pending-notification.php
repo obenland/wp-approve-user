@@ -217,7 +217,7 @@ class WPAU_Pending_Notification_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The wpau_pending_notification_message filter overrides the placeholders before interpolation.
+	 * The wpau_pending_notification_placeholders filter overrides the placeholders before interpolation.
 	 *
 	 * @covers ::notify_admin_pending
 	 */
@@ -238,14 +238,14 @@ class WPAU_Pending_Notification_Test extends WP_UnitTestCase {
 			$placeholders['PENDING_URL'] = 'https://example.test/custom-pending';
 			return $placeholders;
 		};
-		add_filter( 'wpau_pending_notification_message', $filter );
+		add_filter( 'wpau_pending_notification_placeholders', $filter );
 
 		$this->start_wp_mail_capture();
 
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->notify_admin_pending( self::$pending_user->ID );
 
-		remove_filter( 'wpau_pending_notification_message', $filter );
+		remove_filter( 'wpau_pending_notification_placeholders', $filter );
 
 		$this->assertStringContainsString( 'Filtered Site', $this->captured_mail['subject'] );
 		$this->assertStringContainsString( 'Filtered Site', $this->captured_mail['message'] );

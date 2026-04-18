@@ -35,11 +35,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	/**
 	 * Users flagged as pending.
 	 *
+	 * Null until the count has been computed for the current request.
+	 *
 	 * @since 12
 	 *
-	 * @var int
+	 * @var int|null
 	 */
-	protected $pending_count = 0;
+	protected $pending_count = null;
 
 	/**
 	 * Users flagged as unapproved.
@@ -172,11 +174,29 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	/**
 	 * Returns the count of users in the pending state.
 	 *
+	 * The count is cached on the instance once computed; front-end and other
+	 * non-admin contexts compute it lazily here since the constructor only
+	 * runs the query when `is_admin()` is true.
+	 *
 	 * @since 13
 	 *
 	 * @return int Number of users awaiting approval.
 	 */
 	public function get_pending_count() {
+		if ( null === $this->pending_count ) {
+			$args = array(
+				'fields'     => 'ID',
+				'meta_key'   => 'wp-approve-user', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+				'meta_value' => 'pending', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			);
+
+			if ( is_multisite() ) {
+				$args['blog_id'] = is_network_admin() ? 0 : get_current_blog_id();
+			}
+
+			$this->pending_count = count( get_users( $args ) );
+		}
+
 		return $this->pending_count;
 	}
 
@@ -466,7 +486,12 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		 * @param array   $placeholders Key => Value pair of placeholders and their replacements.
 		 * @param WP_User $user         WP_User object of the newly registered user.
 		 */
-		$placeholders = apply_filters( 'wpau_pending_notification_message', $placeholders, $user );
+		$filtered = apply_filters( 'wpau_pending_notification_placeholders', $placeholders, $user );
+
+		// Guard against callbacks that return a non-array or drop required keys.
+		if ( is_array( $filtered ) ) {
+			$placeholders = array_merge( $placeholders, $filtered );
+		}
 
 		$message = sprintf(
 			/* translators: 1: Site name. */

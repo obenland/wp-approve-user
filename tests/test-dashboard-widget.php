@@ -20,7 +20,7 @@ class WPAU_Dashboard_Widget_Test extends WP_UnitTestCase {
 	public static $admin;
 
 	/**
-	 * Editor user (has `promote_users` via `edit_users`? No — subscribers/editors do not).
+	 * Subscriber user (lacks the `promote_users` capability).
 	 *
 	 * @var WP_User
 	 */
