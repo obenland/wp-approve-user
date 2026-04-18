@@ -459,20 +459,34 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			}
 
 			if ( $this->auto_approve_rule_matches( $rule, $user ) ) {
-				update_user_meta( $user_id, 'wp-approve-user', 'approved' );
-
-				/**
-				 * Fires after a user has been approved.
-				 *
-				 * @since 1.1.0
-				 *
-				 * @param int $user_id User ID.
-				 */
-				do_action( 'wpau_approve', $user_id );
-
+				$this->mark_approved( $user_id );
 				return;
 			}
 		}
+	}
+
+	/**
+	 * Flips a user's approval state to `approved` and fires `wpau_approve`.
+	 *
+	 * Shared helper so the admin UI, auto-approval rules, and any future
+	 * callers converge on the same sequence of side-effects.
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param int $user_id User ID to mark approved.
+	 */
+	protected function mark_approved( $user_id ) {
+		update_user_meta( $user_id, 'wp-approve-user', 'approved' );
+
+		/**
+		 * Fires after a user has been approved.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param int $user_id User ID.
+		 */
+		do_action( 'wpau_approve', $user_id );
 	}
 
 	/**
@@ -1247,16 +1261,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				);
 			}
 
-			update_user_meta( $id, 'wp-approve-user', 'approved' );
-
-			/**
-			 * Fires after a user has been approved.
-			 *
-			 * @since 1.1.0
-			 *
-			 * @param int $id User ID.
-			 */
-			do_action( 'wpau_approve', $id );
+			$this->mark_approved( $id );
 		}
 
 		$role          = $this->get_role();

@@ -3,7 +3,8 @@
  *
  * Progressive enhancement on top of the server-rendered list:
  *
- *   - Turns the "Add rule" submit button into a JS-driven clone of the last row.
+ *   - Turns the "Add rule" submit button into a JS-driven clone of an existing
+ *     row template, then resets its fields.
  *   - Handles "Remove" clicks without a round-trip (empty rows are dropped
  *     server-side on the next save).
  */
