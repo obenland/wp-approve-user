@@ -134,8 +134,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		$this->hook( 'ms_user_row_actions', 'user_row_actions' );
 		$this->hook( 'wp_authenticate_user' );
 		$this->hook( 'user_register' );
-		$this->hook( 'user_register', 'notify_admin_pending', 20 );
 		$this->hook( 'register_new_user', 0 );
+		$this->hook( 'wp_new_user_notification_email_admin' );
 		$this->hook( 'wp_login_errors' );
 		$this->hook( 'shake_error_codes' );
 
@@ -439,98 +439,42 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	}
 
 	/**
-	 * Sends an email to the site admin when a new user is pending approval.
+	 * Appends a link to the pending-users screen to WordPress's admin notification email
+	 * when the newly registered user is awaiting approval.
 	 *
-	 * Runs on `user_register` at priority 20, after `user_register()` has
-	 * written the three-state meta. Skips admin-created users (they start
-	 * as `approved`), users whose admin has disabled the notification, and
-	 * registrations that have already been announced.
+	 * WordPress already sends the admin a "New User Registration" email; this filter
+	 * extends that existing email rather than dispatching a second, near-duplicate one.
 	 *
 	 * @since 13
 	 *
-	 * @param int $user_id ID of the newly registered user.
+	 * @param array   $email {
+	 *     Arguments passed to wp_mail() for the admin notification.
+	 *
+	 *     @type string $to      Admin email address.
+	 *     @type string $subject Email subject.
+	 *     @type string $message Email body.
+	 *     @type string $headers Email headers.
+	 * }
+	 * @param WP_User $user     The newly registered user.
+	 * @param string  $blogname Site name.
+	 * @return array Filtered email arguments.
 	 */
-	public function notify_admin_pending( $user_id ) {
-		if ( empty( $this->options['wpau-notify-admin'] ) ) {
-			return;
+	public function wp_new_user_notification_email_admin( $email, $user, $blogname ) {
+		if ( 'pending' !== get_user_meta( $user->ID, 'wp-approve-user', true ) ) {
+			return $email;
 		}
 
-		if ( 'pending' !== get_user_meta( $user_id, 'wp-approve-user', true ) ) {
-			return;
-		}
-
-		if ( get_user_meta( $user_id, 'wp-approve-user-admin-notified', true ) ) {
-			return;
-		}
-
-		$user = get_userdata( $user_id );
-		if ( ! $user ) {
-			return;
-		}
-
-		$site_name   = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
-		$admin_email = is_multisite() ? get_site_option( 'admin_email' ) : get_option( 'admin_email' );
 		$pending_url = is_multisite()
 			? network_admin_url( 'users.php?role=wpau_pending' )
 			: admin_url( 'users.php?role=wpau_pending' );
 
-		$placeholders = array(
-			'USERNAME'    => $user->user_login,
-			'USER_EMAIL'  => $user->user_email,
-			'SITE_NAME'   => $site_name,
-			'PENDING_URL' => $pending_url,
-		);
-
-		/**
-		 * Filters the placeholders used in the pending-user admin notification email.
-		 *
-		 * @since 13
-		 *
-		 * @param array   $placeholders Key => Value pair of placeholders and their replacements.
-		 * @param WP_User $user         WP_User object of the newly registered user.
-		 */
-		$filtered = apply_filters( 'wpau_pending_notification_placeholders', $placeholders, $user );
-
-		// Guard against callbacks that return a non-array or drop required keys.
-		if ( is_array( $filtered ) ) {
-			$placeholders = array_merge( $placeholders, $filtered );
-		}
-
-		$message = sprintf(
-			/* translators: 1: Site name. */
-			__( 'A new user has registered on %s and is awaiting approval.', 'wp-approve-user' ),
-			$placeholders['SITE_NAME']
-		) . "\n\n";
-
-		$message .= sprintf(
-			/* translators: %s: Username. */
-			__( 'Username: %s', 'wp-approve-user' ),
-			$placeholders['USERNAME']
-		) . "\n";
-
-		$message .= sprintf(
-			/* translators: %s: Email address. */
-			__( 'Email: %s', 'wp-approve-user' ),
-			$placeholders['USER_EMAIL']
-		) . "\n\n";
-
-		$message .= sprintf(
-			/* translators: %s: Pending users admin URL. */
+		$email['message'] = rtrim( $email['message'] ) . "\r\n\r\n" . sprintf(
+			/* translators: %s: URL to the pending users admin screen. */
 			__( 'Review pending users: %s', 'wp-approve-user' ),
-			$placeholders['PENDING_URL']
+			$pending_url
 		);
 
-		$subject = sprintf(
-			/* translators: %s: Site name. */
-			__( 'New user awaiting approval on %s', 'wp-approve-user' ),
-			$placeholders['SITE_NAME']
-		);
-
-		$sent = wp_mail( $admin_email, $subject, $message );
-
-		if ( $sent ) {
-			update_user_meta( $user_id, 'wp-approve-user-admin-notified', true );
-		}
+		return $email;
 	}
 
 	/**
@@ -869,25 +813,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				'setting'   => 'wpau-send-unapprove-email',
 			)
 		);
-
-		add_settings_section(
-			$this->textdomain . '-notifications',
-			esc_html__( 'Notifications', 'wp-approve-user' ),
-			array( $this, 'notifications_section_description_cb' ),
-			$this->textdomain
-		);
-
-		add_settings_field(
-			'wp-approve-user[notify-admin]',
-			esc_html__( 'Admin Notification', 'wp-approve-user' ),
-			array( $this, 'checkbox_cb' ),
-			$this->textdomain,
-			$this->textdomain . '-notifications',
-			array(
-				'name'        => 'wpau-notify-admin',
-				'description' => __( 'Notify admin on new pending user.', 'wp-approve-user' ),
-			)
-		);
 	}
 
 	/**
@@ -948,15 +873,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	}
 
 	/**
-	 * Prints the notifications section description.
-	 *
-	 * @since 13
-	 */
-	public function notifications_section_description_cb() {
-		echo '<p>' . esc_html__( 'Control whether the site administrator is notified when a new user is awaiting approval.', 'wp-approve-user' ) . '</p>';
-	}
-
-	/**
 	 * Populates the setting field.
 	 *
 	 * @author Konstantin Obenland
@@ -1008,7 +924,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			'wpau-send-unapprove-email' => isset( $input['wpau-send-unapprove-email'] ),
 			'wpau-approve-email'        => isset( $input['wpau-approve-email'] ) ? trim( $input['wpau-approve-email'] ) : '',
 			'wpau-unapprove-email'      => isset( $input['wpau-unapprove-email'] ) ? trim( $input['wpau-unapprove-email'] ) : '',
-			'wpau-notify-admin'         => isset( $input['wpau-notify-admin'] ),
 		);
 	}
 
@@ -1327,7 +1242,6 @@ Company,
 Contact details',
 			'wpau-send-unapprove-email' => false,
 			'wpau-unapprove-email'      => '',
-			'wpau-notify-admin'         => true,
 		);
 
 		return apply_filters( 'wpau_default_options', $options );

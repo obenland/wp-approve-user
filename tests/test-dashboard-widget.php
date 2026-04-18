@@ -108,6 +108,25 @@ class WPAU_Dashboard_Widget_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Lazily runs a WP_User_Query and caches the result when pending_count is unset.
+	 *
+	 * @covers ::get_pending_count
+	 */
+	public function test_get_pending_count_queries_when_unset() {
+		$pending_user = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		update_user_meta( $pending_user, 'wp-approve-user', 'pending' );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$this->set_protected( $instance, 'pending_count', null );
+
+		$this->assertSame( 1, $instance->get_pending_count() );
+
+		/* Second call returns the cached value without re-running the query. */
+		update_user_meta( $pending_user, 'wp-approve-user', 'approved' );
+		$this->assertSame( 1, $instance->get_pending_count() );
+	}
+
+	/**
 	 * Renders the non-zero branch with a count sentence and the Review button.
 	 *
 	 * @covers ::render_dashboard_widget

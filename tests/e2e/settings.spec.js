@@ -71,7 +71,6 @@ test.describe( 'WP Approve User — settings page rendering', () => {
 			page.locator( '#wpau-send-unapprove-email' )
 		).toBeVisible();
 		await expect( page.locator( '#wpau-unapprove-email' ) ).toBeVisible();
-		await expect( page.locator( '#wpau-notify-admin' ) ).toBeVisible();
 
 		// section_description_cb() lists the placeholder tokens as <code>
 		// elements inside the section description (immediately after the
@@ -142,33 +141,6 @@ test.describe.serial( 'WP Approve User — settings persistence', () => {
 		await expect( page.locator( '#wpau-unapprove-email' ) ).toHaveValue(
 			unapproveBody
 		);
-	} );
-
-	test( 'toggling the admin notification setting persists across reloads', async ( {
-		page,
-	} ) => {
-		await loginAs( page, 'admin', 'password' );
-		await page.goto( SETTINGS_URL );
-
-		// Default is true — uncheck, save, and verify the off state persists.
-		await page.locator( '#wpau-notify-admin' ).uncheck();
-		await page.locator( '#submit' ).click();
-		await expect(
-			page.locator( '#setting-error-settings_updated' )
-		).toBeVisible();
-
-		await page.goto( SETTINGS_URL );
-		await expect( page.locator( '#wpau-notify-admin' ) ).not.toBeChecked();
-
-		// Check it back on and verify the on state persists.
-		await page.locator( '#wpau-notify-admin' ).check();
-		await page.locator( '#submit' ).click();
-		await expect(
-			page.locator( '#setting-error-settings_updated' )
-		).toBeVisible();
-
-		await page.goto( SETTINGS_URL );
-		await expect( page.locator( '#wpau-notify-admin' ) ).toBeChecked();
 	} );
 } );
 

@@ -44,7 +44,6 @@ class WPAU_Uninstall_Test extends WP_UnitTestCase {
 		update_user_meta( $user_id, 'wp-approve-user', 'approved' );
 		update_user_meta( $user_id, 'wp-approve-user-mail-sent', true );
 		update_user_meta( $user_id, 'wp-approve-user-new-registration', true );
-		update_user_meta( $user_id, 'wp-approve-user-admin-notified', true );
 		update_option( 'wp-approve-user', array( 'foo' => 'bar' ) );
 
 		if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
@@ -57,6 +56,5 @@ class WPAU_Uninstall_Test extends WP_UnitTestCase {
 		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user', true ) );
 		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) );
 		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
-		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-admin-notified', true ) );
 	}
 }
