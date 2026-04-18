@@ -76,5 +76,4 @@ class WPAU_Pending_Notification_Test extends WP_UnitTestCase {
 		$this->assertSame( $base, $email );
 		$this->assertStringNotContainsString( 'Review pending users:', $email['message'] );
 	}
-
 }
