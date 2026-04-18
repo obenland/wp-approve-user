@@ -28,6 +28,7 @@ test.describe.serial( 'WP Approve User — login gate', () => {
 	const stamp = Date.now();
 	const unapprovedUser = `wpau-login-unapproved-${ stamp }`;
 	const pendingUser = `wpau-login-pending-${ stamp }`;
+	const noMetaUser = `wpau-login-no-meta-${ stamp }`;
 	const password = 'Correct-Horse-Battery-Staple-1';
 
 	test.beforeAll( () => {
@@ -40,10 +41,19 @@ test.describe.serial( 'WP Approve User — login gate', () => {
 			`user create ${ pendingUser } ${ pendingUser }@example.test --role=subscriber --user_pass=${ password } --porcelain`
 		);
 		wp( `user meta update ${ pendingUser } wp-approve-user pending` );
+
+		/*
+		 * Create a user and explicitly strip any wp-approve-user meta so the
+		 * login path has to hit the empty-meta branch in wp_authenticate_user.
+		 */
+		wp(
+			`user create ${ noMetaUser } ${ noMetaUser }@example.test --role=subscriber --user_pass=${ password } --porcelain`
+		);
+		wp( `user meta delete ${ noMetaUser } wp-approve-user` );
 	} );
 
 	test.afterAll( () => {
-		for ( const user of [ unapprovedUser, pendingUser ] ) {
+		for ( const user of [ unapprovedUser, pendingUser, noMetaUser ] ) {
 			try {
 				wp( `user delete ${ user } --yes` );
 			} catch {
@@ -71,5 +81,13 @@ test.describe.serial( 'WP Approve User — login gate', () => {
 		// core to inject an inline script that adds the shake class to the
 		// first form on the page.
 		await expect( page.locator( '#loginform' ) ).toHaveClass( /shake/ );
+	} );
+
+	test( 'user with no wp-approve-user meta can still log in', async ( {
+		page,
+	} ) => {
+		await attemptLogin( page, noMetaUser, password );
+
+		await expect( page ).toHaveURL( /wp-admin/ );
 	} );
 } );

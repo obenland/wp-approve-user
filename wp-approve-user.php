@@ -21,7 +21,7 @@ if ( ! get_option( 'users_can_register' ) ) {
 }
 
 // Define the current version for upgrades.
-$wpau_db_version = 12;
+$wpau_db_version = 13;
 
 if ( ! class_exists( 'Obenland_Wp_Plugins_V5' ) ) {
 	require_once __DIR__ . '/class-obenland-wp-plugins-v5.php';

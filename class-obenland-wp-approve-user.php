@@ -366,7 +366,16 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			return $userdata;
 		}
 
-		if ( 'approved' === get_user_meta( $userdata->ID, 'wp-approve-user', true ) ) {
+		$status          = get_user_meta( $userdata->ID, 'wp-approve-user', true );
+		$has_status_meta = metadata_exists( 'user', $userdata->ID, 'wp-approve-user' );
+
+		/*
+		 * A missing meta row means the user predates the plugin (or its
+		 * activation hook never finished). Treat only missing meta as
+		 * approved; an existing empty value may represent a legacy
+		 * pre-v12 pending state that hasn't been migrated yet.
+		 */
+		if ( 'approved' === $status || ! $has_status_meta ) {
 			return $userdata;
 		}
 
