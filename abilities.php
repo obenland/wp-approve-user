@@ -141,11 +141,8 @@ function wpau_ability_approve_callback( $input ) {
 		);
 	}
 
-	/*
-	 * Mirror the admin UI safeguard from check_user(): never flip the approval state of
-	 * the site's admin_email account to avoid accidental lockouts via automation.
-	 */
-	if ( get_bloginfo( 'admin_email' ) === $userdata->user_email ) {
+	$admin_user = get_user_by( 'email', get_bloginfo( 'admin_email' ) );
+	if ( $admin_user && (int) $admin_user->ID === $user_id ) {
 		return new WP_Error(
 			'wpau_cannot_edit_admin_email',
 			__( 'The site admin email user cannot be modified through this ability.', 'wp-approve-user' ),
@@ -189,11 +186,8 @@ function wpau_ability_unapprove_callback( $input ) {
 		);
 	}
 
-	/*
-	 * Mirror the admin UI safeguard from check_user(): never flip the approval state of
-	 * the site's admin_email account to avoid accidental lockouts via automation.
-	 */
-	if ( get_bloginfo( 'admin_email' ) === $userdata->user_email ) {
+	$admin_user = get_user_by( 'email', get_bloginfo( 'admin_email' ) );
+	if ( $admin_user && (int) $admin_user->ID === $user_id ) {
 		return new WP_Error(
 			'wpau_cannot_edit_admin_email',
 			__( 'The site admin email user cannot be modified through this ability.', 'wp-approve-user' ),
