@@ -125,7 +125,7 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 	 */
 	public function test_approve_callback_updates_meta_and_fires_action() {
 		$fired = array();
-		$spy   = function ( $user_id ) use ( &$fired ) {
+		$spy   = static function ( $user_id ) use ( &$fired ) {
 			$fired[] = $user_id;
 		};
 		add_action( 'wpau_approve', $spy );
@@ -151,7 +151,7 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		update_user_meta( static::$subscriber_id, 'wp-approve-user', 'approved' );
 
 		$fired = array();
-		$spy   = function ( $user_id ) use ( &$fired ) {
+		$spy   = static function ( $user_id ) use ( &$fired ) {
 			$fired[] = $user_id;
 		};
 		add_action( 'wpau_unapprove', $spy );
@@ -201,7 +201,7 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		 * the user confirms via email, so force the change through for tests.
 		 */
 		if ( get_bloginfo( 'admin_email' ) !== $target->user_email ) {
-			$restore_mail = function () use ( $target ) {
+			$restore_mail = static function () use ( $target ) {
 				return $target->user_email;
 			};
 			add_filter( 'pre_option_admin_email', $restore_mail );
@@ -239,7 +239,7 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		 * blocker below a no-op.
 		 */
 
-		$blocker = function ( $allcaps, $caps, $args ) {
+		$blocker = static function ( $allcaps, $caps, $args ) {
 			if ( isset( $args[0], $args[2] ) && 'edit_user' === $args[0] && (int) $args[2] === static::$subscriber_id ) {
 				$allcaps['edit_users'] = false;
 				foreach ( $caps as $cap ) {

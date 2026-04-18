@@ -39,5 +39,6 @@ class WPAU_Plugin_Loader_Test extends WP_UnitTestCase {
 		wp_approve_user_activate();
 
 		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertFalse( wp_next_scheduled( 'wpau_allowlist_users_cron' ) );
 	}
 }

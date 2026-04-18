@@ -33,9 +33,9 @@ class WPAU_Noop_Test extends WP_UnitTestCase {
 		delete_user_meta( $user_two, 'wp-approve-user' );
 
 		$this->assertSame( 1, wpau_whitelist_users( 1 ) );
-		$this->assertEquals( 1, get_user_meta( $user_one, 'wp-approve-user', true ) );
-		$this->assertEquals( 1, get_user_meta( $user_two, 'wp-approve-user', true ) );
-		$this->assertEquals( 1, get_user_meta( $user_one, 'wp-approve-user-mail-sent', true ) );
+		$this->assertSame( '1', get_user_meta( $user_one, 'wp-approve-user', true ) );
+		$this->assertSame( '1', get_user_meta( $user_two, 'wp-approve-user', true ) );
+		$this->assertSame( '1', get_user_meta( $user_one, 'wp-approve-user-mail-sent', true ) );
 	}
 
 	/**

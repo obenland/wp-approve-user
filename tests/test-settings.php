@@ -337,7 +337,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 * @covers ::auto_approve_rules_cb
 	 */
 	public function test_non_array_auto_approve_rules_coerced_to_empty() {
-		$filter = function ( $defaults ) {
+		$filter = static function ( $defaults ) {
 			unset( $defaults['auto_approve_rules'] );
 			return $defaults;
 		};
