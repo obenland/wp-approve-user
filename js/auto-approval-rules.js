@@ -104,9 +104,13 @@ document.addEventListener( 'DOMContentLoaded', function () {
 			const row = target.closest( '.wpau-auto-approve-rule' );
 			if ( row ) {
 				const input = row.querySelector( 'input[type="text"]' );
+				const select = row.querySelector( 'select' );
 				if ( input ) {
 					input.value = '';
 					input.focus();
+				}
+				if ( select ) {
+					select.selectedIndex = 0;
 				}
 			}
 			return;

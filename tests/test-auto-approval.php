@@ -276,6 +276,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		);
 
 		$user = $this->make_subscriber( 'admin-hire@example.test' );
+
 		/*
 		 * Simulate the user_register() path for an admin-created user: meta is
 		 * already 'approved', so auto_approve_user should bail out early.
@@ -536,16 +537,18 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$wp_settings_sections   = array();
 		$wp_settings_fields     = array();
 
-		$instance = new Obenland_Wp_Approve_User();
-		$instance->admin_init();
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+			$instance->admin_init();
 
-		$this->assertArrayHasKey( 'wp-approve-user', $wp_settings_sections );
-		$this->assertArrayHasKey( 'wpau-auto-approve', $wp_settings_sections['wp-approve-user'] );
-		$this->assertArrayHasKey( 'wpau-auto-approve', $wp_settings_fields['wp-approve-user'] );
-
-		$wp_registered_settings = $prev_settings;
-		$wp_settings_sections   = $prev_sections;
-		$wp_settings_fields     = $prev_fields;
+			$this->assertArrayHasKey( 'wp-approve-user', $wp_settings_sections );
+			$this->assertArrayHasKey( 'wpau-auto-approve', $wp_settings_sections['wp-approve-user'] );
+			$this->assertArrayHasKey( 'wpau-auto-approve', $wp_settings_fields['wp-approve-user'] );
+		} finally {
+			$wp_registered_settings = $prev_settings;
+			$wp_settings_sections   = $prev_sections;
+			$wp_settings_fields     = $prev_fields;
+		}
 	}
 
 	/**

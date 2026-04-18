@@ -1,13 +1,13 @@
 /**
  * Rule-based auto-approval coverage.
  *
- *  - An admin adds an `email_domain` rule via the settings page UI.
- *  - A user registers with a matching email via wp-login.php.
- *  - The user lands with `wp-approve-user` meta = `approved` (wp-cli probe).
+ *  - The spec stores an `email_domain` rule via the plugin option.
+ *  - The spec creates users via WP-CLI with matching and non-matching emails.
+ *  - The spec invokes the plugin approval logic via `wp eval`.
+ *  - The resulting `wp-approve-user` meta is verified via WP-CLI probes.
  *
- * The spec also re-uses the same spin-up to verify that a registration with
- * a non-matching email still ends up pending, so the rule truly gated the
- * auto-approval.
+ * This covers the rule-gated approval behavior, but it does not exercise the
+ * browser-based registration flow through `wp-login.php`.
  */
 const { test, expect } = require( '@playwright/test' );
 const { execSync } = require( 'node:child_process' );

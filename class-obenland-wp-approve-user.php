@@ -221,15 +221,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			$plugin_data['Version'],
 			true
 		);
-
-		wp_localize_script(
-			'wpau-auto-approval-rules',
-			'wpauAutoApprovalRules',
-			array(
-				'removeLabel' => __( 'Remove', 'wp-approve-user' ),
-				'types'       => $this->auto_approve_rule_types(),
-			)
-		);
 	}
 
 	/**
@@ -495,8 +486,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @return bool True when the rule matches, false otherwise.
 	 */
 	protected function auto_approve_rule_matches( $rule, $user ) {
-		if ( 'email_domain' === $rule['type'] ) {
-			$domain = strtolower( (string) $rule['value'] );
+		$type = sanitize_key( (string) $rule['type'] );
+
+		if ( 'email_domain' === $type ) {
+			// Normalize the rule value defensively: filter-injected rules bypass
+			// the settings sanitize pass, so the matcher can't assume lowercase
+			// or `@`-stripped input.
+			$domain = $this->sanitize_email_domain( (string) $rule['value'] );
 
 			if ( '' === $domain ) {
 				return false;
