@@ -76,7 +76,9 @@ document.addEventListener( 'DOMContentLoaded', function () {
 		const typeSelect = clone.querySelector(
 			'select.wpau-auto-approve-rule-type'
 		);
-		const valueInput = clone.querySelector( '.wpau-auto-approve-rule-value' );
+		const valueInput = clone.querySelector(
+			'.wpau-auto-approve-rule-value'
+		);
 		if ( typeSelect && valueInput ) {
 			const option = typeSelect.selectedOptions[ 0 ];
 			const placeholder = option ? option.dataset.placeholder : '';
