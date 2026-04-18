@@ -80,7 +80,7 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 == Upgrade Notice ==
 
 = 13 =
-Adds a richer Pending User Approvals dashboard widget with inline approve/reject actions and rule-based auto-approval for trusted email domains.
+Adds a richer Pending User Approvals dashboard widget with inline approve/reject actions and rule-based auto-approval for trusted email domains, suffixes, and IP ranges.
 
 = 12 =
 Migrates user approval data to a three-state system and adds a RESETLINK email placeholder. Back up before upgrading large installs.
@@ -90,7 +90,7 @@ Migrates user approval data to a three-state system and adds a RESETLINK email p
 
 = 13 =
 * Pending User Approvals dashboard widget now lists up to five pending users with inline Approve and Reject buttons that act via AJAX without leaving the dashboard.
-* Adds a rule-based auto-approval feature so admins can allow registrations from trusted email domains.
+* Adds a rule-based auto-approval feature so admins can allow registrations from trusted email domains, suffixes, and IP ranges.
 * Extends the core "New User Registration" admin email with a link to the pending users screen when a registration needs approval.
 
 = 12 =

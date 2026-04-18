@@ -509,11 +509,6 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Auto_approve_user coerces a non-array stored rules value to an empty list.
-	 *
-	 * @covers ::auto_approve_user
-	 */
-	/**
 	 * Sanitize_ip_range() accepts IPv4/IPv6 single addresses and IPv4 CIDR blocks.
 	 *
 	 * @covers ::sanitize_ip_range
