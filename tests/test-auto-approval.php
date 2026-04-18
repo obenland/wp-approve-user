@@ -373,274 +373,14 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), $defaults['auto_approve_rules'] );
 	}
 
-	/**
-	 * Keeps normalised valid email-domain rules through sanitize().
-	 *
-	 * @covers ::sanitize
-	 * @covers ::sanitize_auto_approve_rules
-	 * @covers ::sanitize_email_domain
-	 */
-	public function test_sanitize_keeps_valid_rules_normalised() {
-		global $wp_settings_errors;
-		$wp_settings_errors = array();
 
-		$instance = new Obenland_Wp_Approve_User();
-		$result   = $instance->sanitize(
-			array(
-				'auto_approve_rules' => array(
-					array(
-						'type'  => 'email_domain',
-						'value' => '@Example.Test',
-					),
-					array(
-						'type'  => 'email_domain',
-						'value' => '   CONTRACTOR.com  ',
-					),
-				),
-			)
-		);
 
-		$this->assertSame(
-			array(
-				array(
-					'type'  => 'email_domain',
-					'value' => 'example.test',
-				),
-				array(
-					'type'  => 'email_domain',
-					'value' => 'contractor.com',
-				),
-			),
-			$result['auto_approve_rules']
-		);
-		$this->assertEmpty( get_settings_errors( 'wp-approve-user' ) );
-	}
 
-	/**
-	 * Empty rows and invalid domains are dropped, with invalid ones surfaced
-	 * via add_settings_error.
-	 *
-	 * @covers ::sanitize_auto_approve_rules
-	 * @covers ::sanitize_email_domain
-	 */
-	public function test_sanitize_drops_empty_and_invalid_rules() {
-		global $wp_settings_errors;
-		$wp_settings_errors = array();
 
-		$instance = new Obenland_Wp_Approve_User();
-		$result   = $instance->sanitize(
-			array(
-				'auto_approve_rules' => array(
-					array(
-						'type'  => 'email_domain',
-						'value' => '',
-					),
-					array(
-						'type'  => 'email_domain',
-						'value' => 'bad domain.com',
-					),
-					array(
-						'type'  => 'email_domain',
-						'value' => 'user@example.test',
-					),
-					array(
-						'type'  => 'email_domain',
-						'value' => 'nolonger',
-					),
-					array(
-						'type'  => 'email_domain',
-						'value' => 'valid.test',
-					),
-				),
-			)
-		);
 
-		$this->assertSame(
-			array(
-				array(
-					'type'  => 'email_domain',
-					'value' => 'valid.test',
-				),
-			),
-			$result['auto_approve_rules']
-		);
 
-		$errors = get_settings_errors( 'wp-approve-user' );
-		$this->assertNotEmpty( $errors );
-		$this->assertSame( 'wpau_auto_approve_invalid', $errors[0]['code'] );
-		$this->assertStringContainsString( 'bad domain.com', $errors[0]['message'] );
-		$this->assertStringContainsString( 'user@example.test', $errors[0]['message'] );
-		$this->assertStringContainsString( 'nolonger', $errors[0]['message'] );
-	}
 
-	/**
-	 * Missing auto_approve_rules key in the submitted form input sanitizes to
-	 * an empty array without surfacing errors.
-	 *
-	 * @covers ::sanitize
-	 */
-	public function test_sanitize_without_rules_input_is_empty_array() {
-		$instance = new Obenland_Wp_Approve_User();
-		$result   = $instance->sanitize( array() );
 
-		$this->assertArrayHasKey( 'auto_approve_rules', $result );
-		$this->assertSame( array(), $result['auto_approve_rules'] );
-	}
-
-	/**
-	 * Returns an empty array when sanitize_auto_approve_rules() is given a
-	 * non-array (e.g., a form value that never existed).
-	 *
-	 * @covers ::sanitize_auto_approve_rules
-	 */
-	public function test_sanitize_rules_non_array_input() {
-		$instance = new Obenland_Wp_Approve_User();
-		$this->assertSame( array(), $instance->sanitize_auto_approve_rules( 'nope' ) );
-	}
-
-	/**
-	 * Unknown rule types are dropped and surfaced as invalid.
-	 *
-	 * @covers ::sanitize_auto_approve_rules
-	 */
-	public function test_sanitize_rules_rejects_unknown_type() {
-		global $wp_settings_errors;
-		$wp_settings_errors = array();
-
-		$instance = new Obenland_Wp_Approve_User();
-		$result   = $instance->sanitize_auto_approve_rules(
-			array(
-				array(
-					'type'  => 'some_future_type',
-					'value' => 'example.test',
-				),
-			)
-		);
-
-		$this->assertSame( array(), $result );
-		$errors = get_settings_errors( 'wp-approve-user' );
-		$this->assertNotEmpty( $errors );
-	}
-
-	/**
-	 * The settings UI registers a new section and rules field on admin_init.
-	 *
-	 * @covers ::admin_init
-	 */
-	public function test_admin_init_registers_auto_approve_section() {
-		global $wp_registered_settings, $wp_settings_sections, $wp_settings_fields;
-		$prev_settings = $wp_registered_settings;
-		$prev_sections = $wp_settings_sections;
-		$prev_fields   = $wp_settings_fields;
-
-		$wp_registered_settings = array();
-		$wp_settings_sections   = array();
-		$wp_settings_fields     = array();
-
-		try {
-			$instance = new Obenland_Wp_Approve_User();
-			$instance->admin_init();
-
-			$this->assertArrayHasKey( 'wp-approve-user', $wp_settings_sections );
-			$this->assertArrayHasKey( 'wpau-auto-approve', $wp_settings_sections['wp-approve-user'] );
-			$this->assertArrayHasKey( 'wpau-auto-approve', $wp_settings_fields['wp-approve-user'] );
-		} finally {
-			$wp_registered_settings = $prev_settings;
-			$wp_settings_sections   = $prev_sections;
-			$wp_settings_fields     = $prev_fields;
-		}
-	}
-
-	/**
-	 * The repeatable rules callback renders a row per stored rule plus one
-	 * trailing blank row for the no-JS add flow.
-	 *
-	 * @covers ::auto_approve_rules_cb
-	 * @covers ::render_auto_approve_rule_row
-	 * @covers ::auto_approve_section_description_cb
-	 */
-	public function test_auto_approve_rules_cb_renders_existing_plus_blank_row() {
-		$this->store_rules(
-			array(
-				array(
-					'type'  => 'email_domain',
-					'value' => 'example.test',
-				),
-			)
-		);
-
-		$instance = new Obenland_Wp_Approve_User();
-
-		ob_start();
-		$instance->auto_approve_section_description_cb();
-		$desc = ob_get_clean();
-		$this->assertStringContainsString( 'Matching new registrations', $desc );
-
-		ob_start();
-		$instance->auto_approve_rules_cb();
-		$html = ob_get_clean();
-
-		$this->assertStringContainsString( 'wpau-auto-approve-rules-list', $html );
-		$this->assertStringContainsString( 'value="example.test"', $html );
-		// Two rows: the stored rule + the trailing blank row.
-		$this->assertSame( 2, substr_count( $html, 'class="wpau-auto-approve-rule"' ) );
-		$this->assertStringContainsString( 'wpau_auto_approve_add_row', $html );
-	}
-
-	/**
-	 * Exposes the email_domain type with a translatable label.
-	 *
-	 * @covers ::auto_approve_rule_types
-	 */
-	public function test_auto_approve_rule_types_includes_email_domain() {
-		$instance = new Obenland_Wp_Approve_User();
-		$types    = $instance->auto_approve_rule_types();
-
-		$this->assertArrayHasKey( 'email_domain', $types );
-		$this->assertNotEmpty( $types['email_domain'] );
-	}
-
-	/**
-	 * A stored non-array value for auto_approve_rules is coerced to an empty list.
-	 *
-	 * @covers ::auto_approve_user
-	 * @covers ::auto_approve_rules_cb
-	 */
-	public function test_non_array_auto_approve_rules_coerced_to_empty() {
-		$filter = function ( $defaults ) {
-			unset( $defaults['auto_approve_rules'] );
-			return $defaults;
-		};
-		add_filter( 'wpau_default_options', $filter );
-
-		update_option(
-			'wp-approve-user',
-			array(
-				'wpau-send-approve-email'   => false,
-				'wpau-send-unapprove-email' => false,
-				'wpau-approve-email'        => '',
-				'wpau-unapprove-email'      => '',
-				'auto_approve_rules'        => 'not-an-array',
-			)
-		);
-
-		$user = $this->make_subscriber( 'nobody@example.test' );
-		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
-
-		$instance = new Obenland_Wp_Approve_User();
-
-		/* auto_approve_user branch. */
-		$instance->auto_approve_user( $user->ID );
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
-
-		/* auto_approve_rules_cb branch — should still render the blank row. */
-		ob_start();
-		$instance->auto_approve_rules_cb();
-		$html = ob_get_clean();
-		$this->assertStringContainsString( 'wpau-auto-approve-rule', $html );
-
-		remove_filter( 'wpau_default_options', $filter );
-	}
 
 	/**
 	 * A ghost user id (pending meta but no user row) bails without firing approve.
@@ -730,43 +470,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
 	}
 
-	/**
-	 * Auto_approve_rules_cb() falls back to an empty list when nothing is stored.
-	 *
-	 * @covers ::auto_approve_rules_cb
-	 */
-	public function test_auto_approve_rules_cb_renders_placeholder_when_option_missing() {
-		delete_option( 'wp-approve-user' );
 
-		$instance = new Obenland_Wp_Approve_User();
-
-		ob_start();
-		$instance->auto_approve_rules_cb();
-		$html = ob_get_clean();
-
-		$this->assertStringContainsString( 'wpau-auto-approve-rule', $html );
-	}
-
-	/**
-	 * Non-array rule entries are skipped by the settings sanitizer.
-	 *
-	 * @covers ::sanitize_auto_approve_rules
-	 */
-	public function test_sanitize_skips_non_array_rules() {
-		$instance = new Obenland_Wp_Approve_User();
-		$result   = $instance->sanitize_auto_approve_rules(
-			array(
-				'not-an-array',
-				array(
-					'type'  => 'email_domain',
-					'value' => 'example.test',
-				),
-			)
-		);
-
-		$this->assertCount( 1, $result );
-		$this->assertSame( 'example.test', $result[0]['value'] );
-	}
 
 	/**
 	 * Sanitize_email_domain() returns an empty string for empty input.
@@ -774,12 +478,69 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	 * @covers ::sanitize_email_domain
 	 */
 	public function test_sanitize_email_domain_returns_empty_on_empty_input() {
-		$instance = new Obenland_Wp_Approve_User();
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_domain( '' ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_domain( '   ' ) );
+	}
 
-		$method = new ReflectionMethod( $instance, 'sanitize_email_domain' );
-		$method->setAccessible( true );
+	/**
+	 * Rejects values that don't look like a bare domain.
+	 *
+	 * @covers ::sanitize_email_domain
+	 */
+	public function test_sanitize_email_domain_rejects_malformed_values() {
+		/* Internal whitespace. */
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_domain( 'bad domain.test' ) );
+		/* Still contains an @ after the leading-@ strip. */
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_domain( 'user@example.test' ) );
+		/* No dot at all — not a domain. */
+		$this->assertSame( '', Obenland_Wp_Approve_User::sanitize_email_domain( 'localhost' ) );
+	}
 
-		$this->assertSame( '', $method->invoke( $instance, '' ) );
-		$this->assertSame( '', $method->invoke( $instance, '   ' ) );
+	/**
+	 * Returns the normalized domain on the happy path.
+	 *
+	 * @covers ::sanitize_email_domain
+	 */
+	public function test_sanitize_email_domain_normalises_valid_input() {
+		$this->assertSame(
+			'example.test',
+			Obenland_Wp_Approve_User::sanitize_email_domain( '  @Example.TEST ' )
+		);
+	}
+
+	/**
+	 * Auto_approve_user coerces a non-array stored rules value to an empty list.
+	 *
+	 * @covers ::auto_approve_user
+	 */
+	public function test_auto_approve_user_handles_non_array_rules() {
+		$filter = function ( $defaults ) {
+			unset( $defaults['auto_approve_rules'] );
+			return $defaults;
+		};
+		add_filter( 'wpau_default_options', $filter );
+
+		try {
+			update_option(
+				'wp-approve-user',
+				array(
+					'wpau-send-approve-email'   => false,
+					'wpau-send-unapprove-email' => false,
+					'wpau-approve-email'        => '',
+					'wpau-unapprove-email'      => '',
+					'auto_approve_rules'        => 'not-an-array',
+				)
+			);
+
+			$user = $this->make_subscriber( 'nomatch@example.test' );
+			update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+			$instance = new Obenland_Wp_Approve_User();
+			$instance->auto_approve_user( $user->ID );
+
+			$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		} finally {
+			remove_filter( 'wpau_default_options', $filter );
+		}
 	}
 }
