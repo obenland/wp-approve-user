@@ -346,9 +346,7 @@ class WPAU_Settings {
 		$name_type  = sprintf( 'wp-approve-user[auto_approve_rules][%d][type]', (int) $index );
 		$name_value = sprintf( 'wp-approve-user[auto_approve_rules][%d][value]', (int) $index );
 		?>
-		<li class="wpau-auto-approve-rule" draggable="true">
-			<span class="wpau-auto-approve-rule-handle" aria-hidden="true" title="<?php esc_attr_e( 'Drag to reorder', 'wp-approve-user' ); ?>">&#x2630;</span>
-
+		<li class="wpau-auto-approve-rule">
 			<label class="screen-reader-text" for="wpau-auto-approve-rule-type-<?php echo esc_attr( (int) $index ); ?>">
 				<?php esc_html_e( 'Rule type', 'wp-approve-user' ); ?>
 			</label>
