@@ -270,41 +270,8 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$this->assertNotFalse(
 			has_action( 'delete_user', array( $instance, 'delete_user' ) )
 		);
-		$this->assertNotFalse(
-			has_action( 'admin_init', array( $instance, 'admin_init' ) )
-		);
-
-		$menu_hook = is_multisite() ? 'network_admin_menu' : 'admin_menu';
-		$this->assertNotFalse(
-			has_action( $menu_hook, array( $instance, 'admin_menu' ) )
-		);
 	}
 
-	/**
-	 * The wpau_default_options filter flips the send-approve-email default and the rendered checkbox reflects it.
-	 *
-	 * @covers ::__construct
-	 * @covers ::default_options
-	 */
-	public function test_default_options_filter_is_applied() {
-		add_filter(
-			'wpau_default_options',
-			array( $this, 'filter_default_options_enable_approve_email' )
-		);
-		delete_option( 'wp-approve-user' );
-
-		$instance = new Obenland_Wp_Approve_User();
-
-		// Observable effect: checkbox_cb renders `checked` when the option is truthy.
-		ob_start();
-		$instance->checkbox_cb(
-			array(
-				'name'        => 'wpau-send-approve-email',
-				'description' => 'Send it.',
-			)
-		);
-		$this->assertStringContainsString( "checked='checked'", ob_get_clean() );
-	}
 
 	/**
 	 * Sets a protected property on the given instance via Reflection.
@@ -603,16 +570,6 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$this->assertTrue( wp_script_is( 'wp-approve-user', 'enqueued' ) );
 	}
 
-	/**
-	 * Enqueues the settings-page stylesheet on the WP Approve User settings screen.
-	 *
-	 * @covers ::admin_print_styles_settings_page_wp_approve_user
-	 */
-	public function test_admin_print_styles_settings_page_enqueues_style() {
-		$instance = new Obenland_Wp_Approve_User();
-		$instance->admin_print_styles_settings_page_wp_approve_user();
-		$this->assertTrue( wp_style_is( 'wp-approve-user', 'enqueued' ) );
-	}
 
 	/**
 	 * Rewrites the post-registration login message to explain that approval is pending.
@@ -653,139 +610,9 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$this->assertContains( 'wpau_confirmation_error', $codes );
 	}
 
-	/**
-	 * Appends the pending-count bubble to the Users menu item and registers the settings submenu.
-	 *
-	 * @covers ::admin_menu
-	 */
-	public function test_admin_menu_appends_count_and_submenu() {
-		global $menu, $submenu;
-		$prev_menu    = $menu;
-		$prev_submenu = $submenu;
 
-		$menu    = array();
-		$submenu = array();
-		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-		$menu[70] = array( 'Users', 'list_users', 'users.php' );
 
-		$instance = new Obenland_Wp_Approve_User();
-		$this->set_protected( $instance, 'pending_count', 4 );
-		$instance->admin_menu();
 
-		$this->assertStringContainsString( 'plugin-count">4', $menu[70][0] );
-		$parent_slug = is_multisite() ? 'settings.php' : 'options-general.php';
-		$this->assertArrayHasKey( $parent_slug, $submenu );
-
-		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-		$menu    = $prev_menu;
-		$submenu = $prev_submenu;
-	}
-
-	/**
-	 * Wires the plugin sanitize callback onto the wp-approve-user setting so raw form input cannot bypass it.
-	 *
-	 * Protects against a regression where `register_setting` stops routing
-	 * option saves through `Obenland_Wp_Approve_User::sanitize()` — which
-	 * would allow unsanitized form input to reach the options table.
-	 *
-	 * @covers ::admin_init
-	 */
-	public function test_admin_init_wires_sanitize_callback_for_option() {
-		global $wp_registered_settings, $wp_settings_sections, $wp_settings_fields;
-		$prev_settings = $wp_registered_settings;
-		$prev_sections = $wp_settings_sections;
-		$prev_fields   = $wp_settings_fields;
-
-		$wp_registered_settings = array();
-		$wp_settings_sections   = array();
-		$wp_settings_fields     = array();
-
-		$instance = new Obenland_Wp_Approve_User();
-		$instance->admin_init();
-
-		$this->assertArrayHasKey( 'wp-approve-user', $wp_registered_settings );
-		$callback = $wp_registered_settings['wp-approve-user']['sanitize_callback'];
-		$this->assertIsArray( $callback );
-		$this->assertSame( $instance, $callback[0] );
-		$this->assertSame( 'sanitize', $callback[1] );
-
-		// The sanitize callback must actually coerce input; prove it by round-tripping.
-		$sanitized = call_user_func( $callback, array( 'wpau-send-approve-email' => '1' ) );
-		$this->assertTrue( $sanitized['wpau-send-approve-email'] );
-		$this->assertFalse( $sanitized['wpau-send-unapprove-email'] );
-
-		$wp_registered_settings = $prev_settings;
-		$wp_settings_sections   = $prev_sections;
-		$wp_settings_fields     = $prev_fields;
-	}
-
-	/**
-	 * The settings page renders the form together with the section description, checkbox and textarea callbacks.
-	 *
-	 * @covers ::settings_page
-	 * @covers ::section_description_cb
-	 * @covers ::checkbox_cb
-	 * @covers ::textarea_cb
-	 */
-	public function test_settings_page_outputs_form_and_callbacks() {
-		$instance = new Obenland_Wp_Approve_User();
-
-		ob_start();
-		$instance->settings_page();
-		$html = ob_get_clean();
-		$this->assertStringContainsString( 'Approve User Settings', $html );
-
-		ob_start();
-		$instance->section_description_cb();
-		$section = ob_get_clean();
-		$this->assertStringContainsString( 'USERNAME', $section );
-
-		ob_start();
-		$instance->checkbox_cb(
-			array(
-				'name'        => 'wpau-send-approve-email',
-				'description' => 'Send it.',
-			)
-		);
-		$checkbox = ob_get_clean();
-		$this->assertStringContainsString( 'type="checkbox"', $checkbox );
-
-		ob_start();
-		$instance->textarea_cb(
-			array(
-				'label_for' => 'wpau-approve-email',
-				'name'      => 'wpau-approve-email',
-				'setting'   => 'wpau-send-approve-email',
-			)
-		);
-		$textarea = ob_get_clean();
-		$this->assertStringContainsString( '<textarea', $textarea );
-	}
-
-	/**
-	 * Trims email bodies, coerces checkbox flags to booleans, and defaults missing fields to empty strings.
-	 *
-	 * @covers ::sanitize
-	 */
-	public function test_sanitize_trims_and_coerces() {
-		$instance = new Obenland_Wp_Approve_User();
-		$result   = $instance->sanitize(
-			array(
-				'wpau-send-approve-email' => '1',
-				'wpau-approve-email'      => '  hello  ',
-				'wpau-unapprove-email'    => 'bye',
-			)
-		);
-
-		$this->assertTrue( $result['wpau-send-approve-email'] );
-		$this->assertFalse( $result['wpau-send-unapprove-email'] );
-		$this->assertSame( 'hello', $result['wpau-approve-email'] );
-		$this->assertSame( 'bye', $result['wpau-unapprove-email'] );
-
-		$empty = $instance->sanitize( array() );
-		$this->assertSame( '', $empty['wpau-approve-email'] );
-		$this->assertSame( '', $empty['wpau-unapprove-email'] );
-	}
 
 	/**
 	 * Approving a new registration dispatches the approval email with placeholders replaced and records the mail-sent meta.
@@ -1359,20 +1186,6 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'RESETLINK', $result );
 	}
 
-	/**
-	 * The settings section description lists RESETLINK as a supported placeholder.
-	 *
-	 * @covers ::section_description_cb
-	 */
-	public function test_section_description_advertises_resetlink() {
-		$instance = new Obenland_Wp_Approve_User();
-
-		ob_start();
-		$instance->section_description_cb();
-		$section = ob_get_clean();
-
-		$this->assertStringContainsString( 'RESETLINK', $section );
-	}
 
 	/**
 	 * Deprecated update_option_users_can_register() emits a _deprecated_function notice.

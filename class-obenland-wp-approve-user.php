@@ -35,11 +35,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	/**
 	 * Users flagged as pending.
 	 *
+	 * Null until the count has been computed for the current request.
+	 *
 	 * @since 12
 	 *
-	 * @var int
+	 * @var int|null
 	 */
-	protected $pending_count = 0;
+	protected $pending_count = null;
 
 	/**
 	 * Users flagged as unapproved.
@@ -121,6 +123,37 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	}
 
 	/**
+	 * Returns the merged plugin options array.
+	 *
+	 * Read-only accessor for collaborator classes (settings UI, dashboard
+	 * widget) that need to render or reason about stored preferences.
+	 *
+	 * @since 13
+	 *
+	 * @return array
+	 */
+	public function get_options() {
+		return $this->options;
+	}
+
+	/**
+	 * Returns the eagerly-computed pending-user count cached by the constructor.
+	 *
+	 * The count is populated once per request during `is_admin()` bootstrapping
+	 * and reused by the admin-menu bubble to avoid a second `count_users`-style
+	 * query. Non-admin callers get `0` — the property stays `null` outside admin
+	 * and the int cast coerces it — so check `is_admin()` at the call site if a
+	 * non-admin zero would be misleading.
+	 *
+	 * @since 13
+	 *
+	 * @return int Cached count, or 0 when the constructor didn't populate it.
+	 */
+	public function get_pending_count_cached() {
+		return (int) $this->pending_count;
+	}
+
+	/**
 	 * Hooks in all the hooks :)
 	 *
 	 * @author Konstantin Obenland
@@ -131,14 +164,16 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		$this->hook( 'user_row_actions' );
 		$this->hook( 'ms_user_row_actions', 'user_row_actions' );
 		$this->hook( 'wp_authenticate_user' );
+		$this->hook( 'user_register', 5, 'capture_registration_ip' );
 		$this->hook( 'user_register' );
+		$this->hook( 'user_register', 20, 'auto_approve_user' );
 		$this->hook( 'register_new_user', 0 );
+		$this->hook( 'wp_new_user_notification_email_admin' );
 		$this->hook( 'wp_login_errors' );
 		$this->hook( 'shake_error_codes' );
 
 		$this->hook( 'admin_print_scripts-users.php' );
 		$this->hook( 'admin_print_scripts-site-users.php', 'admin_print_scripts_users_php' );
-		$this->hook( 'admin_print_styles-settings_page_wp-approve-user' );
 
 		$this->hook( 'load-users.php', 'map_action2' );
 		$this->hook( 'load-site-users.php', 'map_action2' );
@@ -150,7 +185,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 		$this->hook( 'wpau_approve' );
 		$this->hook( 'delete_user' );
-		$this->hook( 'admin_init' );
 
 		if ( is_admin() ) {
 			$this->hook( 'views_users' );
@@ -159,10 +193,12 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			$this->hook( 'pre_user_query' );
 		}
 
-		if ( is_multisite() ) {
-			$this->hook( 'network_admin_menu', 'admin_menu' );
-		} else {
-			$this->hook( 'admin_menu' );
+		if ( class_exists( 'WPAU_Dashboard_Widget' ) ) {
+			( new WPAU_Dashboard_Widget() )->register_hooks();
+		}
+
+		if ( class_exists( 'WPAU_Settings' ) ) {
+			( new WPAU_Settings() )->register_hooks();
 		}
 	}
 
@@ -192,25 +228,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				'approve'   => __( 'Approve', 'wp-approve-user' ),
 				'unapprove' => __( 'Unapprove', 'wp-approve-user' ),
 			)
-		);
-	}
-
-	/**
-	 * Enqueues the style on the settings page
-	 *
-	 * @author Konstantin Obenland
-	 * @since  2.0.0 - 10.04.2012
-	 * @access public
-	 */
-	public function admin_print_styles_settings_page_wp_approve_user() {
-		$plugin_data = get_plugin_data( __FILE__, false, false );
-		$suffix      = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-		wp_enqueue_style(
-			$this->textdomain,
-			plugins_url( "/css/settings-page{$suffix}.css", __FILE__ ),
-			array(),
-			$plugin_data['Version']
 		);
 	}
 
@@ -402,6 +419,230 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	}
 
 	/**
+	 * Captures the registering user's IP for later rule evaluation.
+	 *
+	 * Runs on `user_register` at priority 5, before `user_register()` writes
+	 * the three-state meta and before `auto_approve_user()` evaluates rules
+	 * at priority 20, so the IP is available when a rule matcher looks it up.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param int $user_id ID of the newly registered user.
+	 */
+	public function capture_registration_ip( $user_id ) {
+		$ip = isset( $_SERVER['REMOTE_ADDR'] )
+			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
+			: '';
+
+		if ( '' === $ip || false === filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			return;
+		}
+
+		update_user_meta( $user_id, 'wp-approve-user-ip', $ip );
+	}
+
+	/**
+	 * Auto-approves newly registered users when an auto-approval rule matches.
+	 *
+	 * Runs on `user_register` at priority 20, after `user_register()` has
+	 * written the initial `'pending'` status. Admin-created users are left
+	 * alone because they already have `'approved'` meta.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param int $user_id ID of the newly registered user.
+	 */
+	public function auto_approve_user( $user_id ) {
+		if ( 'pending' !== get_user_meta( $user_id, 'wp-approve-user', true ) ) {
+			return;
+		}
+
+		$stored = isset( $this->options['auto_approve_rules'] ) && is_array( $this->options['auto_approve_rules'] )
+			? $this->options['auto_approve_rules']
+			: array();
+
+		/**
+		 * Filters the auto-approval rules evaluated against new registrations.
+		 *
+		 * Developers can add rules programmatically without touching the
+		 * stored option.
+		 *
+		 * @since 13
+		 *
+		 * @param array $rules   List of rule arrays (`type`, `value`).
+		 * @param int   $user_id ID of the newly registered user.
+		 */
+		$rules = apply_filters( 'wpau_auto_approve_rules', $stored, $user_id );
+
+		if ( empty( $rules ) || ! is_array( $rules ) ) {
+			return;
+		}
+
+		$user = get_userdata( $user_id );
+		if ( ! $user || empty( $user->user_email ) ) {
+			return;
+		}
+
+		foreach ( $rules as $rule ) {
+			if ( ! is_array( $rule ) || empty( $rule['type'] ) || ! isset( $rule['value'] ) ) {
+				continue;
+			}
+
+			if ( $this->auto_approve_rule_matches( $rule, $user ) ) {
+				self::mark_approved( $user_id );
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Flips a user's approval state to `approved` and fires `wpau_approve`.
+	 *
+	 * Shared helper so the admin UI, auto-approval rules, and any future
+	 * callers converge on the same sequence of side-effects.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param int $user_id User ID to mark approved.
+	 */
+	public static function mark_approved( $user_id ) {
+		update_user_meta( $user_id, 'wp-approve-user', 'approved' );
+
+		/**
+		 * Fires after a user has been approved.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param int $user_id User ID.
+		 */
+		do_action( 'wpau_approve', $user_id );
+	}
+
+	/**
+	 * Flips a user's approval state to `unapproved`, destroys their sessions,
+	 * and fires `wpau_unapprove`.
+	 *
+	 * Shared helper so the admin UI, AJAX handlers, and any future callers
+	 * converge on the same sequence of side-effects.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param int $user_id User ID to mark unapproved.
+	 */
+	public static function mark_unapproved( $user_id ) {
+		update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
+		WP_Session_Tokens::get_instance( $user_id )->destroy_all();
+
+		/**
+		 * Fires after a user has been unapproved.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param int $user_id User ID.
+		 */
+		do_action( 'wpau_unapprove', $user_id );
+	}
+
+	/**
+	 * Evaluates a single auto-approval rule against a user.
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param array   $rule Rule with `type` and `value` keys.
+	 * @param WP_User $user User being evaluated.
+	 * @return bool True when the rule matches, false otherwise.
+	 */
+	protected function auto_approve_rule_matches( $rule, $user ) {
+		$type  = sanitize_key( (string) $rule['type'] );
+		$email = strtolower( (string) $user->user_email );
+
+		if ( 'email_domain' === $type ) {
+			/*
+			 * Normalize the rule value defensively: filter-injected rules bypass
+			 * the settings sanitize pass, so the matcher can't assume lowercase
+			 * or `@`-stripped input.
+			 */
+			$domain = self::sanitize_email_domain( (string) $rule['value'] );
+			if ( '' === $domain ) {
+				return false;
+			}
+
+			$at_pos    = strrpos( $email, '@' );
+			$user_host = false === $at_pos ? '' : substr( $email, $at_pos + 1 );
+
+			return '' !== $user_host && $user_host === $domain;
+		}
+
+		if ( 'email_suffix' === $type ) {
+			$suffix = self::sanitize_email_suffix( (string) $rule['value'] );
+			if ( '' === $suffix ) {
+				return false;
+			}
+
+			/* A bare ".edu" matches "alice@mit.edu" but not "bob@studyedu.com". */
+			return '' !== $email && substr( $email, -strlen( $suffix ) ) === $suffix;
+		}
+
+		if ( 'ip_range' === $type ) {
+			$range = self::sanitize_ip_range( (string) $rule['value'] );
+			if ( '' === $range ) {
+				return false;
+			}
+
+			$user_ip = (string) get_user_meta( $user->ID, 'wp-approve-user-ip', true );
+
+			return '' !== $user_ip && self::ip_in_range( $user_ip, $range );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Appends a link to the pending-users screen to WordPress's admin notification email
+	 * when the newly registered user is awaiting approval.
+	 *
+	 * WordPress already sends the admin a "New User Registration" email; this filter
+	 * extends that existing email rather than dispatching a second, near-duplicate one.
+	 *
+	 * @since 13
+	 *
+	 * @param array   $email {
+	 *     Arguments passed to wp_mail() for the admin notification.
+	 *
+	 *     @type string $to      Admin email address.
+	 *     @type string $subject Email subject.
+	 *     @type string $message Email body.
+	 *     @type string $headers Email headers.
+	 * }
+	 * @param WP_User $user     The newly registered user.
+	 * @param string  $blogname Site name.
+	 * @return array Filtered email arguments.
+	 */
+	public function wp_new_user_notification_email_admin( $email, $user, $blogname ) {
+		if ( 'pending' !== get_user_meta( $user->ID, 'wp-approve-user', true ) ) {
+			return $email;
+		}
+
+		$pending_url = is_multisite()
+			? network_admin_url( 'users.php?role=wpau_pending' )
+			: admin_url( 'users.php?role=wpau_pending' );
+
+		$email['message'] = rtrim( $email['message'] ) . "\r\n\r\n" . sprintf(
+			/* translators: %s: URL to the pending users admin screen. */
+			__( 'Review pending users: %s', 'wp-approve-user' ),
+			$pending_url
+		);
+
+		return $email;
+	}
+
+
+	/**
 	 * Fires after a new user registration has been recorded.
 	 *
 	 * Prevents WordPress to send the new user notification email, if the user has to be approved first.
@@ -577,217 +818,164 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	}
 
 	/**
-	 * Enhances the User menu item to reflect the amount of unapproved users.
+	 * Normalizes and validates an email-domain rule value.
 	 *
-	 * @author Konstantin Obenland
-	 * @since  1.1 - 12.02.2012
+	 * Strips a leading `@`, lowercases, and rejects anything that still
+	 * contains whitespace or `@`, or that doesn't look like a domain
+	 * (needs at least one dot).
+	 *
+	 * @since 13
 	 * @access public
+	 * @static
+	 *
+	 * @param  string $value Raw domain value.
+	 * @return string Normalized domain, or empty string when the value is invalid.
 	 */
-	public function admin_menu() {
-		if ( current_user_can( 'list_users' ) && version_compare( get_bloginfo( 'version' ), '3.2', '>=' ) ) {
-			global $menu;
+	public static function sanitize_email_domain( $value ) {
+		$domain = ltrim( trim( $value ), '@' );
+		$domain = strtolower( $domain );
 
-			foreach ( $menu as $key => $menu_item ) {
-				if ( array_search( 'users.php', $menu_item, true ) ) {
-					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-					$menu[ $key ][0] .= sprintf( ' <span class="update-plugins count-%1$s"><span class="plugin-count">%1$s</span></span>', $this->pending_count );
+		if ( '' === $domain ) {
+			return '';
+		}
 
-					break; // Bail on success.
-				}
+		if ( preg_match( '/\s/', $domain ) ) {
+			return '';
+		}
+
+		if ( false !== strpos( $domain, '@' ) ) {
+			return '';
+		}
+
+		if ( false === strpos( $domain, '.' ) ) {
+			return '';
+		}
+
+		return $domain;
+	}
+
+	/**
+	 * Normalizes and validates an email-suffix rule value.
+	 *
+	 * Suffix rules match any email whose address ends with the given string,
+	 * so `.edu` catches every university email and `@acme.co.uk` catches every
+	 * address at that specific host. The suffix must begin with `.` or `@` so
+	 * it can't accidentally swallow a lookalike substring (`edu` alone would
+	 * false-match `alice@studyedu.com`).
+	 *
+	 * @since 13
+	 * @access public
+	 * @static
+	 *
+	 * @param  string $value Raw suffix value.
+	 * @return string Normalized suffix, or empty string when the value is invalid.
+	 */
+	public static function sanitize_email_suffix( $value ) {
+		$suffix = strtolower( trim( $value ) );
+
+		/* Must carry the leading anchor plus at least one domain character. */
+		if ( strlen( $suffix ) < 2 ) {
+			return '';
+		}
+
+		if ( preg_match( '/\s/', $suffix ) ) {
+			return '';
+		}
+
+		if ( '.' !== $suffix[0] && '@' !== $suffix[0] ) {
+			return '';
+		}
+
+		return $suffix;
+	}
+
+	/**
+	 * Normalizes and validates an IP-address rule value.
+	 *
+	 * Accepts either a single IP (IPv4 or IPv6) or an IPv4 CIDR block like
+	 * `192.168.1.0/24`. IPv6 ranges are not supported in v13 because the
+	 * matcher's prefix math uses `ip2long`, which is IPv4-only.
+	 *
+	 * @since 13
+	 * @access public
+	 * @static
+	 *
+	 * @param  string $value Raw IP or CIDR.
+	 * @return string Normalized value, or empty string when the value is invalid.
+	 */
+	public static function sanitize_ip_range( $value ) {
+		$value = trim( $value );
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( false !== strpos( $value, '/' ) ) {
+			list( $ip, $prefix ) = explode( '/', $value, 2 );
+
+			if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+				return '';
 			}
+
+			if ( ! ctype_digit( $prefix ) ) {
+				return '';
+			}
+
+			$prefix = (int) $prefix;
+			if ( $prefix < 0 || $prefix > 32 ) {
+				return '';
+			}
+
+			return $ip . '/' . $prefix;
 		}
 
-		add_submenu_page(
-			is_multisite() ? 'settings.php' : 'options-general.php',
-			esc_html__( 'Approve User', 'wp-approve-user' ), // Page Title.
-			esc_html__( 'Approve User', 'wp-approve-user' ), // Menu Title.
-			'promote_users',                                 // Capability.
-			$this->textdomain,                               // Menu Slug.
-			array( $this, 'settings_page' )                  // Function.
-		);
+		$validated = filter_var( $value, FILTER_VALIDATE_IP );
+
+		return false === $validated ? '' : $validated;
 	}
 
 	/**
-	 * Registers the plugins' settings.
+	 * Tests whether an IP falls inside a range produced by sanitize_ip_range().
 	 *
-	 * @author Konstantin Obenland
-	 * @since  1.0.0 - 02.03.2012
-	 * @access public
-	 */
-	public function admin_init() {
-		register_setting(
-			$this->textdomain,
-			'wp-approve-user',
-			array( &$this, 'sanitize' )
-		);
-
-		add_settings_section(
-			$this->textdomain,
-			esc_html__( 'Email contents', 'wp-approve-user' ),
-			array( $this, 'section_description_cb' ),
-			$this->textdomain
-		);
-
-		add_settings_field(
-			'wp-approve-user[send-approve-email]',
-			esc_html__( 'Send Approve Email', 'wp-approve-user' ),
-			array( $this, 'checkbox_cb' ),
-			$this->textdomain,
-			$this->textdomain,
-			array(
-				'name'        => 'wpau-send-approve-email',
-				'description' => __( 'Send email on approval.', 'wp-approve-user' ),
-			)
-		);
-
-		add_settings_field(
-			'wp-approve-user[approve-email]',
-			esc_html__( 'Approve Email', 'wp-approve-user' ),
-			array( $this, 'textarea_cb' ),
-			$this->textdomain,
-			$this->textdomain,
-			array(
-				'label_for' => 'wpau-approve-email',
-				'name'      => 'wpau-approve-email',
-				'setting'   => 'wpau-send-approve-email',
-			)
-		);
-
-		add_settings_field(
-			'wp-approve-user[send-unapprove-email]',
-			esc_html__( 'Send Unapprove Email', 'wp-approve-user' ),
-			array( $this, 'checkbox_cb' ),
-			$this->textdomain,
-			$this->textdomain,
-			array(
-				'name'        => 'wpau-send-unapprove-email',
-				'description' => __( 'Send email on unapproval.', 'wp-approve-user' ),
-			)
-		);
-		add_settings_field(
-			'wp-approve-user[unapprove-email]',
-			esc_html__( 'Unapprove Email', 'wp-approve-user' ),
-			array( $this, 'textarea_cb' ),
-			$this->textdomain,
-			$this->textdomain,
-			array(
-				'label_for' => 'wpau-unapprove-email',
-				'name'      => 'wpau-unapprove-email',
-				'setting'   => 'wpau-send-unapprove-email',
-			)
-		);
-	}
-
-	/**
-	 * Displays the options page.
+	 * Single-value ranges use string equality. CIDR ranges (IPv4 only) compare
+	 * the masked subnet bits via `ip2long`.
 	 *
-	 * @author Konstantin Obenland
-	 * @since  2.0.0 - 31.03.2012
+	 * @since 13
 	 * @access public
-	 */
-	public function settings_page() {
-		?>
-		<div class="wrap">
-			<h2><?php esc_html_e( 'Approve User Settings', 'wp-approve-user' ); ?></h2>
-
-			<div id="poststuff">
-				<div id="post-body" class="obenland-wp columns-2">
-					<div id="post-body-content">
-						<form method="post" action="options.php">
-							<?php
-							settings_fields( $this->textdomain );
-							do_settings_sections( $this->textdomain );
-							submit_button();
-							?>
-						</form>
-					</div>
-					<div id="postbox-container-1">
-						<div id="side-info-column">
-							<?php
-							$this->donate_box();
-							$this->feed_box();
-							?>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-		<?php
-	}
-
-	/**
-	 * Prints the section description.
+	 * @static
 	 *
-	 * @author Konstantin Obenland
-	 * @since  2.0.0 - 31.03.2012
-	 * @access public
+	 * @param  string $ip    IP to test (already validated upstream).
+	 * @param  string $range Normalized range from sanitize_ip_range().
+	 * @return bool
 	 */
-	public function section_description_cb() {
-		$tags = array( 'USERNAME', 'BLOG_TITLE', 'BLOG_URL', 'LOGINLINK', 'RESETLINK' );
-		if ( is_multisite() ) {
-			$tags[] = 'SITE_NAME';
+	public static function ip_in_range( $ip, $range ) {
+		if ( false === strpos( $range, '/' ) ) {
+			return $ip === $range;
 		}
 
-		printf(
-			/* translators: Placeholders. */
-			esc_html_x( 'To take advantage of dynamic data, you can use the following placeholders: %s. Username will be the user login in most cases.', 'Placeholders', 'wp-approve-user' ),
-			sprintf( '<code>%s</code>', implode( '</code>, <code>', $tags ) ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		);
-	}
+		list( $subnet, $prefix ) = explode( '/', $range, 2 );
 
-	/**
-	 * Populates the setting field.
-	 *
-	 * @author Konstantin Obenland
-	 * @since  2.0.0 - 31.03.2012
-	 * @access public
-	 *
-	 * @param  array $option Settings option.
-	 */
-	public function checkbox_cb( $option ) {
-		$option = (object) $option;
-		?>
-		<label for="<?php echo esc_attr( sanitize_title_with_dashes( $option->name ) ); ?>">
-			<input type="checkbox" name="wp-approve-user[<?php echo esc_attr( $option->name ); ?>]" id="<?php echo esc_attr( sanitize_title_with_dashes( $option->name ) ); ?>" value="1" <?php checked( $this->options[ $option->name ] ); ?> />
-			<?php echo esc_html( $option->description ); ?>
-		</label><br />
-		<?php
-	}
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 ) ) {
+			return false;
+		}
 
-	/**
-	 * Populates the setting field.
-	 *
-	 * @author Konstantin Obenland
-	 * @since  2.0.0 - 31.03.2012
-	 * @access public
-	 *
-	 * @param array $option Settings option.
-	 */
-	public function textarea_cb( $option ) {
-		$option = (object) $option;
-		?>
-		<textarea id="<?php echo esc_attr( sanitize_title_with_dashes( $option->name ) ); ?>" class="large-text code" name="wp-approve-user[<?php echo esc_attr( $option->name ); ?>]" rows="10" cols="50" ><?php echo esc_textarea( $this->options[ $option->name ] ); ?></textarea>
-		<?php
-	}
+		/*
+		 * Both `$ip` and `$subnet` have already been validated through
+		 * FILTER_VALIDATE_IP + FILTER_FLAG_IPV4 (here for `$ip`, and upstream
+		 * in sanitize_ip_range() for `$subnet`), so ip2long() cannot fail.
+		 */
+		$ip_long     = ip2long( $ip );
+		$subnet_long = ip2long( $subnet );
 
-	/**
-	 * Sanitizes the settings input.
-	 *
-	 * @author Konstantin Obenland
-	 * @since  2.0.0 - 31.03.2012
-	 * @access public
-	 *
-	 * @param  array $input Form input.
-	 *
-	 * @return array The sanitized settings
-	 */
-	public function sanitize( $input ) {
-		return array(
-			'wpau-send-approve-email'   => isset( $input['wpau-send-approve-email'] ),
-			'wpau-send-unapprove-email' => isset( $input['wpau-send-unapprove-email'] ),
-			'wpau-approve-email'        => isset( $input['wpau-approve-email'] ) ? trim( $input['wpau-approve-email'] ) : '',
-			'wpau-unapprove-email'      => isset( $input['wpau-unapprove-email'] ) ? trim( $input['wpau-unapprove-email'] ) : '',
-		);
+		$prefix = (int) $prefix;
+		/* Prefix 0 matches every address; avoid PHP's negative-shift quirk. */
+		if ( 0 === $prefix ) {
+			return true;
+		}
+
+		$mask = ( -1 << ( 32 - $prefix ) ) & 0xFFFFFFFF;
+
+		return ( $ip_long & $mask ) === ( $subnet_long & $mask );
 	}
 
 	/**
@@ -887,16 +1075,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				);
 			}
 
-			update_user_meta( $id, 'wp-approve-user', 'approved' );
-
-			/**
-			 * Fires after a user has been approved.
-			 *
-			 * @since 1.1.0
-			 *
-			 * @param int $id User ID.
-			 */
-			do_action( 'wpau_approve', $id );
+			self::mark_approved( $id );
 		}
 
 		$role          = $this->get_role();
@@ -941,17 +1120,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				);
 			}
 
-			update_user_meta( $id, 'wp-approve-user', 'unapproved' );
-			WP_Session_Tokens::get_instance( $id )->destroy_all();
-
-			/**
-			 * Fires after a user has been unapproved.
-			 *
-			 * @since 1.1.0
-			 *
-			 * @param int $id User ID.
-			 */
-			do_action( 'wpau_unapprove', $id );
+			self::mark_unapproved( $id );
 		}
 
 		$role          = $this->get_role();
@@ -1105,6 +1274,7 @@ Company,
 Contact details',
 			'wpau-send-unapprove-email' => false,
 			'wpau-unapprove-email'      => '',
+			'auto_approve_rules'        => array(),
 		);
 
 		return apply_filters( 'wpau_default_options', $options );

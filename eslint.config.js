@@ -16,17 +16,22 @@ module.exports = [
 		languageOptions: {
 			globals: {
 				wp_approve_user: 'readonly',
+				wp_approve_user_dashboard: 'readonly',
 			},
 		},
 		rules: {
 			/*
 			 * Snake_case identifiers that cross the PHP boundary:
-			 * - `wp_approve_user`: script handle registered via wp_localize_script().
-			 * - `user_id`: input/output key on the Abilities REST schema.
+			 * - `wp_approve_user*`: script handles registered via wp_localize_script().
+			 * - `user_id`: input/output key on the Abilities REST schema and
+			 *   payload key expected by the WP AJAX handlers.
 			 */
 			camelcase: [
 				'error',
-				{ allow: [ '^wp_approve_user$', '^user_id$' ] },
+				{
+					allow: [ '^wp_approve_user', '^user_id$' ],
+					properties: 'never',
+				},
 			],
 		},
 	},
