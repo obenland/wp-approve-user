@@ -13,6 +13,10 @@ jobs:
         steps:
             - uses: actions/checkout@master
             - name: WordPress.org plugin asset/readme update
+              # The 10up action exits 1 when non-readme/non-asset files differ
+              # from SVN trunk, which is the normal state between releases.
+              # Treat that as a no-op rather than a failed workflow run.
+              continue-on-error: true
               uses: 10up/action-wordpress-plugin-asset-update@stable
               env:
                   SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
