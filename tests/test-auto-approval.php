@@ -599,4 +599,187 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'email_domain', $types );
 		$this->assertNotEmpty( $types['email_domain'] );
 	}
+
+	/**
+	 * A stored non-array value for auto_approve_rules is coerced to an empty list.
+	 *
+	 * @covers ::auto_approve_user
+	 * @covers ::auto_approve_rules_cb
+	 */
+	public function test_non_array_auto_approve_rules_coerced_to_empty() {
+		$filter = function ( $defaults ) {
+			unset( $defaults['auto_approve_rules'] );
+			return $defaults;
+		};
+		add_filter( 'wpau_default_options', $filter );
+
+		update_option(
+			'wp-approve-user',
+			array(
+				'wpau-send-approve-email'   => false,
+				'wpau-send-unapprove-email' => false,
+				'wpau-approve-email'        => '',
+				'wpau-unapprove-email'      => '',
+				'auto_approve_rules'        => 'not-an-array',
+			)
+		);
+
+		$user = $this->make_subscriber( 'nobody@example.test' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+		$instance = new Obenland_Wp_Approve_User();
+
+		/* auto_approve_user branch. */
+		$instance->auto_approve_user( $user->ID );
+		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+
+		/* auto_approve_rules_cb branch — should still render the blank row. */
+		ob_start();
+		$instance->auto_approve_rules_cb();
+		$html = ob_get_clean();
+		$this->assertStringContainsString( 'wpau-auto-approve-rule', $html );
+
+		remove_filter( 'wpau_default_options', $filter );
+	}
+
+	/**
+	 * A ghost user id (pending meta but no user row) bails without firing approve.
+	 *
+	 * @covers ::auto_approve_user
+	 */
+	public function test_auto_approve_user_bails_on_missing_user() {
+		$this->store_rules(
+			array(
+				array(
+					'type'  => 'email_domain',
+					'value' => 'example.test',
+				),
+			)
+		);
+
+		$ghost_id = 9000001;
+		update_user_meta( $ghost_id, 'wp-approve-user', 'pending' );
+
+		$fired = 0;
+		add_action(
+			'wpau_approve',
+			function () use ( &$fired ) {
+				++$fired;
+			}
+		);
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->auto_approve_user( $ghost_id );
+
+		delete_user_meta( $ghost_id, 'wp-approve-user' );
+
+		$this->assertSame( 0, $fired );
+	}
+
+	/**
+	 * Empty rule values (after sanitize) return false from the matcher.
+	 *
+	 * @covers ::auto_approve_rule_matches
+	 */
+	public function test_rule_matches_returns_false_for_empty_domain_value() {
+		$this->store_rules(
+			array(
+				array(
+					'type'  => 'email_domain',
+					'value' => '@', /* Sanitizes to an empty string. */
+				),
+			)
+		);
+
+		$user = $this->make_subscriber( 'someone@example.test' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->auto_approve_user( $user->ID );
+
+		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Unknown rule types return false instead of throwing.
+	 *
+	 * @covers ::auto_approve_user
+	 * @covers ::auto_approve_rule_matches
+	 */
+	public function test_rule_matches_returns_false_for_unknown_rule_type() {
+		$filter = function () {
+			return array(
+				array(
+					'type'  => 'nonsense',
+					'value' => 'anything',
+				),
+			);
+		};
+		add_filter( 'wpau_auto_approve_rules', $filter );
+
+		$user = $this->make_subscriber( 'someone@example.test' );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+			$instance->auto_approve_user( $user->ID );
+		} finally {
+			remove_filter( 'wpau_auto_approve_rules', $filter );
+		}
+
+		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Auto_approve_rules_cb() falls back to an empty list when nothing is stored.
+	 *
+	 * @covers ::auto_approve_rules_cb
+	 */
+	public function test_auto_approve_rules_cb_renders_placeholder_when_option_missing() {
+		delete_option( 'wp-approve-user' );
+
+		$instance = new Obenland_Wp_Approve_User();
+
+		ob_start();
+		$instance->auto_approve_rules_cb();
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'wpau-auto-approve-rule', $html );
+	}
+
+	/**
+	 * Non-array rule entries are skipped by the settings sanitizer.
+	 *
+	 * @covers ::sanitize_auto_approve_rules
+	 */
+	public function test_sanitize_skips_non_array_rules() {
+		$instance = new Obenland_Wp_Approve_User();
+		$result   = $instance->sanitize_auto_approve_rules(
+			array(
+				'not-an-array',
+				array(
+					'type'  => 'email_domain',
+					'value' => 'example.test',
+				),
+			)
+		);
+
+		$this->assertCount( 1, $result );
+		$this->assertSame( 'example.test', $result[0]['value'] );
+	}
+
+	/**
+	 * Sanitize_email_domain() returns an empty string for empty input.
+	 *
+	 * @covers ::sanitize_email_domain
+	 */
+	public function test_sanitize_email_domain_returns_empty_on_empty_input() {
+		$instance = new Obenland_Wp_Approve_User();
+
+		$method = new ReflectionMethod( $instance, 'sanitize_email_domain' );
+		$method->setAccessible( true );
+
+		$this->assertSame( '', $method->invoke( $instance, '' ) );
+		$this->assertSame( '', $method->invoke( $instance, '   ' ) );
+	}
 }

@@ -161,8 +161,10 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			$this->hook( 'views_users-network', 'views_users' );
 			$this->hook( 'views_site-users-network', 'views_users' );
 			$this->hook( 'pre_user_query' );
-			$this->hook( 'wp_dashboard_setup', 'register_dashboard_widget' );
-			$this->hook( 'wp_network_dashboard_setup', 'register_dashboard_widget' );
+		}
+
+		if ( class_exists( 'WPAU_Dashboard_Widget' ) ) {
+			( new WPAU_Dashboard_Widget() )->register_hooks();
 		}
 
 		if ( is_multisite() ) {
@@ -170,38 +172,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		} else {
 			$this->hook( 'admin_menu' );
 		}
-	}
-
-	/**
-	 * Returns the count of users in the pending state.
-	 *
-	 * The count is cached on the instance once computed; front-end and other
-	 * non-admin contexts compute it lazily here since the constructor only
-	 * runs the query when `is_admin()` is true.
-	 *
-	 * @since 13
-	 *
-	 * @return int Number of users awaiting approval.
-	 */
-	public function get_pending_count() {
-		if ( null === $this->pending_count ) {
-			$args = array(
-				'fields'      => 'ID',
-				'number'      => 1,
-				'count_total' => true,
-				'meta_key'    => 'wp-approve-user', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-				'meta_value'  => 'pending', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-			);
-
-			if ( is_multisite() ) {
-				$args['blog_id'] = is_network_admin() ? 0 : get_current_blog_id();
-			}
-
-			$query               = new WP_User_Query( $args );
-			$this->pending_count = (int) $query->get_total();
-		}
-
-		return $this->pending_count;
 	}
 
 	/**
@@ -509,11 +479,11 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * callers converge on the same sequence of side-effects.
 	 *
 	 * @since 13
-	 * @access protected
+	 * @access public
 	 *
 	 * @param int $user_id User ID to mark approved.
 	 */
-	protected function mark_approved( $user_id ) {
+	public function mark_approved( $user_id ) {
 		update_user_meta( $user_id, 'wp-approve-user', 'approved' );
 
 		/**
@@ -524,6 +494,32 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		 * @param int $user_id User ID.
 		 */
 		do_action( 'wpau_approve', $user_id );
+	}
+
+	/**
+	 * Flips a user's approval state to `unapproved`, destroys their sessions,
+	 * and fires `wpau_unapprove`.
+	 *
+	 * Shared helper so the admin UI, AJAX handlers, and any future callers
+	 * converge on the same sequence of side-effects.
+	 *
+	 * @since 13
+	 * @access public
+	 *
+	 * @param int $user_id User ID to mark unapproved.
+	 */
+	public function mark_unapproved( $user_id ) {
+		update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
+		WP_Session_Tokens::get_instance( $user_id )->destroy_all();
+
+		/**
+		 * Fires after a user has been unapproved.
+		 *
+		 * @since 1.1.0
+		 *
+		 * @param int $user_id User ID.
+		 */
+		do_action( 'wpau_unapprove', $user_id );
 	}
 
 	/**
@@ -598,66 +594,6 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		return $email;
 	}
 
-	/**
-	 * Registers the pending user approvals dashboard widget.
-	 *
-	 * @since 13
-	 */
-	public function register_dashboard_widget() {
-		if ( ! current_user_can( 'promote_users' ) ) {
-			return;
-		}
-
-		if ( ! function_exists( 'wp_add_dashboard_widget' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/dashboard.php';
-		}
-
-		wp_add_dashboard_widget(
-			'wpau_pending_users',
-			esc_html__( 'Pending User Approvals', 'wp-approve-user' ),
-			array( $this, 'render_dashboard_widget' )
-		);
-	}
-
-	/**
-	 * Renders the pending user approvals dashboard widget.
-	 *
-	 * @since 13
-	 */
-	public function render_dashboard_widget() {
-		if ( is_network_admin() ) {
-			$pending_url  = network_admin_url( 'users.php?role=wpau_pending' );
-			$settings_url = network_admin_url( 'settings.php?page=wp-approve-user' );
-		} else {
-			$pending_url  = admin_url( 'users.php?role=wpau_pending' );
-			$settings_url = admin_url( 'options-general.php?page=wp-approve-user' );
-		}
-
-		if ( $this->pending_count > 0 ) {
-			printf(
-				'<p>%s</p>',
-				esc_html(
-					sprintf(
-						/* translators: %d: Number of users awaiting approval. */
-						_n( '%d user is awaiting approval.', '%d users are awaiting approval.', $this->pending_count, 'wp-approve-user' ),
-						$this->pending_count
-					)
-				)
-			);
-			printf(
-				'<p><a class="button button-primary" href="%1$s">%2$s</a></p>',
-				esc_url( $pending_url ),
-				esc_html__( 'Review pending users', 'wp-approve-user' )
-			);
-		} else {
-			printf( '<p>%s</p>', esc_html__( 'No users awaiting approval.', 'wp-approve-user' ) );
-			printf(
-				'<p><a href="%1$s">%2$s</a></p>',
-				esc_url( $settings_url ),
-				esc_html__( 'Approve User settings', 'wp-approve-user' )
-			);
-		}
-	}
 
 	/**
 	 * Fires after a new user registration has been recorded.
@@ -1443,17 +1379,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				);
 			}
 
-			update_user_meta( $id, 'wp-approve-user', 'unapproved' );
-			WP_Session_Tokens::get_instance( $id )->destroy_all();
-
-			/**
-			 * Fires after a user has been unapproved.
-			 *
-			 * @since 1.1.0
-			 *
-			 * @param int $id User ID.
-			 */
-			do_action( 'wpau_unapprove', $id );
+			$this->mark_unapproved( $id );
 		}
 
 		$role          = $this->get_role();

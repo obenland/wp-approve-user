@@ -16,12 +16,22 @@ module.exports = [
 		languageOptions: {
 			globals: {
 				wp_approve_user: 'readonly',
+				wp_approve_user_dashboard: 'readonly',
 			},
 		},
 		rules: {
-			// `wp_approve_user` is the snake_case handle registered via
-			// wp_localize_script(); allow it without triggering camelcase.
-			camelcase: [ 'error', { allow: [ '^wp_approve_user$' ] } ],
+			/*
+			 * `wp_approve_user*` are snake_case handles registered via
+			 * wp_localize_script(), and `user_id` is a snake_case AJAX payload
+			 * key expected by the WP AJAX handlers.
+			 */
+			camelcase: [
+				'error',
+				{
+					allow: [ '^wp_approve_user' ],
+					properties: 'never',
+				},
+			],
 		},
 	},
 	{

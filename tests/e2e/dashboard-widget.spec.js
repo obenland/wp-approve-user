@@ -1,8 +1,8 @@
 /**
  * Dashboard widget coverage.
  *
- * Seeds a pending user, loads /wp-admin/, and verifies the "Pending User
- * Approvals" widget renders with the expected count and action link.
+ * Seeds pending users, loads /wp-admin/, and drives the inline approve/reject
+ * actions end-to-end through the AJAX handlers.
  */
 const { test, expect } = require( '@playwright/test' );
 const { execSync } = require( 'node:child_process' );
@@ -23,25 +23,32 @@ async function loginAs( page, username, password ) {
 }
 
 test.describe.serial( 'WP Approve User — dashboard widget', () => {
-	const username = `wpau-dash-${ Date.now() }`;
+	const stamp = Date.now();
+	const approveUser = `wpau-dash-approve-${ stamp }`;
+	const rejectUser = `wpau-dash-reject-${ stamp }`;
+	const extraUser = `wpau-dash-extra-${ stamp }`;
 	const password = 'Correct-Horse-Battery-Staple-1';
 
 	test.beforeAll( () => {
-		wp(
-			`user create ${ username } ${ username }@example.test --role=subscriber --user_pass=${ password } --porcelain`
-		);
-		wp( `user meta update ${ username } wp-approve-user pending` );
-	} );
-
-	test.afterAll( () => {
-		try {
-			wp( `user delete ${ username } --yes` );
-		} catch {
-			// Best-effort.
+		for ( const username of [ approveUser, rejectUser, extraUser ] ) {
+			wp(
+				`user create ${ username } ${ username }@example.test --role=subscriber --user_pass=${ password } --porcelain`
+			);
+			wp( `user meta update ${ username } wp-approve-user pending` );
 		}
 	} );
 
-	test( 'widget renders with a pending count and review-pending link', async ( {
+	test.afterAll( () => {
+		for ( const username of [ approveUser, rejectUser, extraUser ] ) {
+			try {
+				wp( `user delete ${ username } --yes` );
+			} catch {
+				// Best-effort.
+			}
+		}
+	} );
+
+	test( 'widget lists pending users with per-row actions and a view-all footer', async ( {
 		page,
 	} ) => {
 		await loginAs( page, 'admin', 'password' );
@@ -52,11 +59,56 @@ test.describe.serial( 'WP Approve User — dashboard widget', () => {
 		await expect( widget.locator( 'h2, .hndle' ).first() ).toContainText(
 			'Pending User Approvals'
 		);
-		await expect( widget ).toContainText( /awaiting approval/ );
 
-		const reviewLink = widget.locator(
-			'a[href*="users.php?role=wpau_pending"]'
+		const approveRow = widget.locator(
+			`li.wpau-pending-row:has-text("${ approveUser }@example.test")`
 		);
-		await expect( reviewLink ).toBeVisible();
+		await expect( approveRow ).toBeVisible();
+		await expect(
+			approveRow.locator( '[data-wpau-action="approve"]' )
+		).toBeVisible();
+		await expect(
+			approveRow.locator( '[data-wpau-action="unapprove"]' )
+		).toBeVisible();
+
+		await expect( widget.locator( '.wpau-widget-footer' ) ).toContainText(
+			/View all \d+ pending/
+		);
+	} );
+
+	test( 'approve from the widget flips the user and removes the row', async ( {
+		page,
+	} ) => {
+		await loginAs( page, 'admin', 'password' );
+		await page.goto( '/wp-admin/' );
+
+		const row = page.locator(
+			`li.wpau-pending-row:has-text("${ approveUser }@example.test")`
+		);
+		await expect( row ).toBeVisible();
+
+		await row.locator( '[data-wpau-action="approve"]' ).click();
+		await expect( row ).toHaveCount( 0, { timeout: 5000 } );
+
+		const status = wp( `user meta get ${ approveUser } wp-approve-user` );
+		expect( status ).toBe( 'approved' );
+	} );
+
+	test( 'reject from the widget flips the user to unapproved', async ( {
+		page,
+	} ) => {
+		await loginAs( page, 'admin', 'password' );
+		await page.goto( '/wp-admin/' );
+
+		const row = page.locator(
+			`li.wpau-pending-row:has-text("${ rejectUser }@example.test")`
+		);
+		await expect( row ).toBeVisible();
+
+		await row.locator( '[data-wpau-action="unapprove"]' ).click();
+		await expect( row ).toHaveCount( 0, { timeout: 5000 } );
+
+		const status = wp( `user meta get ${ rejectUser } wp-approve-user` );
+		expect( status ).toBe( 'unapproved' );
 	} );
 } );
