@@ -72,13 +72,21 @@
 	}
 
 	function appendNextRow( list, html ) {
-		if ( ! html || ! list || list.tagName !== 'UL' ) {
+		// Empty html is the documented "queue drained" signal — silent return.
+		if ( ! html ) {
+			return;
+		}
+		if ( ! list || list.tagName !== 'UL' ) {
 			return;
 		}
 		const template = document.createElement( 'template' );
 		template.innerHTML = html.trim();
 		const newRow = template.content.firstElementChild;
 		if ( ! newRow ) {
+			// Server promised a row but sent markup we can't parse — log so a
+			// regression in render_row()/transition_payload() stays observable.
+			/* eslint-disable-next-line no-console */
+			console.error( 'WPAU dashboard widget', 'invalid next_row markup' );
 			return;
 		}
 		// Skip if the row is already visible (e.g. a concurrent refresh pulled it in).
@@ -135,6 +143,7 @@
 	function refresh( event ) {
 		const btn = event.currentTarget;
 		btn.disabled = true;
+		clearRefreshError( btn );
 
 		postForm( i18n.ajaxurl, {
 			action: 'wpau_dashboard_refresh',
@@ -143,20 +152,35 @@
 			.then( function ( response ) {
 				if ( ! response || ! response.success ) {
 					btn.disabled = false;
+					showRefreshError( btn );
 					return;
 				}
-				const wrap = btn.closest( '.wpau-widget-refresh' );
+				if ( response.data.pending_count > 0 && ! response.data.html ) {
+					// Server says users are pending but handed back no rows —
+					// that's a backend inconsistency, not a "drained" signal.
+					// Keep the refresh button so the admin can try again.
+					/* eslint-disable-next-line no-console */
+					console.error(
+						'WPAU dashboard widget',
+						'empty html with pending_count > 0'
+					);
+					btn.disabled = false;
+					showRefreshError( btn );
+					return;
+				}
+
 				let replacement;
-				if ( response.data.html ) {
+				if ( response.data.pending_count <= 0 ) {
+					replacement = document.createElement( 'p' );
+					replacement.className = 'wpau-widget-empty';
+					replacement.textContent = i18n.emptyMessage;
+				} else {
 					replacement = document.createElement( 'ul' );
 					replacement.className = 'wpau-pending-list';
 					replacement.setAttribute( 'data-wpau-container', '' );
 					replacement.innerHTML = response.data.html;
-				} else {
-					replacement = document.createElement( 'p' );
-					replacement.className = 'wpau-widget-empty';
-					replacement.textContent = i18n.emptyMessage;
 				}
+				const wrap = btn.closest( '.wpau-widget-refresh' );
 				wrap.parentNode.replaceChild( replacement, wrap );
 				updateFooter( response.data );
 			} )
@@ -164,7 +188,28 @@
 				/* eslint-disable-next-line no-console */
 				console.error( 'WPAU dashboard widget', error );
 				btn.disabled = false;
+				showRefreshError( btn );
 			} );
+	}
+
+	function showRefreshError( btn ) {
+		const wrap = btn.closest( '.wpau-widget-refresh' );
+		if ( ! wrap || wrap.querySelector( '.wpau-widget-error' ) ) {
+			return;
+		}
+		const notice = document.createElement( 'div' );
+		notice.className = 'notice notice-error inline wpau-widget-error';
+		notice.setAttribute( 'role', 'alert' );
+		notice.textContent = i18n.errorGeneric;
+		wrap.appendChild( notice );
+	}
+
+	function clearRefreshError( btn ) {
+		const wrap = btn.closest( '.wpau-widget-refresh' );
+		const existing = wrap && wrap.querySelector( '.wpau-widget-error' );
+		if ( existing ) {
+			existing.parentNode.removeChild( existing );
+		}
 	}
 
 	function showError( row, message, action ) {
