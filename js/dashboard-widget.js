@@ -61,12 +61,35 @@
 
 	function removeRow( row, data ) {
 		// Keep the timeout in sync with the CSS .is-removing transition duration.
+		const list = row.parentNode;
 		row.classList.add( 'is-removing' );
 		window.setTimeout( function () {
-			row.parentNode.removeChild( row );
+			list.removeChild( row );
+			appendNextRow( list, data.next_row );
 			updateFooter( data );
 			maybeOfferRefresh( data.pending_count );
 		}, 200 );
+	}
+
+	function appendNextRow( list, html ) {
+		if ( ! html || ! list || list.tagName !== 'UL' ) {
+			return;
+		}
+		const template = document.createElement( 'template' );
+		template.innerHTML = html.trim();
+		const newRow = template.content.firstElementChild;
+		if ( ! newRow ) {
+			return;
+		}
+		// Skip if the row is already visible (e.g. a concurrent refresh pulled it in).
+		if (
+			list.querySelector(
+				'[data-user-id="' + newRow.dataset.userId + '"]'
+			)
+		) {
+			return;
+		}
+		list.appendChild( newRow );
 	}
 
 	function updateFooter( data ) {
@@ -122,12 +145,19 @@
 					btn.disabled = false;
 					return;
 				}
-				const list = document.createElement( 'ul' );
-				list.className = 'wpau-pending-list';
-				list.setAttribute( 'data-wpau-container', '' );
-				list.innerHTML = response.data.html;
 				const wrap = btn.closest( '.wpau-widget-refresh' );
-				wrap.parentNode.replaceChild( list, wrap );
+				let replacement;
+				if ( response.data.html ) {
+					replacement = document.createElement( 'ul' );
+					replacement.className = 'wpau-pending-list';
+					replacement.setAttribute( 'data-wpau-container', '' );
+					replacement.innerHTML = response.data.html;
+				} else {
+					replacement = document.createElement( 'p' );
+					replacement.className = 'wpau-widget-empty';
+					replacement.textContent = i18n.emptyMessage;
+				}
+				wrap.parentNode.replaceChild( replacement, wrap );
 				updateFooter( response.data );
 			} )
 			.catch( function ( error ) {

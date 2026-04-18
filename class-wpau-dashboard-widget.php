@@ -318,15 +318,7 @@ class WPAU_Dashboard_Widget {
 			Obenland_Wp_Approve_User::get_instance()->mark_approved( $user_id );
 		}
 
-		$count = $this->get_pending_count();
-		wp_send_json_success(
-			array(
-				'user_id'       => $user_id,
-				'stale'         => $stale,
-				'pending_count' => $count,
-				'pending_label' => $count > 0 ? $this->view_all_label( $count ) : '',
-			)
-		);
+		wp_send_json_success( $this->transition_payload( $user_id, $stale ) );
 	}
 
 	/**
@@ -361,15 +353,77 @@ class WPAU_Dashboard_Widget {
 			Obenland_Wp_Approve_User::get_instance()->mark_unapproved( $user_id );
 		}
 
+		wp_send_json_success( $this->transition_payload( $user_id, $stale ) );
+	}
+
+	/**
+	 * Builds the JSON payload shared by approve and unapprove success responses.
+	 *
+	 * Also fetches the next off-screen pending user (if any) so the client can
+	 * refill its row slot without a second request — keeping the widget at
+	 * ROWS visible users as the admin works through the queue.
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param int  $user_id The user the action just applied to.
+	 * @param bool $stale   True when the target was no longer `pending` when the
+	 *                      request arrived (another admin beat us to it).
+	 * @return array
+	 */
+	protected function transition_payload( $user_id, $stale ) {
 		$count = $this->get_pending_count();
-		wp_send_json_success(
-			array(
-				'user_id'       => $user_id,
-				'stale'         => $stale,
-				'pending_count' => $count,
-				'pending_label' => $count > 0 ? $this->view_all_label( $count ) : '',
-			)
+
+		/*
+		 * After the transition, the pending list has shifted — the user that
+		 * was at post-index ROWS-1 is the one the client hasn't seen yet but
+		 * needs to display to refill to ROWS. Ask for exactly that user.
+		 */
+		$next_row = '';
+		$next     = $this->get_pending_users_slice( self::ROWS - 1, 1 );
+		if ( ! empty( $next ) ) {
+			$next_row = $this->render_row( $next[0] );
+		}
+
+		return array(
+			'user_id'       => $user_id,
+			'stale'         => $stale,
+			'pending_count' => $count,
+			'pending_label' => $count > 0 ? $this->view_all_label( $count ) : '',
+			'next_row'      => $next_row,
 		);
+	}
+
+	/**
+	 * Returns a specific slice of the pending-user query.
+	 *
+	 * Thin wrapper around WP_User_Query used to fetch a single off-screen row
+	 * for `transition_payload()`; kept separate from `get_pending_users()` so
+	 * the offset-aware query args don't bleed into the main render path.
+	 *
+	 * @since 13
+	 * @access protected
+	 *
+	 * @param int $offset Zero-based offset into the pending list.
+	 * @param int $limit  Maximum number of users to return.
+	 * @return WP_User[]
+	 */
+	protected function get_pending_users_slice( $offset, $limit ) {
+		$args = array(
+			'meta_key'   => 'wp-approve-user', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+			'meta_value' => 'pending', //phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+			'number'     => (int) $limit,
+			'offset'     => (int) $offset,
+			'orderby'    => 'registered',
+			'order'      => 'DESC',
+		);
+
+		if ( is_multisite() ) {
+			$args['blog_id'] = is_network_admin() ? 0 : get_current_blog_id();
+		}
+
+		$query = new WP_User_Query( $args );
+		return $query->get_results();
 	}
 
 	/**

@@ -120,6 +120,52 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 	}
 
 	/**
+	 * The approve response includes the next off-screen pending user so the client can refill its row slot.
+	 *
+	 * @covers ::ajax_approve
+	 * @covers ::transition_payload
+	 * @covers ::get_pending_users_slice
+	 */
+	public function test_ajax_approve_returns_next_row_when_more_pending_remain() {
+		$ids = array();
+		for ( $i = 0; $i < WPAU_Dashboard_Widget::ROWS + 2; $i++ ) {
+			$ids[] = $this->make_pending( "refill-{$i}@example.test" );
+		}
+
+		$target = $ids[0];
+
+		$_POST['action']  = 'wpau_dashboard_approve';
+		$_POST['user_id'] = $target;
+		$_POST['nonce']   = wp_create_nonce( 'wpau-dashboard-approve-' . $target );
+
+		$response = $this->dispatch( 'wpau_dashboard_approve' );
+
+		$this->assertTrue( $response['success'] );
+		$this->assertNotSame( '', $response['data']['next_row'] );
+		$this->assertStringContainsString( 'class="wpau-pending-row"', $response['data']['next_row'] );
+		$this->assertStringNotContainsString( 'data-user-id="' . $target . '"', $response['data']['next_row'] );
+	}
+
+	/**
+	 * The approve response omits next_row when fewer than ROWS pending users remain.
+	 *
+	 * @covers ::ajax_approve
+	 * @covers ::transition_payload
+	 */
+	public function test_ajax_approve_returns_empty_next_row_when_queue_drains() {
+		$user_id = $this->make_pending( 'drain@example.test' );
+
+		$_POST['action']  = 'wpau_dashboard_approve';
+		$_POST['user_id'] = $user_id;
+		$_POST['nonce']   = wp_create_nonce( 'wpau-dashboard-approve-' . $user_id );
+
+		$response = $this->dispatch( 'wpau_dashboard_approve' );
+
+		$this->assertTrue( $response['success'] );
+		$this->assertSame( '', $response['data']['next_row'] );
+	}
+
+	/**
 	 * A nonce minted for one user ID is rejected when POSTed against a different user ID.
 	 *
 	 * @covers ::ajax_approve
