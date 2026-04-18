@@ -69,6 +69,22 @@ document.addEventListener( 'DOMContentLoaded', function () {
 			}
 		} );
 
+		/*
+		 * Sync the value input's placeholder to the freshly reset select so
+		 * the clone doesn't inherit a stale placeholder from the template row.
+		 */
+		const typeSelect = clone.querySelector(
+			'select.wpau-auto-approve-rule-type'
+		);
+		const valueInput = clone.querySelector( '.wpau-auto-approve-rule-value' );
+		if ( typeSelect && valueInput ) {
+			const option = typeSelect.selectedOptions[ 0 ];
+			const placeholder = option ? option.dataset.placeholder : '';
+			if ( placeholder !== undefined ) {
+				valueInput.placeholder = placeholder;
+			}
+		}
+
 		clone.querySelectorAll( '[id]' ).forEach( function ( element ) {
 			element.id = element.id.replace( /-\d+$/, '-' + index );
 		} );

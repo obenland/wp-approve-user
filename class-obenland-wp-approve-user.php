@@ -491,7 +491,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			}
 
 			if ( $this->auto_approve_rule_matches( $rule, $user ) ) {
-				$this->mark_approved( $user_id );
+				self::mark_approved( $user_id );
 				return;
 			}
 		}
@@ -508,7 +508,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 *
 	 * @param int $user_id User ID to mark approved.
 	 */
-	public function mark_approved( $user_id ) {
+	public static function mark_approved( $user_id ) {
 		update_user_meta( $user_id, 'wp-approve-user', 'approved' );
 
 		/**
@@ -533,7 +533,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 *
 	 * @param int $user_id User ID to mark unapproved.
 	 */
-	public function mark_unapproved( $user_id ) {
+	public static function mark_unapproved( $user_id ) {
 		update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
 		WP_Session_Tokens::get_instance( $user_id )->destroy_all();
 
@@ -1075,7 +1075,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				);
 			}
 
-			$this->mark_approved( $id );
+			self::mark_approved( $id );
 		}
 
 		$role          = $this->get_role();
@@ -1120,7 +1120,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				);
 			}
 
-			$this->mark_unapproved( $id );
+			self::mark_unapproved( $id );
 		}
 
 		$role          = $this->get_role();

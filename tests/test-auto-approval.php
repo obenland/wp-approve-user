@@ -373,15 +373,6 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), $defaults['auto_approve_rules'] );
 	}
 
-
-
-
-
-
-
-
-
-
 	/**
 	 * A ghost user id (pending meta but no user row) bails without firing approve.
 	 *
@@ -469,8 +460,6 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
 	}
-
-
 
 	/**
 	 * Sanitize_email_domain() returns an empty string for empty input.

@@ -43,8 +43,7 @@ class WPAU_Mark_Helpers_Test extends WP_UnitTestCase {
 		add_action( 'wpau_approve', $listener );
 
 		try {
-			$instance = new Obenland_Wp_Approve_User();
-			$instance->mark_approved( self::$user->ID );
+			Obenland_Wp_Approve_User::mark_approved( self::$user->ID );
 		} finally {
 			remove_action( 'wpau_approve', $listener );
 		}
@@ -101,8 +100,7 @@ class WPAU_Mark_Helpers_Test extends WP_UnitTestCase {
 		add_action( 'wpau_unapprove', $listener );
 
 		try {
-			$instance = new Obenland_Wp_Approve_User();
-			$instance->mark_unapproved( self::$user->ID );
+			Obenland_Wp_Approve_User::mark_unapproved( self::$user->ID );
 		} finally {
 			remove_action( 'wpau_unapprove', $listener );
 		}
