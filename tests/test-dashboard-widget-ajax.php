@@ -99,7 +99,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 		$_POST['nonce']   = wp_create_nonce( 'wpau-dashboard-approve-' . $user_id );
 
 		$fired    = array();
-		$listener = function ( $id ) use ( &$fired ) {
+		$listener = static function ( $id ) use ( &$fired ) {
 			$fired[] = $id;
 		};
 		add_action( 'wpau_approve', $listener );
@@ -208,7 +208,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 		$_POST['nonce']   = wp_create_nonce( 'wpau-dashboard-unapprove-' . $user_id );
 
 		$fired    = array();
-		$listener = function ( $id ) use ( &$fired ) {
+		$listener = static function ( $id ) use ( &$fired ) {
 			$fired[] = $id;
 		};
 		add_action( 'wpau_unapprove', $listener );
@@ -240,7 +240,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 		$fired = 0;
 		add_action(
 			'wpau_approve',
-			function () use ( &$fired ) {
+			static function () use ( &$fired ) {
 				++$fired;
 			}
 		);
@@ -286,7 +286,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 		$fired = 0;
 		add_action(
 			'wpau_approve',
-			function () use ( &$fired ) {
+			static function () use ( &$fired ) {
 				++$fired;
 			}
 		);
@@ -335,7 +335,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 		$fired = 0;
 		add_action(
 			'wpau_unapprove',
-			function () use ( &$fired ) {
+			static function () use ( &$fired ) {
 				++$fired;
 			}
 		);

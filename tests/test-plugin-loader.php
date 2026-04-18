@@ -39,5 +39,20 @@ class WPAU_Plugin_Loader_Test extends WP_UnitTestCase {
 		wp_approve_user_activate();
 
 		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+
+		/*
+		 * wpau_allowlist_users() schedules with `array( $processed )` args, so
+		 * wp_next_scheduled() with no args wouldn't detect it. Walk the cron
+		 * array instead to catch any scheduled event for this hook.
+		 */
+		$cron_array = _get_cron_array();
+		$scheduled  = false;
+		foreach ( (array) $cron_array as $events ) {
+			if ( isset( $events['wpau_allowlist_users_cron'] ) ) {
+				$scheduled = true;
+				break;
+			}
+		}
+		$this->assertFalse( $scheduled, 'Small-site activation should not leave an orphan cron.' );
 	}
 }

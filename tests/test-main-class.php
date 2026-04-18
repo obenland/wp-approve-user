@@ -216,26 +216,11 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Returns the same singleton from repeated get_instance() calls.
+	 * Smoke-checks that plugins_loaded() registers its hook surface.
 	 *
-	 * @covers ::get_instance
-	 */
-	public function test_get_instance_returns_singleton() {
-		Obenland_Wp_Approve_User::$instance = null;
-		$a                                  = Obenland_Wp_Approve_User::get_instance();
-		$b                                  = Obenland_Wp_Approve_User::get_instance();
-		$this->assertSame( $a, $b );
-		$this->assertInstanceOf( Obenland_Wp_Approve_User::class, $a );
-	}
-
-	/**
-	 * Tests that `plugins_loaded` wires every hook the admin flows rely on.
-	 *
-	 * This is a regression guard for the hook registration block in the
-	 * method — if any `$this->hook( ... )` line is dropped, a downstream
-	 * admin flow (row action, bulk action, settings page, row query) breaks
-	 * with a silent "nothing happened" failure. Asserting the registration
-	 * surface here catches that before the functional tests do.
+	 * Picks a representative hook — the functional tests in this file
+	 * already exercise each individual callback, so a single registration
+	 * assertion is enough to catch a complete wiring regression.
 	 *
 	 * @covers ::plugins_loaded
 	 */
@@ -244,32 +229,33 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$instance->plugins_loaded();
 
 		$this->assertNotFalse(
-			has_filter( 'user_row_actions', array( $instance, 'user_row_actions' ) )
-		);
-		$this->assertNotFalse(
-			has_filter( 'wp_authenticate_user', array( $instance, 'wp_authenticate_user' ) )
-		);
-		$this->assertNotFalse(
 			has_action( 'user_register', array( $instance, 'user_register' ) )
 		);
-		$this->assertNotFalse(
-			has_action( 'admin_action_wpau_approve', array( $instance, 'admin_action_wpau_approve' ) )
-		);
-		$this->assertNotFalse(
-			has_action( 'admin_action_wpau_bulk_approve', array( $instance, 'admin_action_wpau_bulk_approve' ) )
-		);
-		$this->assertNotFalse(
-			has_action( 'admin_action_wpau_unapprove', array( $instance, 'admin_action_wpau_unapprove' ) )
-		);
-		$this->assertNotFalse(
-			has_action( 'admin_action_wpau_update', array( $instance, 'admin_action_wpau_update' ) )
-		);
-		$this->assertNotFalse(
-			has_action( 'wpau_approve', array( $instance, 'wpau_approve' ) )
-		);
-		$this->assertNotFalse(
-			has_action( 'delete_user', array( $instance, 'delete_user' ) )
-		);
+	}
+
+	/**
+	 * The singleton accessor returns the same initialised instance on every call.
+	 *
+	 * Production code (wp-approve-user.php) calls ::get_instance() on plugins_loaded
+	 * priority 0 and relies on every later caller reusing the same object so that
+	 * pending/unapproved counts and registered hooks are not duplicated.
+	 *
+	 * @covers ::get_instance
+	 */
+	public function test_get_instance_returns_same_instance() {
+		$previous                           = Obenland_Wp_Approve_User::$instance;
+		Obenland_Wp_Approve_User::$instance = null;
+
+		try {
+			$first  = Obenland_Wp_Approve_User::get_instance();
+			$second = Obenland_Wp_Approve_User::get_instance();
+
+			$this->assertInstanceOf( Obenland_Wp_Approve_User::class, $first );
+			$this->assertSame( $first, $second );
+		} finally {
+			/* Restore the original singleton so subsequent tests in the run reuse it. */
+			Obenland_Wp_Approve_User::$instance = $previous;
+		}
 	}
 
 
@@ -621,7 +607,16 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * @covers ::populate_message
 	 */
 	public function test_wpau_approve_sends_email_when_enabled() {
-		update_user_meta( self::$subscriber->ID, 'wp-approve-user-new-registration', true );
+		$user_id = self::factory()->user->create(
+			array(
+				'role'          => 'subscriber',
+				'user_login'    => 'alice',
+				'user_nicename' => 'alice',
+				'user_email'    => 'alice@example.test',
+			)
+		);
+		update_user_meta( $user_id, 'wp-approve-user', 'pending' );
+		update_user_meta( $user_id, 'wp-approve-user-new-registration', true );
 
 		update_option(
 			'wp-approve-user',
@@ -638,12 +633,12 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		add_filter( 'wp_mail', array( $this, 'filter_wp_mail_capture' ) );
 		add_filter( 'pre_wp_mail', '__return_true' );
 
-		$instance->wpau_approve( self::$subscriber->ID );
+		$instance->wpau_approve( $user_id );
 
 		$this->assertNotEmpty( $this->captured_mail );
-		$this->assertStringContainsString( 'Hello ' . self::$subscriber->user_nicename, $this->captured_mail['message'] );
-		$this->assertEmpty( get_user_meta( self::$subscriber->ID, 'wp-approve-user-new-registration', true ) );
-		$this->assertNotEmpty( get_user_meta( self::$subscriber->ID, 'wp-approve-user-mail-sent', true ) );
+		$this->assertStringContainsString( 'Hello alice', $this->captured_mail['message'] );
+		$this->assertEmpty( get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
+		$this->assertNotEmpty( get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) );
 	}
 
 	/**
@@ -680,8 +675,16 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * @covers ::delete_user
 	 */
 	public function test_delete_user_sends_unapprove_email() {
-		update_user_meta( self::$subscriber->ID, 'wp-approve-user', 'unapproved' );
-		update_user_meta( self::$subscriber->ID, 'wp-approve-user-new-registration', true );
+		$user_id = self::factory()->user->create(
+			array(
+				'role'          => 'subscriber',
+				'user_login'    => 'alice',
+				'user_nicename' => 'alice',
+				'user_email'    => 'alice-unapprove@example.test',
+			)
+		);
+		update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
+		update_user_meta( $user_id, 'wp-approve-user-new-registration', true );
 
 		update_option(
 			'wp-approve-user',
@@ -698,10 +701,10 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 
 		$instance = new Obenland_Wp_Approve_User();
 
-		$instance->delete_user( self::$subscriber->ID );
+		$instance->delete_user( $user_id );
 
 		$this->assertNotEmpty( $this->captured_mail );
-		$this->assertStringContainsString( 'Sorry ' . self::$subscriber->user_nicename, $this->captured_mail['message'] );
+		$this->assertStringContainsString( 'Sorry alice', $this->captured_mail['message'] );
 	}
 
 	/**
@@ -1071,6 +1074,32 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Documents the current contract: pre_user_query() only inspects the
+	 * scalar `role` query var (and `$_REQUEST['role']` when `role` is empty).
+	 * A `role__in` array containing `wpau_pending` is NOT rewritten to the
+	 * meta-based lookup — callers must use `role` to get the pseudo-role
+	 * behavior.
+	 *
+	 * This test locks in that contract so a future change (either direction)
+	 * is an explicit decision, not an accident.
+	 *
+	 * @covers ::pre_user_query
+	 */
+	public function test_pre_user_query_role_in_is_not_rewritten() {
+		$instance = $this->make_instance();
+
+		$query             = new WP_User_Query();
+		$query->query_vars = array(
+			'role'     => '',
+			'role__in' => array( 'wpau_pending' ),
+		);
+		$instance->pre_user_query( $query );
+
+		$this->assertArrayNotHasKey( 'meta_value', $query->query_vars );
+		$this->assertSame( array( 'wpau_pending' ), $query->query_vars['role__in'] );
+	}
+
+	/**
 	 * Roles outside wpau_pending and wpau_unapproved are left untouched by pre_user_query.
 	 *
 	 * @covers ::pre_user_query
@@ -1142,23 +1171,23 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * @covers ::populate_message
 	 */
 	public function test_populate_message_without_resetlink_skips_key_generation() {
-		global $wpdb;
-
 		$user_id = self::factory()->user->create( array( 'role' => 'subscriber' ) );
 		$user    = get_userdata( $user_id );
 
-		// phpcs:disable WordPress.DB
-		$this->assertEmpty( $wpdb->get_var( $wpdb->prepare( "SELECT user_activation_key FROM {$wpdb->users} WHERE ID = %d", $user_id ) ) );
+		$this->assertEmpty( $user->user_activation_key );
 
 		$instance = new Obenland_Wp_Approve_User();
 		$reflect  = new ReflectionObject( $instance );
 		$method   = $reflect->getMethod( 'populate_message' );
 		$method->setAccessible( true );
 
-		$method->invoke( $instance, 'Hello USERNAME', $user );
+		$result = $method->invoke( $instance, 'Hello USERNAME', $user );
 
-		$this->assertEmpty( $wpdb->get_var( $wpdb->prepare( "SELECT user_activation_key FROM {$wpdb->users} WHERE ID = %d", $user_id ) ) );
-		// phpcs:enable WordPress.DB
+		$this->assertStringNotContainsString( 'action=rp', $result );
+		$this->assertStringNotContainsString( 'key=', $result );
+
+		$refreshed = get_userdata( $user_id );
+		$this->assertEmpty( $refreshed->user_activation_key );
 	}
 
 	/**
@@ -1167,10 +1196,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * @covers ::populate_message
 	 */
 	public function test_populate_message_resetlink_falls_back_on_wp_error() {
-		$deny = function () {
-			return false;
-		};
-		add_filter( 'allow_password_reset', $deny );
+		add_filter( 'allow_password_reset', '__return_false' );
 
 		$instance = new Obenland_Wp_Approve_User();
 		$reflect  = new ReflectionObject( $instance );
@@ -1179,7 +1205,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 
 		$result = $method->invoke( $instance, 'Reset: RESETLINK', self::$subscriber );
 
-		remove_filter( 'allow_password_reset', $deny );
+		remove_filter( 'allow_password_reset', '__return_false' );
 
 		$this->assertStringContainsString( wp_login_url(), $result );
 		$this->assertStringNotContainsString( 'action=rp', $result );

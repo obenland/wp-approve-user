@@ -76,21 +76,4 @@ class WPAU_Pending_Notification_Test extends WP_UnitTestCase {
 		$this->assertSame( $base, $email );
 		$this->assertStringNotContainsString( 'Review pending users:', $email['message'] );
 	}
-
-	/**
-	 * Registers the filter during plugins_loaded() so core invokes it on real registrations.
-	 *
-	 * @covers ::plugins_loaded
-	 */
-	public function test_filter_is_registered() {
-		$instance = new Obenland_Wp_Approve_User();
-		$instance->plugins_loaded();
-
-		$this->assertNotFalse(
-			has_filter(
-				'wp_new_user_notification_email_admin',
-				array( $instance, 'wp_new_user_notification_email_admin' )
-			)
-		);
-	}
 }

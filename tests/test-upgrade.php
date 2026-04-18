@@ -64,23 +64,37 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 	public function test_upgrade_all_bails_when_version_is_string_from_db() {
 		global $wpau_db_version;
 
-		update_site_option( 'wpau_db_version', $wpau_db_version );
-		wp_cache_flush();
+		$stringify = static function () use ( $wpau_db_version ) {
+			return (string) $wpau_db_version;
+		};
+		add_filter( 'pre_site_option_wpau_db_version', $stringify );
 
 		$user_id = self::factory()->user->create();
 		update_user_meta( $user_id, 'wp-approve-user', true );
 
-		$filter = function ( $value, $option ) {
+		/*
+		 * On single-site, update_site_option() delegates to update_option() and
+		 * fires pre_update_option. On multisite, it uses the network-option
+		 * path, so pre_update_site_option_{$option} must also be guarded below.
+		 */
+		$guard = static function ( $value, $option ) {
 			if ( 'wpau_db_version' === $option ) {
-				$this->fail( 'update_site_option should not be called when already up to date.' );
+				self::fail( 'update_site_option should not be called when already up to date.' );
 			}
 			return $value;
 		};
-		add_filter( 'pre_update_option', $filter, 10, 2 );
+		add_filter( 'pre_update_option', $guard, 10, 2 );
+
+		$guard_network = static function () {
+			self::fail( 'update_site_option should not be called when already up to date.' );
+		};
+		add_filter( 'pre_update_site_option_wpau_db_version', $guard_network );
 
 		wpau_upgrade_all();
 
-		remove_filter( 'pre_update_option', $filter );
+		remove_filter( 'pre_update_site_option_wpau_db_version', $guard_network );
+		remove_filter( 'pre_update_option', $guard );
+		remove_filter( 'pre_site_option_wpau_db_version', $stringify );
 
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
 	}
@@ -121,6 +135,36 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		$this->assertSame( 'approved', get_user_meta( $approved, 'wp-approve-user', true ) );
 		$this->assertSame( 'pending', get_user_meta( $pending, 'wp-approve-user', true ) );
 		$this->assertSame( 'unapproved', get_user_meta( $unapproved, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Stamps missing-meta users as approved across a larger user population.
+	 *
+	 * Verifies correctness for a bulk set of users and serves as a regression
+	 * smoke that the migration completes and updates every missing-meta user.
+	 *
+	 * @covers ::wpau_upgrade_to_13
+	 */
+	public function test_upgrade_to_13_handles_large_user_set() {
+		$ids = array();
+		for ( $i = 0; $i < 50; $i++ ) {
+			$ids[] = self::factory()->user->create(
+				array(
+					'user_login' => 'bulk-' . $i . '-' . wp_generate_password( 6, false ),
+					'user_email' => 'bulk-' . $i . '@example.test',
+				)
+			);
+		}
+
+		foreach ( $ids as $id ) {
+			delete_user_meta( $id, 'wp-approve-user' );
+		}
+
+		wpau_upgrade_to_13();
+
+		foreach ( $ids as $id ) {
+			$this->assertSame( 'approved', get_user_meta( $id, 'wp-approve-user', true ) );
+		}
 	}
 
 	/**

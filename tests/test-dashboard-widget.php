@@ -263,11 +263,14 @@ class WPAU_Dashboard_Widget_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Registers the hooks at plugins_loaded-time.
+	 * Registers the dashboard setup + AJAX handlers so that wp_dashboard_setup
+	 * triggers register_widget and each AJAX action routes to its handler. The
+	 * AJAX tests in test-dashboard-widget-ajax.php call handlers directly; this
+	 * test guards the wiring that connects them.
 	 *
 	 * @covers ::register_hooks
 	 */
-	public function test_register_hooks_wires_everything() {
+	public function test_register_hooks_registers_dashboard_and_ajax_callbacks() {
 		$widget = new WPAU_Dashboard_Widget();
 		$widget->register_hooks();
 

@@ -105,7 +105,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
 
 		$fired    = array();
-		$listener = function ( $id ) use ( &$fired ) {
+		$listener = static function ( $id ) use ( &$fired ) {
 			$fired[] = $id;
 		};
 		add_action( 'wpau_approve', $listener );
@@ -181,7 +181,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$user = $this->make_subscriber( 'dev@filter.test' );
 		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
 
-		$filter = function () {
+		$filter = static function () {
 			return array(
 				array(
 					'type'  => 'email_domain',
@@ -225,7 +225,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
 
 		$count    = 0;
-		$listener = function () use ( &$count ) {
+		$listener = static function () use ( &$count ) {
 			++$count;
 		};
 		add_action( 'wpau_approve', $listener );
@@ -284,7 +284,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		update_user_meta( $user->ID, 'wp-approve-user', 'approved' );
 
 		$fired    = 0;
-		$listener = function () use ( &$fired ) {
+		$listener = static function () use ( &$fired ) {
 			++$fired;
 		};
 		add_action( 'wpau_approve', $listener );
@@ -341,7 +341,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
 
 		$captured = null;
-		$filter   = function ( $rules, $user_id ) use ( &$captured ) {
+		$filter   = static function ( $rules, $user_id ) use ( &$captured ) {
 			$captured = $user_id;
 			return $rules;
 		};
@@ -394,7 +394,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$fired = 0;
 		add_action(
 			'wpau_approve',
-			function () use ( &$fired ) {
+			static function () use ( &$fired ) {
 				++$fired;
 			}
 		);
@@ -438,7 +438,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	 * @covers ::auto_approve_rule_matches
 	 */
 	public function test_rule_matches_returns_false_for_unknown_rule_type() {
-		$filter = function () {
+		$filter = static function () {
 			return array(
 				array(
 					'type'  => 'nonsense',
@@ -713,7 +713,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	 * @covers ::auto_approve_rule_matches
 	 */
 	public function test_email_suffix_rule_with_invalid_value_does_not_match() {
-		$filter = function () {
+		$filter = static function () {
 			return array(
 				array(
 					'type'  => 'email_suffix',
@@ -741,7 +741,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	 * @covers ::auto_approve_rule_matches
 	 */
 	public function test_ip_range_rule_with_invalid_value_does_not_match() {
-		$filter = function () {
+		$filter = static function () {
 			return array(
 				array(
 					'type'  => 'ip_range',
@@ -770,7 +770,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	 * @covers ::auto_approve_user
 	 */
 	public function test_auto_approve_user_handles_non_array_rules() {
-		$filter = function ( $defaults ) {
+		$filter = static function ( $defaults ) {
 			unset( $defaults['auto_approve_rules'] );
 			return $defaults;
 		};
