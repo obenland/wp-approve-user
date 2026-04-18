@@ -48,8 +48,8 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 
 		/*
 		 * Ensure abilities.php is loaded — tests/bootstrap.php requires wp-approve-user.php,
-		 * which in turn requires abilities.php when the Abilities API is present, but
-		 * load it directly here for safety in case the gate short-circuits in the harness.
+		 * which already requires abilities.php, but load it directly here for safety in
+		 * case that path has not run in the test harness.
 		 */
 		if ( ! function_exists( 'wpau_register_abilities' ) ) {
 			require_once dirname( __DIR__ ) . '/abilities.php';
