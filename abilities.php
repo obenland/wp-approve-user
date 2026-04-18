@@ -17,10 +17,6 @@
  * @since 13
  */
 function wpau_register_abilities() {
-	if ( ! function_exists( 'wp_register_ability' ) ) {
-		return;
-	}
-
 	$input_schema = array(
 		'type'       => 'object',
 		'properties' => array(
@@ -150,15 +146,15 @@ function wpau_ability_approve_callback( $input ) {
 		);
 	}
 
-	update_user_meta( $user_id, 'wp-approve-user', 'approved' );
+	$updated = update_user_meta( $user_id, 'wp-approve-user', 'approved' );
 
 	/** This action is documented in class-obenland-wp-approve-user.php */
 	do_action( 'wpau_approve', $user_id );
 
 	return array(
-		'success' => true,
+		'success' => false !== $updated,
 		'user_id' => $user_id,
-		'status'  => 'approved',
+		'status'  => get_user_meta( $user_id, 'wp-approve-user', true ),
 	);
 }
 
@@ -195,7 +191,7 @@ function wpau_ability_unapprove_callback( $input ) {
 		);
 	}
 
-	update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
+	$updated = update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
 
 	/*
 	 * Mirror the admin UI's unapprove() behaviour — destroy all active sessions for the
@@ -209,8 +205,8 @@ function wpau_ability_unapprove_callback( $input ) {
 	do_action( 'wpau_unapprove', $user_id );
 
 	return array(
-		'success' => true,
+		'success' => false !== $updated,
 		'user_id' => $user_id,
-		'status'  => 'unapproved',
+		'status'  => get_user_meta( $user_id, 'wp-approve-user', true ),
 	);
 }

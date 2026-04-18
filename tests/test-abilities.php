@@ -58,17 +58,14 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		/*
 		 * Requiring abilities.php only attaches wpau_register_abilities() to the
 		 * wp_abilities_api_init hook. If that hook already fired during the test
-		 * harness bootstrap, register the abilities directly so the assertions do
-		 * not depend on hook timing.
+		 * harness bootstrap, re-fire it so wp_register_ability() runs within the
+		 * action context the API requires in WordPress 6.9+.
 		 */
 		if (
-			function_exists( 'wpau_register_abilities' )
-			&& (
-				! wp_has_ability( 'wp-approve-user/approve' )
-				|| ! wp_has_ability( 'wp-approve-user/unapprove' )
-			)
+			! wp_has_ability( 'wp-approve-user/approve' )
+			|| ! wp_has_ability( 'wp-approve-user/unapprove' )
 		) {
-			wpau_register_abilities();
+			do_action( 'wp_abilities_api_init' );
 		}
 	}
 
