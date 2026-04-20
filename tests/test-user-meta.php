@@ -281,6 +281,22 @@ class User_Meta extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Unexpected scalars (neither canonical three-state strings nor the
+	 * legacy boolean API) pass through untouched so data bugs surface
+	 * instead of being silently rewritten.
+	 *
+	 * @covers ::sanitize_status_meta
+	 */
+	public function test_sanitize_passes_unknown_values_through() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+		update_user_meta( $user, 'wp-approve-user', 'banana' );
+
+		$this->assertSame( 'banana', get_user_meta( $user, 'wp-approve-user', true ) );
+	}
+
+	/**
 	 * End-to-end: a legacy integration that approves via boolean `true`
 	 * should unlock the login gate.
 	 *
