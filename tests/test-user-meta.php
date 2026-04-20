@@ -209,7 +209,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::sanitize_status_meta
 	 */
 	public function test_sanitize_coerces_legacy_boolean_true_to_approved() {
-		// Instantiation registers the sanitize_user_meta filter.
+		// Instantiation registers the user meta sanitize callback.
 		new Obenland_Wp_Approve_User();
 
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
