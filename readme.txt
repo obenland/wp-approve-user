@@ -92,6 +92,7 @@ Migrates user approval data to a three-state system and adds a RESETLINK email p
 * Pending User Approvals dashboard widget now lists up to five pending users with inline Approve and Reject buttons that act via AJAX without leaving the dashboard.
 * Adds a rule-based auto-approval feature so admins can allow registrations from trusted email domains, suffixes, and IP ranges.
 * Extends the core "New User Registration" admin email with a link to the pending users screen when a registration needs approval.
+* Restores compatibility with third-party integrations (e.g. Restrict Content Pro) that still call `update_user_meta( $id, 'wp-approve-user', true|false )` by coercing legacy boolean writes to the V12 three-state strings.
 
 = 12 =
 * Bumped minimum required WordPress version to 4.7.
