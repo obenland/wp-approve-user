@@ -24,7 +24,7 @@ function wpau_whitelist_users( $new_value ) {
 		);
 
 		foreach ( $user_ids as $user_id ) {
-			update_user_meta( $user_id, 'wp-approve-user', true );
+			update_user_meta( $user_id, 'wp-approve-user', 'approved' );
 			update_user_meta( $user_id, 'wp-approve-user-mail-sent', true );
 		}
 	}

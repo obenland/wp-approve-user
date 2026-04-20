@@ -106,7 +106,47 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 
 		load_plugin_textdomain( 'wp-approve-user', false, 'wp-approve-user/lang' );
 
+		register_meta(
+			'user',
+			'wp-approve-user',
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'sanitize_callback' => array( __CLASS__, 'sanitize_status_meta' ),
+			)
+		);
+
 		$this->hook( 'plugins_loaded' );
+	}
+
+	/**
+	 * Normalizes `wp-approve-user` meta writes to the canonical three-state
+	 * string. Legacy boolean writes from pre-V12 integrations map to the
+	 * closest match; canonical values pass through untouched; unexpected
+	 * scalars are left alone so consumers see the raw value.
+	 *
+	 * Mapping mirrors `wpau_upgrade_to_12()` so an in-flight write and a
+	 * post-hoc migration land on the same string for the same input.
+	 *
+	 * @since 13
+	 *
+	 * @param mixed $meta_value Incoming value passed to update_user_meta().
+	 * @return mixed Sanitized value.
+	 */
+	public static function sanitize_status_meta( $meta_value ) {
+		if ( in_array( $meta_value, array( 'approved', 'unapproved', 'pending' ), true ) ) {
+			return $meta_value;
+		}
+
+		if ( true === $meta_value || 1 === $meta_value || '1' === $meta_value ) {
+			return 'approved';
+		}
+
+		if ( false === $meta_value || 0 === $meta_value || '0' === $meta_value || '' === $meta_value ) {
+			return 'pending';
+		}
+
+		return $meta_value;
 	}
 
 	/**

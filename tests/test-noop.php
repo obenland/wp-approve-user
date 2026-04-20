@@ -21,7 +21,7 @@ class WPAU_Noop_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Marks every existing user with the legacy boolean `true` payload when registration is being enabled, matching the pre-v12 approval flag.
+	 * Marks every existing user as `'approved'` when registration is being enabled, so the main plugin's login gate recognises them on its next load.
 	 *
 	 * @covers ::wpau_whitelist_users
 	 */
@@ -33,8 +33,8 @@ class WPAU_Noop_Test extends WP_UnitTestCase {
 		delete_user_meta( $user_two, 'wp-approve-user' );
 
 		$this->assertSame( 1, wpau_whitelist_users( 1 ) );
-		$this->assertSame( '1', get_user_meta( $user_one, 'wp-approve-user', true ) );
-		$this->assertSame( '1', get_user_meta( $user_two, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', get_user_meta( $user_one, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', get_user_meta( $user_two, 'wp-approve-user', true ) );
 		$this->assertSame( '1', get_user_meta( $user_one, 'wp-approve-user-mail-sent', true ) );
 	}
 

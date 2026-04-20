@@ -19,6 +19,36 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Writes a raw meta value straight to the usermeta table, bypassing
+	 * WP's meta sanitization. Used to simulate the pre-V12 DB state where
+	 * the `wp-approve-user` row held a raw boolean (stored as `"1"` / `""`).
+	 * `update_user_meta()` now coerces those writes to the canonical
+	 * three-state strings via `sanitize_status_meta()`, so the legacy state
+	 * isn't reachable through the meta API anymore.
+	 *
+	 * @param int    $user_id    User ID.
+	 * @param string $meta_value Raw meta_value to insert.
+	 */
+	private function set_raw_meta( $user_id, $meta_value ) {
+		global $wpdb;
+
+		delete_user_meta( $user_id, 'wp-approve-user' );
+
+		// phpcs:disable WordPress.DB
+		$wpdb->insert(
+			$wpdb->usermeta,
+			array(
+				'user_id'    => $user_id,
+				'meta_key'   => 'wp-approve-user',
+				'meta_value' => $meta_value,
+			)
+		);
+		// phpcs:enable WordPress.DB
+
+		wp_cache_delete( $user_id, 'user_meta' );
+	}
+
+	/**
 	 * Runs the v12 meta migration and stamps the current wpau_db_version.
 	 *
 	 * @covers ::wpau_upgrade_all
@@ -28,7 +58,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		global $wpau_db_version;
 
 		$user_id = self::factory()->user->create();
-		update_user_meta( $user_id, 'wp-approve-user', true );
+		$this->set_raw_meta( $user_id, '1' );
 
 		wpau_upgrade_all();
 
@@ -47,7 +77,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		update_site_option( 'wpau_db_version', $wpau_db_version );
 
 		$user_id = self::factory()->user->create();
-		update_user_meta( $user_id, 'wp-approve-user', true );
+		$this->set_raw_meta( $user_id, '1' );
 
 		wpau_upgrade_all();
 
@@ -70,7 +100,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		add_filter( 'pre_site_option_wpau_db_version', $stringify );
 
 		$user_id = self::factory()->user->create();
-		update_user_meta( $user_id, 'wp-approve-user', true );
+		$this->set_raw_meta( $user_id, '1' );
 
 		/*
 		 * On single-site, update_site_option() delegates to update_option() and
@@ -106,7 +136,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 	 */
 	public function test_upgrade_to_12_migrates_false_to_pending() {
 		$user_id = self::factory()->user->create();
-		update_user_meta( $user_id, 'wp-approve-user', false );
+		$this->set_raw_meta( $user_id, '' );
 
 		wpau_upgrade_to_12();
 
@@ -180,7 +210,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		$legacy  = self::factory()->user->create();
 		$missing = self::factory()->user->create();
 
-		update_user_meta( $legacy, 'wp-approve-user', true );
+		$this->set_raw_meta( $legacy, '1' );
 
 		wpau_upgrade_all();
 
@@ -202,7 +232,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		$legacy  = self::factory()->user->create();
 		$missing = self::factory()->user->create();
 
-		update_user_meta( $legacy, 'wp-approve-user', true );
+		$this->set_raw_meta( $legacy, '1' );
 
 		wpau_upgrade_all();
 

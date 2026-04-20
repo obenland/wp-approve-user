@@ -151,8 +151,28 @@ class User_Meta extends WP_UnitTestCase {
 	 * @covers ::wp_authenticate_user
 	 */
 	public function test_wp_authenticate_user_empty_legacy_meta_is_still_blocked() {
+		global $wpdb;
+
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
-		update_user_meta( $user->ID, 'wp-approve-user', false );
+
+		/*
+		 * Bypass the sanitize filter — on V12+ installs `update_user_meta()`
+		 * now coerces `false` to `'pending'`, so the legacy DB state has to
+		 * be written straight to the usermeta table.
+		 */
+		delete_user_meta( $user->ID, 'wp-approve-user' );
+		// phpcs:disable WordPress.DB
+		$wpdb->insert(
+			$wpdb->usermeta,
+			array(
+				'user_id'    => $user->ID,
+				'meta_key'   => 'wp-approve-user',
+				'meta_value' => '',
+			)
+		);
+		// phpcs:enable WordPress.DB
+		wp_cache_delete( $user->ID, 'user_meta' );
+
 		$this->assertSame( '', get_user_meta( $user->ID, 'wp-approve-user', true ) );
 		$this->assertTrue( metadata_exists( 'user', $user->ID, 'wp-approve-user' ) );
 
@@ -178,6 +198,121 @@ class User_Meta extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
+	}
+
+	/**
+	 * Legacy third-party integrations (e.g. Restrict Content Pro's
+	 * approve button) still call `update_user_meta( $id, 'wp-approve-user', true )`
+	 * with a boolean. Ensure the sanitize filter coerces that to the
+	 * canonical `'approved'` string so the login gate recognises the user.
+	 *
+	 * @covers ::sanitize_status_meta
+	 */
+	public function test_sanitize_coerces_legacy_boolean_true_to_approved() {
+		// Instantiation registers the user meta sanitize callback.
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		update_user_meta( $user->ID, 'wp-approve-user', true );
+
+		$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * The `false` side of the legacy boolean API needs to land as
+	 * `'pending'` to match `wpau_upgrade_to_12()`'s one-shot migration.
+	 *
+	 * @covers ::sanitize_status_meta
+	 */
+	public function test_sanitize_coerces_legacy_boolean_false_to_pending() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		update_user_meta( $user->ID, 'wp-approve-user', false );
+
+		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Integer and numeric-string variants of the legacy API should get
+	 * the same treatment as the raw booleans.
+	 *
+	 * @covers ::sanitize_status_meta
+	 */
+	public function test_sanitize_coerces_numeric_variants() {
+		new Obenland_Wp_Approve_User();
+
+		$one_int    = static::factory()->user->create();
+		$one_string = static::factory()->user->create();
+		$zero_int   = static::factory()->user->create();
+		$zero_str   = static::factory()->user->create();
+
+		update_user_meta( $one_int, 'wp-approve-user', 1 );
+		update_user_meta( $one_string, 'wp-approve-user', '1' );
+		update_user_meta( $zero_int, 'wp-approve-user', 0 );
+		update_user_meta( $zero_str, 'wp-approve-user', '0' );
+
+		$this->assertSame( 'approved', get_user_meta( $one_int, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', get_user_meta( $one_string, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', get_user_meta( $zero_int, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', get_user_meta( $zero_str, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Canonical three-state strings must pass through the sanitize filter
+	 * untouched — the filter only normalizes legacy values.
+	 *
+	 * @covers ::sanitize_status_meta
+	 */
+	public function test_sanitize_passes_canonical_values_through() {
+		new Obenland_Wp_Approve_User();
+
+		$approved   = static::factory()->user->create();
+		$unapproved = static::factory()->user->create();
+		$pending    = static::factory()->user->create();
+
+		update_user_meta( $approved, 'wp-approve-user', 'approved' );
+		update_user_meta( $unapproved, 'wp-approve-user', 'unapproved' );
+		update_user_meta( $pending, 'wp-approve-user', 'pending' );
+
+		$this->assertSame( 'approved', get_user_meta( $approved, 'wp-approve-user', true ) );
+		$this->assertSame( 'unapproved', get_user_meta( $unapproved, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', get_user_meta( $pending, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Unexpected scalars (neither canonical three-state strings nor the
+	 * legacy boolean API) pass through untouched so data bugs surface
+	 * instead of being silently rewritten.
+	 *
+	 * @covers ::sanitize_status_meta
+	 */
+	public function test_sanitize_passes_unknown_values_through() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+		update_user_meta( $user, 'wp-approve-user', 'banana' );
+
+		$this->assertSame( 'banana', get_user_meta( $user, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * End-to-end: a legacy integration that approves via boolean `true`
+	 * should unlock the login gate.
+	 *
+	 * @covers ::sanitize_status_meta
+	 * @covers ::wp_authenticate_user
+	 */
+	public function test_legacy_boolean_true_unlocks_login_gate() {
+		$class = new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
+		update_user_meta( $user->ID, 'wp-approve-user', 'pending' );
+
+		// Simulate a third-party integration approving via the boolean API.
+		update_user_meta( $user->ID, 'wp-approve-user', true );
+
+		$this->assertSame( $user, $class->wp_authenticate_user( $user ) );
 	}
 
 	/**
