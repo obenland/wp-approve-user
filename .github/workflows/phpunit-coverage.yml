@@ -26,16 +26,16 @@ jobs:
             WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v6
 
             - name: Setup Node.js (.nvmrc)
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version-file: '.nvmrc'
                   cache: npm
 
             - name: Cache Composer dependencies
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               id: composer-cache
               with:
                   path: vendor
@@ -68,7 +68,7 @@ jobs:
                   echo "EOF" >> $GITHUB_ENV
 
             - name: Find Comment
-              uses: peter-evans/find-comment@v2
+              uses: peter-evans/find-comment@v4
               id: fc
               with:
                   issue-number: ${{ github.event.pull_request.number }}
@@ -76,7 +76,7 @@ jobs:
                   body-includes: PHPUnit Coverage Report
 
             - name: Create or Update Comment
-              uses: peter-evans/create-or-update-comment@v3
+              uses: peter-evans/create-or-update-comment@v5
               with:
                   comment-id: ${{ steps.fc.outputs.comment-id }}
                   issue-number: ${{ github.event.pull_request.number }}
