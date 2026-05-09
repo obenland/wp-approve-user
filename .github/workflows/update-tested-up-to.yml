@@ -86,12 +86,12 @@ jobs:
                   branch: chore/tested-up-to-${{ steps.wp.outputs.version }}
                   delete-branch: true
 
-            - name: Auto-merge PR
+            - name: Merge PR
               if: steps.pr.outputs.pull-request-number
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               run: |
-                  gh pr merge --auto --squash --delete-branch "${{ steps.pr.outputs.pull-request-number }}"
+                  gh pr merge --squash --delete-branch "${{ steps.pr.outputs.pull-request-number }}"
 
             - name: Sync readme to WordPress.org SVN
               if: steps.pr.outputs.pull-request-number
