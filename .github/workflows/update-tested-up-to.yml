@@ -16,6 +16,8 @@ concurrency:
 jobs:
     validate:
         name: Validate against latest WordPress
+        permissions:
+            contents: read
         if: github.ref == 'refs/heads/trunk'
         runs-on: ubuntu-latest
         timeout-minutes: 30
@@ -35,11 +37,11 @@ jobs:
               id: composer-cache
               with:
                   path: vendor
-                  key: composer-${{ hashFiles('composer.json') }}
+                  key: composer-${{ hashFiles('composer.lock') }}
 
             - name: Install PHP dependencies
               if: steps.composer-cache.outputs.cache-hit != 'true'
-              run: composer update --prefer-dist --no-progress
+              run: composer install --prefer-dist --no-progress
 
             - name: npm install
               run: npm ci
