@@ -86,7 +86,7 @@ jobs:
                   branch: chore/tested-up-to-${{ steps.wp.outputs.version }}
                   delete-branch: true
 
-            - name: Auto-merge PR and wait
+            - name: Merge PR (auto if checks required, immediate otherwise)
               if: steps.pr.outputs.pull-request-number
               shell: bash
               env:
@@ -94,9 +94,21 @@ jobs:
                   PR: ${{ steps.pr.outputs.pull-request-number }}
               run: |
                   set -euo pipefail
-                  # Enable auto-merge so the PR queues if any required checks are added later.
-                  gh pr merge --auto --squash --delete-branch "$PR"
-                  # Wait for the merge to actually complete before downstream steps run,
+                  # Try auto-merge first (queues the PR if any required checks are pending,
+                  # forward-compat for adding required checks to trunk later). GitHub rejects
+                  # auto-merge with "is in clean status" when the PR is already mergeable —
+                  # in that case we fall back to an immediate merge.
+                  auto_err=$(mktemp)
+                  if gh pr merge --auto --squash --delete-branch "$PR" 2>"$auto_err"; then
+                      echo "Auto-merge enabled for PR #$PR; waiting for it to complete."
+                  elif grep -q "in clean status" "$auto_err"; then
+                      echo "PR #$PR is already mergeable; merging immediately."
+                      gh pr merge --squash --delete-branch "$PR"
+                  else
+                      cat "$auto_err" >&2
+                      exit 1
+                  fi
+                  # Wait for the merge to actually complete before any downstream step,
                   # so the SVN sync below cannot publish ahead of trunk.
                   for _ in $(seq 1 60); do
                       merged_at=$(gh pr view "$PR" --json mergedAt --jq '.mergedAt')
