@@ -128,6 +128,18 @@ jobs:
                   echo "PR #$PR did not merge within 10 minutes" >&2
                   exit 1
 
+            - name: Refresh workspace from merged trunk
+              if: success() && steps.pr.outputs.pull-request-number
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  # peter-evans/create-pull-request leaves the working tree at the pre-PR
+                  # state, and the merge happens on the remote. Pull the post-merge trunk
+                  # so the SVN sync below copies the actually-bumped readme.txt rather than
+                  # the workspace's stale copy.
+                  git fetch origin trunk
+                  git reset --hard origin/trunk
+
             - name: Sync readme to WordPress.org SVN
               if: success() && steps.pr.outputs.pull-request-number
               uses: 10up/action-wordpress-plugin-asset-update@stable
