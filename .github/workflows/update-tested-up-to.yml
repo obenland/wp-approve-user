@@ -14,7 +14,49 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
+    validate:
+        name: Validate against latest WordPress
+        permissions:
+            contents: read
+        if: github.ref == 'refs/heads/trunk'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        env:
+            WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Setup Node.js (.nvmrc)
+              uses: actions/setup-node@v6
+              with:
+                  node-version-file: '.nvmrc'
+                  cache: npm
+
+            - name: Cache Composer dependencies
+              uses: actions/cache@v5
+              id: composer-cache
+              with:
+                  path: vendor
+                  key: composer-${{ hashFiles('composer.lock') }}
+
+            - name: Install PHP dependencies
+              if: steps.composer-cache.outputs.cache-hit != 'true'
+              run: composer install --prefer-dist --no-progress
+
+            - name: npm install
+              run: npm ci
+
+            - name: Start WordPress (latest stable)
+              run: npm run wp-env start
+
+            - name: Run PHP unit tests (single site) against latest WordPress
+              run: npm run test-php
+
+            - name: Run PHP unit tests (multisite) against latest WordPress
+              run: npm run test-php-multisite
+
     update:
+        needs: validate
         if: github.ref == 'refs/heads/trunk'
         runs-on: ubuntu-latest
         steps:
