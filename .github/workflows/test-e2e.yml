@@ -34,10 +34,10 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version-file: '.nvmrc'
                   cache: npm
@@ -46,7 +46,7 @@ jobs:
               run: npm ci
 
             - name: Cache Playwright browsers
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               id: playwright-cache
               with:
                   path: ~/.cache/ms-playwright
@@ -68,7 +68,7 @@ jobs:
 
             - name: Upload Playwright report
               if: ${{ always() }}
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: playwright-report
                   path: playwright-report/
@@ -81,10 +81,10 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Setup Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version-file: '.nvmrc'
                   cache: npm
@@ -93,7 +93,7 @@ jobs:
               run: npm ci
 
             - name: Cache Playwright browsers
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               id: playwright-cache
               with:
                   path: ~/.cache/ms-playwright
@@ -115,7 +115,7 @@ jobs:
 
             - name: Upload Playwright multisite report
               if: ${{ always() }}
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: playwright-report-multisite
                   path: playwright-report/
