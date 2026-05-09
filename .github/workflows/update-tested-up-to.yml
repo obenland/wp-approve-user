@@ -1,0 +1,118 @@
+name: Update Tested up to
+
+on:
+    schedule:
+        - cron: '0 9 * * 1'
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: write
+
+concurrency:
+    group: update-tested-up-to
+    cancel-in-progress: false
+
+jobs:
+    update:
+        if: github.ref == 'refs/heads/trunk'
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Get latest WordPress version
+              id: wp
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  latest=$(curl -fsSL --connect-timeout 30 --max-time 60 --retry 3 --retry-delay 2 https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers[0].version')
+                  if ! [[ "$latest" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+                      echo "Unexpected WordPress version: '$latest'" >&2
+                      exit 1
+                  fi
+                  short=$(echo "$latest" | awk -F. '{print $1"."$2}')
+                  if ! [[ "$short" =~ ^[0-9]+\.[0-9]+$ ]]; then
+                      echo "Failed to derive major.minor from '$latest'" >&2
+                      exit 1
+                  fi
+                  {
+                      echo "version=$short"
+                      echo "full=$latest"
+                  } >> "$GITHUB_OUTPUT"
+                  echo "Latest WordPress: $latest (major.minor: $short)"
+
+            - name: Update readme.txt
+              id: update
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  target='${{ steps.wp.outputs.version }}'
+                  current=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' readme.txt)
+                  if [ -z "$current" ]; then
+                      echo "Could not find 'Tested up to:' header in readme.txt" >&2
+                      exit 1
+                  fi
+                  sorted=$(printf '%s\n%s\n' "$current" "$target" | sort -V)
+                  older="${sorted%%$'\n'*}"
+                  if [ "$current" = "$target" ] || [ "$older" != "$current" ]; then
+                      echo "Current ($current) is at or ahead of target ($target); nothing to do."
+                      echo "updated=false" >> "$GITHUB_OUTPUT"
+                      exit 0
+                  fi
+                  sed -i -E "s/^([Tt]ested up to:[[:space:]]+).*/\1$target/" readme.txt
+                  new=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' readme.txt)
+                  if [ "$new" != "$target" ]; then
+                      echo "sed did not produce expected value (got '$new')" >&2
+                      exit 1
+                  fi
+                  {
+                      echo "updated=true"
+                      echo "previous=$current"
+                  } >> "$GITHUB_OUTPUT"
+                  echo "Bumped Tested up to: $current -> $target"
+
+            - name: Create Pull Request
+              if: steps.update.outputs.updated == 'true'
+              id: pr
+              uses: peter-evans/create-pull-request@v8
+              with:
+                  base: trunk
+                  commit-message: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
+                  title: 'Bump Tested up to ${{ steps.wp.outputs.version }}'
+                  body: |
+                      WordPress ${{ steps.wp.outputs.full }} is the latest stable release.
+
+                      Bumps `Tested up to` in readme.txt from ${{ steps.update.outputs.previous }} to ${{ steps.wp.outputs.version }} (major.minor of ${{ steps.wp.outputs.full }}).
+                  branch: chore/tested-up-to-${{ steps.wp.outputs.version }}
+                  delete-branch: true
+
+            - name: Auto-merge PR and wait
+              if: steps.pr.outputs.pull-request-number
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  PR: ${{ steps.pr.outputs.pull-request-number }}
+              run: |
+                  set -euo pipefail
+                  # Enable auto-merge so the PR queues if any required checks are added later.
+                  gh pr merge --auto --squash --delete-branch "$PR"
+                  # Wait for the merge to actually complete before downstream steps run,
+                  # so the SVN sync below cannot publish ahead of trunk.
+                  for _ in $(seq 1 60); do
+                      merged_at=$(gh pr view "$PR" --json mergedAt --jq '.mergedAt')
+                      if [ "$merged_at" != "null" ] && [ -n "$merged_at" ]; then
+                          echo "PR #$PR merged at $merged_at"
+                          exit 0
+                      fi
+                      sleep 10
+                  done
+                  echo "PR #$PR did not merge within 10 minutes" >&2
+                  exit 1
+
+            - name: Sync readme to WordPress.org SVN
+              if: success() && steps.pr.outputs.pull-request-number
+              uses: 10up/action-wordpress-plugin-asset-update@stable
+              env:
+                  SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+                  SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+                  IGNORE_OTHER_FILES: true
