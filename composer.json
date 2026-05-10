@@ -7,7 +7,7 @@
 		"wp-coding-standards/wpcs": "^3.0",
 		"phpcompatibility/phpcompatibility-wp": "^2.1",
 		"wp-phpunit/wp-phpunit": "^5.8",
-		"yoast/phpunit-polyfills": "^1.0"
+		"yoast/phpunit-polyfills": "^4.0"
 	},
 	"scripts": {
 		"lint": "phpcs",
