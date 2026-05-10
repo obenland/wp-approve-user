@@ -605,24 +605,32 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 
 	/**
 	 * Values that contain non-identifier characters after the prefix must not
-	 * dispatch, even if the prefix itself is at position 0.
+	 * dispatch, even if the prefix itself is at position 0. Registering the
+	 * tracker on the raw, sanitize_key-normalised, and prefix-only hook names
+	 * catches dispatch under any of those forms — so a sanitiser that strips
+	 * `<script>` and leaves a bare `wpau_` (which would pass the prefix gate)
+	 * is also caught.
 	 *
 	 * @covers ::map_action2
 	 */
 	public function test_map_action2_rejects_non_identifier_suffix() {
-		$fired  = false;
-		$record = static function () use ( &$fired ) {
-			$fired = true;
+		$fired_hooks = array();
+		$record      = static function () use ( &$fired_hooks ) {
+			$fired_hooks[] = current_filter();
 		};
 		add_action( 'admin_action_wpau_<script>', $record );
+		add_action( 'admin_action_wpau_script', $record );
+		add_action( 'admin_action_wpau_', $record );
 		$_REQUEST['action2'] = 'wpau_<script>';
 
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->map_action2();
 
 		remove_action( 'admin_action_wpau_<script>', $record );
+		remove_action( 'admin_action_wpau_script', $record );
+		remove_action( 'admin_action_wpau_', $record );
 
-		$this->assertFalse( $fired );
+		$this->assertSame( array(), $fired_hooks );
 	}
 
 	/**
@@ -929,6 +937,36 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '>', (string) $captured );
 		$this->assertStringNotContainsString( '(', (string) $captured );
 		$this->assertStringNotContainsString( ')', (string) $captured );
+	}
+
+	/**
+	 * Bails when the sanitised update key collapses to an empty string —
+	 * a raw value of pure punctuation must not reach the filter or
+	 * register an empty-coded settings error.
+	 *
+	 * @covers ::admin_action_wpau_update
+	 */
+	public function test_admin_action_wpau_update_bails_when_sanitized_empty() {
+		global $wp_settings_errors;
+		$wp_settings_errors = array();
+
+		$_REQUEST['update'] = '!!!';
+		$_REQUEST['count']  = 0;
+
+		$called   = false;
+		$callback = static function ( $message ) use ( &$called ) {
+			$called = true;
+			return $message;
+		};
+		add_filter( 'wpau_update_message_handler', $callback );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->admin_action_wpau_update();
+
+		remove_filter( 'wpau_update_message_handler', $callback );
+
+		$this->assertFalse( $called, 'Filter must not run when the sanitised update key is empty.' );
+		$this->assertEmpty( get_settings_errors( 'wp-approve-user' ) );
 	}
 
 	/**

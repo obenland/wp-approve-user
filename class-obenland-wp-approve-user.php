@@ -709,16 +709,24 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @access public
 	 */
 	public function map_action2() {
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		if ( ! empty( $_REQUEST['action2'] ) ) {
-			$action2 = sanitize_key( wp_unslash( $_REQUEST['action2'] ) );
-			if ( 0 === strpos( $action2, 'wpau_' ) ) {
-				do_action( "admin_action_{$action2}" );
+			$raw    = wp_unslash( $_REQUEST['action2'] );
+			$action = sanitize_key( $raw );
+
+			/*
+			 * Reject anything sanitize_key() had to rewrite (case-only
+			 * differences are fine — sanitize_key() lowercases). Dispatching
+			 * the normalised form would let `wpau_<script>` slip through as
+			 * `wpau_script`, defeating the prefix gate.
+			 */
+			if ( strtolower( $raw ) === $action && 0 === strpos( $action, 'wpau_' ) ) {
+				do_action( "admin_action_{$action}" );
 			}
 		}
 
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		wp_add_inline_style( 'list-tables', '.wp-list-table.users tbody th, .wp-list-table.users tbody td { box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.1); } #the-list .submitapprove { color:#007017; } #the-list .submitunapprove { color:#996800; }' );
 	}
@@ -791,7 +799,11 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		}
 
 		$update = sanitize_key( wp_unslash( $_REQUEST['update'] ) );
-		$count  = isset( $_REQUEST['count'] ) ? absint( $_REQUEST['count'] ) : 0;
+		if ( '' === $update ) {
+			return;
+		}
+
+		$count = isset( $_REQUEST['count'] ) ? absint( $_REQUEST['count'] ) : 0;
 
 		switch ( $update ) {
 			case 'wpau-approved':
