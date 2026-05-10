@@ -16,6 +16,15 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
     cancel-in-progress: true
 
+permissions:
+    contents: read
+    # The post-coverage step (`peter-evans/create-or-update-comment`) needs to
+    # write the coverage summary back to the PR. Dependabot PRs run with a
+    # read-only token by default, so without this the comment step fails
+    # with "Resource not accessible by integration" and turns the whole
+    # coverage check red.
+    pull-requests: write
+
 jobs:
     php-coverage:
         name: 'PHP Coverage Analysis'
