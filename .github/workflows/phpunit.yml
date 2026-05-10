@@ -58,11 +58,11 @@ jobs:
               id: composer-cache
               with:
                   path: vendor
-                  key: composer-php${{ matrix.php }}-${{ hashFiles('composer.json') }}
+                  key: composer-php${{ matrix.php }}-${{ hashFiles('composer.lock') }}
 
             - name: Install PHP dependencies
               if: steps.composer-cache.outputs.cache-hit != 'true'
-              run: composer update --prefer-dist --no-progress
+              run: composer install --prefer-dist --no-progress
 
             - name: npm install
               run: npm ci
