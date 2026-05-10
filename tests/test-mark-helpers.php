@@ -53,35 +53,6 @@ class WPAU_Mark_Helpers_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The constructor hydrates options and, on admin, the pending/unapproved counts.
-	 *
-	 * @covers ::__construct
-	 * @covers ::get_options
-	 * @covers ::get_pending_count_cached
-	 */
-	public function test_constructor_hydrates_options_and_counts() {
-		update_option(
-			'wp-approve-user',
-			array(
-				'wpau-send-approve-email'   => true,
-				'wpau-send-unapprove-email' => false,
-				'wpau-approve-email'        => 'Hi USERNAME',
-				'wpau-unapprove-email'      => '',
-				'auto_approve_rules'        => array(),
-			)
-		);
-
-		set_current_screen( 'dashboard' );
-		Obenland_Wp_Approve_User::$instance = null;
-		$instance                           = new Obenland_Wp_Approve_User();
-
-		$options = $instance->get_options();
-		$this->assertTrue( $options['wpau-send-approve-email'] );
-		$this->assertSame( 'Hi USERNAME', $options['wpau-approve-email'] );
-		$this->assertIsInt( $instance->get_pending_count_cached() );
-	}
-
-	/**
 	 * Documents the current contract: mark_approved() always fires
 	 * `wpau_approve`, even when the user is already approved.
 	 *

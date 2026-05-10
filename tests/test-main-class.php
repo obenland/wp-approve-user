@@ -258,6 +258,42 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * The constructor hydrates options and, on admin, the pending/unapproved counts.
+	 *
+	 * @covers ::__construct
+	 * @covers ::get_options
+	 * @covers ::get_pending_count_cached
+	 */
+	public function test_constructor_hydrates_options_and_counts() {
+		update_option(
+			'wp-approve-user',
+			array(
+				'wpau-send-approve-email'   => true,
+				'wpau-send-unapprove-email' => false,
+				'wpau-approve-email'        => 'Hi USERNAME',
+				'wpau-unapprove-email'      => '',
+				'auto_approve_rules'        => array(),
+			)
+		);
+
+		set_current_screen( 'dashboard' );
+		$previous                           = Obenland_Wp_Approve_User::$instance;
+		Obenland_Wp_Approve_User::$instance = null;
+
+		try {
+			$instance = new Obenland_Wp_Approve_User();
+
+			$options = $instance->get_options();
+			$this->assertTrue( $options['wpau-send-approve-email'] );
+			$this->assertSame( 'Hi USERNAME', $options['wpau-approve-email'] );
+			$this->assertIsInt( $instance->get_pending_count_cached() );
+		} finally {
+			Obenland_Wp_Approve_User::$instance = $previous;
+			delete_option( 'wp-approve-user' );
+		}
+	}
+
 
 	/**
 	 * Sets a protected property on the given instance via Reflection.
@@ -919,6 +955,51 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * On the network users screen the bulk approve flow must verify the
+	 * `bulk-users-network` nonce (not the site-scoped `bulk-users` nonce)
+	 * and still apply the approved meta to the selected users.
+	 *
+	 * @covers ::admin_action_wpau_bulk_approve
+	 * @covers ::check_user
+	 */
+	public function test_admin_action_wpau_bulk_approve_on_users_network_screen() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Multisite only.' );
+		}
+
+		$this->make_instance();
+
+		$previous_screen = get_current_screen();
+		set_current_screen( 'users-network' );
+
+		/*
+		 * On the network users screen the bulk form submits user IDs under
+		 * the `allusers` key (site-users.php) rather than `users` — matches
+		 * the key check_user() reads when current_action() is wpau_bulk_*.
+		 */
+		$_REQUEST['allusers'] = array( self::$subscriber->ID );
+		$_REQUEST['_wpnonce'] = wp_create_nonce( 'bulk-users-network' );
+
+		$this->capture_redirect();
+
+		try {
+			do_action( 'admin_action_wpau_bulk_approve' );
+			$this->fail( 'Expected redirect.' );
+		} catch ( WPAU_Redirect_Exception $e ) {
+			$this->assertStringContainsString( 'update=wpau-approved', $e->location );
+		} finally {
+			if ( $previous_screen ) {
+				set_current_screen( $previous_screen );
+			}
+		}
+
+		$this->assertSame(
+			'approved',
+			get_user_meta( self::$subscriber->ID, 'wp-approve-user', true )
+		);
+	}
+
+	/**
 	 * Bulk unapprove from the unapproved view redirects back to the unapproved list.
 	 *
 	 * @covers ::admin_action_wpau_bulk_unapprove
@@ -1113,6 +1194,61 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 'administrator', $query->query_vars['role'] );
 		$this->assertArrayNotHasKey( 'meta_value', $query->query_vars );
+	}
+
+	/**
+	 * Self-unhooks after rewriting a pseudo-role query so a nested query fired
+	 * inside the meta lookup does not recurse back through the same rewrite
+	 * and call prepare_query() again.
+	 *
+	 * @covers ::pre_user_query
+	 */
+	public function test_pre_user_query_self_unhooks_after_pending_rewrite() {
+		$instance = $this->make_instance();
+
+		$this->assertNotFalse(
+			has_filter( 'pre_user_query', array( $instance, 'pre_user_query' ) ),
+			'Setup precondition: filter must be registered before the rewrite.'
+		);
+
+		$_REQUEST['role']  = 'wpau_pending';
+		$query             = new WP_User_Query();
+		$query->query_vars = array( 'role' => '' );
+		$instance->pre_user_query( $query );
+
+		$this->assertFalse(
+			has_filter( 'pre_user_query', array( $instance, 'pre_user_query' ) ),
+			'pre_user_query must unhook itself after rewriting the wpau_pending query.'
+		);
+
+		/*
+		 * A follow-up, non-pseudo-role query must therefore pass through
+		 * untouched — no second rewrite, no meta_key/meta_value injection.
+		 */
+		$second             = new WP_User_Query();
+		$second->query_vars = array( 'role' => 'administrator' );
+		$instance->pre_user_query( $second );
+
+		$this->assertSame( 'administrator', $second->query_vars['role'] );
+		$this->assertArrayNotHasKey( 'meta_value', $second->query_vars );
+	}
+
+	/**
+	 * Same self-unhook contract for the wpau_unapproved branch.
+	 *
+	 * @covers ::pre_user_query
+	 */
+	public function test_pre_user_query_self_unhooks_after_unapproved_rewrite() {
+		$instance = $this->make_instance();
+
+		$query             = new WP_User_Query();
+		$query->query_vars = array( 'role' => 'wpau_unapproved' );
+		$instance->pre_user_query( $query );
+
+		$this->assertFalse(
+			has_filter( 'pre_user_query', array( $instance, 'pre_user_query' ) ),
+			'pre_user_query must unhook itself after rewriting the wpau_unapproved query.'
+		);
 	}
 
 	/**

@@ -546,6 +546,42 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A /32 CIDR block must match only the exact host and nothing else.
+	 *
+	 * Protects the "single host written as a CIDR" idiom that admins
+	 * sometimes use for parity with allowlist formats.
+	 *
+	 * @covers ::ip_in_range
+	 */
+	public function test_ip_in_range_slash_32_matches_exact_host_only() {
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '10.0.0.5', '10.0.0.5/32' ) );
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '10.0.0.6', '10.0.0.5/32' ) );
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '10.0.0.4', '10.0.0.5/32' ) );
+	}
+
+	/**
+	 * A /1 CIDR block exercises the `& 0xFFFFFFFF` sign-extension guard.
+	 *
+	 * Without the mask, `-1 << 31` produces a negative PHP_INT on 64-bit
+	 * builds and the comparison against `ip2long` (which always returns
+	 * an unsigned 32-bit value as an int) would fail for IPs in the
+	 * upper half of the address space.
+	 *
+	 * @covers ::ip_in_range
+	 */
+	public function test_ip_in_range_slash_1_respects_sign_extension_guard() {
+		/* Upper half of the IPv4 space: bit 31 is set. */
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '128.0.0.1', '128.0.0.0/1' ) );
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '200.200.200.200', '128.0.0.0/1' ) );
+		$this->assertTrue( Obenland_Wp_Approve_User::ip_in_range( '255.255.255.255', '128.0.0.0/1' ) );
+
+		/* Lower half: bit 31 is clear. */
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '127.255.255.255', '128.0.0.0/1' ) );
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '10.0.0.1', '128.0.0.0/1' ) );
+		$this->assertFalse( Obenland_Wp_Approve_User::ip_in_range( '0.0.0.0', '128.0.0.0/1' ) );
+	}
+
+	/**
 	 * An ip_range rule approves the user when their captured IP matches the range.
 	 *
 	 * @covers ::auto_approve_user
