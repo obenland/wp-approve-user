@@ -634,6 +634,23 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A crafted request like `?action2[]=foo` makes `$_REQUEST['action2']`
+	 * an array. `sanitize_key()` calls `strtolower()` internally, which
+	 * fatals with TypeError on PHP 8+ when handed a non-string. Guard
+	 * against that and bail without dispatching.
+	 *
+	 * @covers ::map_action2
+	 */
+	public function test_map_action2_handles_array_input_without_fatal() {
+		$_REQUEST['action2'] = array( 'wpau_foo' );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->map_action2();
+
+		$this->assertTrue( true, 'map_action2() must return without a fatal when given array input.' );
+	}
+
+	/**
 	 * Enqueues the plugin JS on the Users admin screen.
 	 *
 	 * @covers ::admin_print_scripts_users_php
@@ -967,6 +984,30 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $called, 'Filter must not run when the sanitised update key is empty.' );
 		$this->assertEmpty( get_settings_errors( 'wp-approve-user' ) );
+	}
+
+	/**
+	 * A crafted request like `?update[]=x` makes `$_REQUEST['update']` an
+	 * array, which would fatal inside `sanitize_key()` on PHP 8+. The
+	 * handler must coerce or bail safely so a malformed request can't crash
+	 * the admin notice path.
+	 *
+	 * @covers ::admin_action_wpau_update
+	 */
+	public function test_admin_action_wpau_update_handles_array_input_without_fatal() {
+		global $wp_settings_errors;
+		$wp_settings_errors = array();
+
+		$_REQUEST['update'] = array( 'wpau-approved' );
+		$_REQUEST['count']  = 0;
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->admin_action_wpau_update();
+
+		$this->assertEmpty(
+			get_settings_errors( 'wp-approve-user' ),
+			'Array input must not register a settings error.'
+		);
 	}
 
 	/**

@@ -712,17 +712,21 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
 		if ( ! empty( $_REQUEST['action2'] ) ) {
-			$raw    = wp_unslash( $_REQUEST['action2'] );
-			$action = sanitize_key( $raw );
+			$raw = wp_unslash( $_REQUEST['action2'] );
 
 			/*
-			 * Reject anything sanitize_key() had to rewrite (case-only
-			 * differences are fine — sanitize_key() lowercases). Dispatching
-			 * the normalised form would let `wpau_<script>` slip through as
-			 * `wpau_script`, defeating the prefix gate.
+			 * Reject array input (`?action2[]=foo`) outright — `strtolower()`
+			 * would TypeError on PHP 8+. Then reject anything sanitize_key()
+			 * had to rewrite; case-only differences are fine because
+			 * sanitize_key() lowercases. Dispatching the normalised form would
+			 * let `wpau_<script>` slip through as `wpau_script`, defeating
+			 * the prefix gate.
 			 */
-			if ( strtolower( $raw ) === $action && 0 === strpos( $action, 'wpau_' ) ) {
-				do_action( "admin_action_{$action}" );
+			if ( is_string( $raw ) ) {
+				$action = sanitize_key( $raw );
+				if ( strtolower( $raw ) === $action && 0 === strpos( $action, 'wpau_' ) ) {
+					do_action( "admin_action_{$action}" );
+				}
 			}
 		}
 
@@ -793,12 +797,17 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @access public
 	 */
 	public function admin_action_wpau_update() {
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( empty( $_REQUEST['update'] ) ) {
 			return;
 		}
 
-		$update = sanitize_key( wp_unslash( $_REQUEST['update'] ) );
+		$raw = wp_unslash( $_REQUEST['update'] );
+		if ( ! is_string( $raw ) ) {
+			return;
+		}
+
+		$update = sanitize_key( $raw );
 		if ( '' === $update ) {
 			return;
 		}
@@ -834,7 +843,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		// Prevent other admin action handlers from trying to handle our action.
 		$_REQUEST['action'] = -1;
 
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	}
 
 	/**
