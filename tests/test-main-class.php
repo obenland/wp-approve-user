@@ -582,6 +582,50 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * `wpau_` must be a prefix, not a substring — values that merely contain it
+	 * mid-string (e.g. an attacker-supplied `evil_wpau_x`) must not dispatch.
+	 *
+	 * @covers ::map_action2
+	 */
+	public function test_map_action2_rejects_substring_match() {
+		$fired  = false;
+		$record = static function () use ( &$fired ) {
+			$fired = true;
+		};
+		add_action( 'admin_action_evil_wpau_action', $record );
+		$_REQUEST['action2'] = 'evil_wpau_action';
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->map_action2();
+
+		remove_action( 'admin_action_evil_wpau_action', $record );
+
+		$this->assertFalse( $fired );
+	}
+
+	/**
+	 * Values that contain non-identifier characters after the prefix must not
+	 * dispatch, even if the prefix itself is at position 0.
+	 *
+	 * @covers ::map_action2
+	 */
+	public function test_map_action2_rejects_non_identifier_suffix() {
+		$fired  = false;
+		$record = static function () use ( &$fired ) {
+			$fired = true;
+		};
+		add_action( 'admin_action_wpau_<script>', $record );
+		$_REQUEST['action2'] = 'wpau_<script>';
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->map_action2();
+
+		remove_action( 'admin_action_wpau_<script>', $record );
+
+		$this->assertFalse( $fired );
+	}
+
+	/**
 	 * Enqueues the plugin JS on the Users admin screen.
 	 *
 	 * @covers ::admin_print_scripts_users_php
@@ -852,6 +896,39 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	public function test_admin_action_wpau_update_returns_without_update() {
 		$instance = new Obenland_Wp_Approve_User();
 		$this->assertNull( $instance->admin_action_wpau_update() );
+	}
+
+	/**
+	 * Sanitises the `update` query arg with `sanitize_key()` before passing it
+	 * to the `wpau_update_message_handler` filter, so naive third-party
+	 * consumers cannot reflect attacker-controlled markup back into the admin.
+	 *
+	 * @covers ::admin_action_wpau_update
+	 */
+	public function test_admin_action_wpau_update_sanitizes_update_arg_passed_to_filter() {
+		global $wp_settings_errors;
+		$wp_settings_errors = array();
+
+		$_REQUEST['update'] = '<script>alert(1)</script>';
+		$_REQUEST['count']  = 0;
+
+		$captured = null;
+		$callback = static function ( $message, $update ) use ( &$captured ) {
+			$captured = $update;
+			return 'noop %d';
+		};
+		add_filter( 'wpau_update_message_handler', $callback, 10, 2 );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->admin_action_wpau_update();
+
+		remove_filter( 'wpau_update_message_handler', $callback, 10 );
+
+		$this->assertNotNull( $captured, 'Filter should have been called for an unknown update key.' );
+		$this->assertStringNotContainsString( '<', (string) $captured );
+		$this->assertStringNotContainsString( '>', (string) $captured );
+		$this->assertStringNotContainsString( '(', (string) $captured );
+		$this->assertStringNotContainsString( ')', (string) $captured );
 	}
 
 	/**

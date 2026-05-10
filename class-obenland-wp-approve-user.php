@@ -709,13 +709,16 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @access public
 	 */
 	public function map_action2() {
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 
-		if ( ! empty( $_REQUEST['action2'] ) && false !== stripos( $_REQUEST['action2'], 'wpau_' ) ) {
-			do_action( "admin_action_{$_REQUEST['action2']}" );
+		if ( ! empty( $_REQUEST['action2'] ) ) {
+			$action2 = sanitize_key( wp_unslash( $_REQUEST['action2'] ) );
+			if ( 0 === strpos( $action2, 'wpau_' ) ) {
+				do_action( "admin_action_{$action2}" );
+			}
 		}
 
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		wp_add_inline_style( 'list-tables', '.wp-list-table.users tbody th, .wp-list-table.users tbody td { box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.1); } #the-list .submitapprove { color:#007017; } #the-list .submitunapprove { color:#996800; }' );
 	}
@@ -782,14 +785,15 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @access public
 	 */
 	public function admin_action_wpau_update() {
-		// phpcs:disable WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Recommended
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		if ( empty( $_REQUEST['update'] ) ) {
 			return;
 		}
 
-		$count = absint( $_REQUEST['count'] );
+		$update = sanitize_key( wp_unslash( $_REQUEST['update'] ) );
+		$count  = isset( $_REQUEST['count'] ) ? absint( $_REQUEST['count'] ) : 0;
 
-		switch ( $_REQUEST['update'] ) {
+		switch ( $update ) {
 			case 'wpau-approved':
 				/* translators: Number of users. */
 				$message = esc_html( _n( '%d User approved.', '%d users approved.', $count, 'wp-approve-user' ) );
@@ -801,13 +805,13 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 				break;
 
 			default:
-				$message = apply_filters( 'wpau_update_message_handler', '', $_REQUEST['update'] );
+				$message = apply_filters( 'wpau_update_message_handler', '', $update );
 		}
 
 		if ( isset( $message ) ) {
 			add_settings_error(
 				$this->textdomain,
-				esc_attr( $_REQUEST['update'] ),
+				$update,
 				sprintf( $message, $count ),
 				'updated'
 			);
@@ -818,7 +822,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		// Prevent other admin action handlers from trying to handle our action.
 		$_REQUEST['action'] = -1;
 
-		// phpcs:enable WordPress.Security.ValidatedSanitizedInput, WordPress.Security.NonceVerification.Recommended
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 	}
 
 	/**
