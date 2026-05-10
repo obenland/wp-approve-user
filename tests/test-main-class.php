@@ -582,6 +582,75 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * `wpau_` must be a prefix, not a substring — values that merely contain it
+	 * mid-string (e.g. an attacker-supplied `evil_wpau_x`) must not dispatch.
+	 *
+	 * @covers ::map_action2
+	 */
+	public function test_map_action2_rejects_substring_match() {
+		$fired  = false;
+		$record = static function () use ( &$fired ) {
+			$fired = true;
+		};
+		add_action( 'admin_action_evil_wpau_action', $record );
+		$_REQUEST['action2'] = 'evil_wpau_action';
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->map_action2();
+
+		remove_action( 'admin_action_evil_wpau_action', $record );
+
+		$this->assertFalse( $fired );
+	}
+
+	/**
+	 * Values that contain non-identifier characters after the prefix must not
+	 * dispatch, even if the prefix itself is at position 0. Registering the
+	 * tracker on the raw, sanitize_key-normalised, and prefix-only hook names
+	 * catches dispatch under any of those forms — so a sanitiser that strips
+	 * `<script>` and leaves a bare `wpau_` (which would pass the prefix gate)
+	 * is also caught.
+	 *
+	 * @covers ::map_action2
+	 */
+	public function test_map_action2_rejects_non_identifier_suffix() {
+		$fired_hooks = array();
+		$record      = static function () use ( &$fired_hooks ) {
+			$fired_hooks[] = current_filter();
+		};
+		add_action( 'admin_action_wpau_<script>', $record );
+		add_action( 'admin_action_wpau_script', $record );
+		add_action( 'admin_action_wpau_', $record );
+		$_REQUEST['action2'] = 'wpau_<script>';
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->map_action2();
+
+		remove_action( 'admin_action_wpau_<script>', $record );
+		remove_action( 'admin_action_wpau_script', $record );
+		remove_action( 'admin_action_wpau_', $record );
+
+		$this->assertSame( array(), $fired_hooks );
+	}
+
+	/**
+	 * A crafted request like `?action2[]=foo` makes `$_REQUEST['action2']`
+	 * an array. `sanitize_key()` calls `strtolower()` internally, which
+	 * fatals with TypeError on PHP 8+ when handed a non-string. Guard
+	 * against that and bail without dispatching.
+	 *
+	 * @covers ::map_action2
+	 */
+	public function test_map_action2_handles_array_input_without_fatal() {
+		$_REQUEST['action2'] = array( 'wpau_foo' );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->map_action2();
+
+		$this->assertTrue( true, 'map_action2() must return without a fatal when given array input.' );
+	}
+
+	/**
 	 * Enqueues the plugin JS on the Users admin screen.
 	 *
 	 * @covers ::admin_print_scripts_users_php
@@ -852,6 +921,93 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	public function test_admin_action_wpau_update_returns_without_update() {
 		$instance = new Obenland_Wp_Approve_User();
 		$this->assertNull( $instance->admin_action_wpau_update() );
+	}
+
+	/**
+	 * Sanitises the `update` query arg with `sanitize_key()` before passing it
+	 * to the `wpau_update_message_handler` filter, so naive third-party
+	 * consumers cannot reflect attacker-controlled markup back into the admin.
+	 *
+	 * @covers ::admin_action_wpau_update
+	 */
+	public function test_admin_action_wpau_update_sanitizes_update_arg_passed_to_filter() {
+		global $wp_settings_errors;
+		$wp_settings_errors = array();
+
+		$_REQUEST['update'] = '<script>alert(1)</script>';
+		$_REQUEST['count']  = 0;
+
+		$captured = null;
+		$callback = static function ( $message, $update ) use ( &$captured ) {
+			$captured = $update;
+			return 'noop %d';
+		};
+		add_filter( 'wpau_update_message_handler', $callback, 10, 2 );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->admin_action_wpau_update();
+
+		remove_filter( 'wpau_update_message_handler', $callback, 10 );
+
+		$this->assertNotNull( $captured, 'Filter should have been called for an unknown update key.' );
+		$this->assertStringNotContainsString( '<', (string) $captured );
+		$this->assertStringNotContainsString( '>', (string) $captured );
+		$this->assertStringNotContainsString( '(', (string) $captured );
+		$this->assertStringNotContainsString( ')', (string) $captured );
+	}
+
+	/**
+	 * Bails when the sanitised update key collapses to an empty string —
+	 * a raw value of pure punctuation must not reach the filter or
+	 * register an empty-coded settings error.
+	 *
+	 * @covers ::admin_action_wpau_update
+	 */
+	public function test_admin_action_wpau_update_bails_when_sanitized_empty() {
+		global $wp_settings_errors;
+		$wp_settings_errors = array();
+
+		$_REQUEST['update'] = '!!!';
+		$_REQUEST['count']  = 0;
+
+		$called   = false;
+		$callback = static function ( $message ) use ( &$called ) {
+			$called = true;
+			return $message;
+		};
+		add_filter( 'wpau_update_message_handler', $callback );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->admin_action_wpau_update();
+
+		remove_filter( 'wpau_update_message_handler', $callback );
+
+		$this->assertFalse( $called, 'Filter must not run when the sanitised update key is empty.' );
+		$this->assertEmpty( get_settings_errors( 'wp-approve-user' ) );
+	}
+
+	/**
+	 * A crafted request like `?update[]=x` makes `$_REQUEST['update']` an
+	 * array, which would fatal inside `sanitize_key()` on PHP 8+. The
+	 * handler must coerce or bail safely so a malformed request can't crash
+	 * the admin notice path.
+	 *
+	 * @covers ::admin_action_wpau_update
+	 */
+	public function test_admin_action_wpau_update_handles_array_input_without_fatal() {
+		global $wp_settings_errors;
+		$wp_settings_errors = array();
+
+		$_REQUEST['update'] = array( 'wpau-approved' );
+		$_REQUEST['count']  = 0;
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->admin_action_wpau_update();
+
+		$this->assertEmpty(
+			get_settings_errors( 'wp-approve-user' ),
+			'Array input must not register a settings error.'
+		);
 	}
 
 	/**
