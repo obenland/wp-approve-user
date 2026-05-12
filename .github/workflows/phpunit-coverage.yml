@@ -5,7 +5,7 @@ on:
         types: [opened, synchronize, reopened]
         paths-ignore:
             - '**/*.md'
-            - 'readme.txt'
+            - 'README.md'
             - 'lang/**'
             - '.wordpress-org/**'
             - '.distignore'
