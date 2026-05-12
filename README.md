@@ -32,9 +32,9 @@ Currently available in:
 * Russian
 
 
-### Plugin Hooks
+## Plugin Hooks
 
-## Actions
+### Actions
 
 **wpau_approve** (*int*)
 > User-ID of approved user.
@@ -42,7 +42,7 @@ Currently available in:
 **wpau_unapprove** (*int*)
 > User-ID of unapproved user.
 
-## Filter
+### Filter
 
 **wpau_default_options** (*array*)
 > Default options.
@@ -196,8 +196,3 @@ Migrates user approval data to a three-state system and adds a RESETLINK email p
 
 ### 1.0
 * Initial Release.
-
-
-## Upgrade Notice
-Updated registration flow, now sending out Core's password-creation email only after a registration was approved.
-With this change, the minimum required version is now WordPress 4.3.
