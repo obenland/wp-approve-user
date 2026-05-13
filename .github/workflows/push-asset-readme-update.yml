@@ -4,7 +4,7 @@ on:
         branches:
             - trunk
         paths:
-            - 'readme.txt'
+            - 'README.md'
             - '.wordpress-org/**'
 jobs:
     trunk:
@@ -17,7 +17,7 @@ jobs:
               env:
                   SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
                   SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
-                  # Only sync readme.txt + assets. Without this the action
+                  # Only sync README.md + assets. Without this the action
                   # rsyncs the whole tree into SVN trunk and exits 1 whenever
                   # git trunk is ahead of the last release (i.e. almost always
                   # between releases). Code goes out via deploy.yml at tag time.

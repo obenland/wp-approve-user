@@ -31,7 +31,7 @@ jobs:
         steps:
             - uses: actions/checkout@v6
               with:
-                  sparse-checkout: readme.txt
+                  sparse-checkout: README.md
                   sparse-checkout-cone-mode: false
 
             - name: Compare latest WordPress against readme
@@ -49,9 +49,9 @@ jobs:
                       echo "Failed to derive major.minor from '$latest'" >&2
                       exit 1
                   fi
-                  current=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' readme.txt)
+                  current=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' README.md)
                   if [ -z "$current" ]; then
-                      echo "Could not find 'Tested up to:' header in readme.txt" >&2
+                      echo "Could not find 'Tested up to:' header in README.md" >&2
                       exit 1
                   fi
                   sorted=$(printf '%s\n%s\n' "$current" "$short" | sort -V)
@@ -216,15 +216,15 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
-            - name: Update readme.txt
+            - name: Update README.md
               shell: bash
               env:
                   TARGET: ${{ needs.check.outputs.version }}
                   PREVIOUS: ${{ needs.check.outputs.previous }}
               run: |
                   set -euo pipefail
-                  sed -i -E "s/^([Tt]ested up to:[[:space:]]+).*/\1$TARGET/" readme.txt
-                  new=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' readme.txt)
+                  sed -i -E "s/^([Tt]ested up to:[[:space:]]+).*/\1$TARGET/" README.md
+                  new=$(sed -nE '/^[Tt]ested up to:/{s/^[Tt]ested up to:[[:space:]]+//;s/\r$//;p;q;}' README.md)
                   if [ "$new" != "$TARGET" ]; then
                       echo "sed did not produce expected value (got '$new')" >&2
                       exit 1
@@ -241,7 +241,7 @@ jobs:
                   body: |
                       WordPress ${{ needs.check.outputs.full }} is the latest stable release.
 
-                      Bumps `Tested up to` in readme.txt from ${{ needs.check.outputs.previous }} to ${{ needs.check.outputs.version }} (major.minor of ${{ needs.check.outputs.full }}).
+                      Bumps `Tested up to` in README.md from ${{ needs.check.outputs.previous }} to ${{ needs.check.outputs.version }} (major.minor of ${{ needs.check.outputs.full }}).
                   branch: chore/tested-up-to-${{ needs.check.outputs.version }}
                   delete-branch: true
 
@@ -294,7 +294,7 @@ jobs:
                   set -euo pipefail
                   # peter-evans/create-pull-request leaves the working tree at the pre-PR
                   # state, and the merge happens on the remote. Pull the post-merge trunk
-                  # so the SVN sync below copies the actually-bumped readme.txt rather than
+                  # so the SVN sync below copies the actually-bumped README.md rather than
                   # the workspace's stale copy.
                   git fetch origin trunk
                   git reset --hard origin/trunk
