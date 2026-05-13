@@ -305,4 +305,5 @@ jobs:
               env:
                   SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
                   SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+                  README_NAME: README.md
                   IGNORE_OTHER_FILES: true
