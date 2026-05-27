@@ -3,10 +3,10 @@
 Contributors: obenland
 Tags: admin, user, login, approve, user management
 Donate link: <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY>
-Requires at least: 4.7
+Requires at least: 5.5
 Tested up to: 7.0
 Requires PHP: 7.4
-Stable tag: 13
+Stable tag: 14
 License: GPLv2 or later
 License URI: <https://www.gnu.org/licenses/gpl-2.0.html>
 
@@ -80,6 +80,10 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 ## Upgrade Notice
 
+### 14
+
+Finishes the V13 compatibility patch for Restrict Content Pro and similar integrations that read `wp-approve-user` meta as a boolean. Requires WordPress 5.5 or later.
+
 ### 13
 
 Adds a richer Pending User Approvals dashboard widget with inline approve/reject actions and rule-based auto-approval for trusted email domains, suffixes, and IP ranges.
@@ -90,6 +94,11 @@ Migrates user approval data to a three-state system and adds a RESETLINK email p
 
 
 ## Changelog
+
+### 14
+
+* Restores read-side compatibility for third-party integrations (notably Restrict Content Pro) that gate users with `! get_user_meta( $id, 'wp-approve-user', true )`. V13 normalized boolean writes but left reads returning the canonical strings, so pending and unapproved users still appeared "approved" to those consumers. A `get_user_metadata` filter now translates the stored three-state string back to the legacy boolean for outside callers; plugin internals read via `get_metadata_raw()` to keep seeing the raw value.
+* Bumps minimum required WordPress version to 5.5 (for `get_metadata_raw()`).
 
 ### 13
 

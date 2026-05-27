@@ -114,7 +114,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 			$instance = new Obenland_Wp_Approve_User();
 			$instance->auto_approve_user( $user->ID );
 
-			$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+			$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 			$this->assertSame( array( $user->ID ), $fired );
 		} finally {
 			remove_action( 'wpau_approve', $listener );
@@ -142,7 +142,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -166,7 +166,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -195,7 +195,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 			$instance = new Obenland_Wp_Approve_User();
 			$instance->auto_approve_user( $user->ID );
 
-			$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+			$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		} finally {
 			remove_filter( 'wpau_auto_approve_rules', $filter );
 		}
@@ -235,7 +235,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 			$instance->auto_approve_user( $user->ID );
 
 			$this->assertSame( 1, $count );
-			$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+			$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		} finally {
 			remove_action( 'wpau_approve', $listener );
 		}
@@ -255,7 +255,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -294,7 +294,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 			$instance->auto_approve_user( $user->ID );
 
 			$this->assertSame( 0, $fired );
-			$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+			$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		} finally {
 			remove_action( 'wpau_approve', $listener );
 		}
@@ -325,7 +325,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -428,7 +428,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -458,7 +458,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 			remove_filter( 'wpau_auto_approve_rules', $filter );
 		}
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -604,7 +604,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -628,7 +628,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -654,7 +654,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		$instance = new Obenland_Wp_Approve_User();
 		$instance->auto_approve_user( $user->ID );
 
-		$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -765,7 +765,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		try {
 			$instance = new Obenland_Wp_Approve_User();
 			$instance->auto_approve_user( $user->ID );
-			$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+			$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		} finally {
 			remove_filter( 'wpau_auto_approve_rules', $filter );
 		}
@@ -794,7 +794,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 		try {
 			$instance = new Obenland_Wp_Approve_User();
 			$instance->auto_approve_user( $user->ID );
-			$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+			$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		} finally {
 			remove_filter( 'wpau_auto_approve_rules', $filter );
 		}
@@ -830,7 +830,7 @@ class WPAU_Auto_Approval_Test extends WP_UnitTestCase {
 			$instance = new Obenland_Wp_Approve_User();
 			$instance->auto_approve_user( $user->ID );
 
-			$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+			$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		} finally {
 			remove_filter( 'wpau_default_options', $filter );
 		}

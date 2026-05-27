@@ -116,6 +116,8 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			)
 		);
 
+		add_filter( 'get_user_metadata', array( __CLASS__, 'translate_status_read' ), 10, 4 );
+
 		$this->hook( 'plugins_loaded' );
 	}
 
@@ -147,6 +149,94 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		}
 
 		return $meta_value;
+	}
+
+	/**
+	 * Reentrancy guard for the `get_user_metadata` translation filter.
+	 *
+	 * Both `get_metadata()` and `get_metadata_raw()` fire the
+	 * `get_{$meta_type}_metadata` short-circuit hook, so reading the raw
+	 * value from inside the callback or from [[read_status_raw]] would
+	 * recurse without this flag.
+	 *
+	 * @since 14
+	 *
+	 * @var bool
+	 */
+	private static $skip_translate = false;
+
+	/**
+	 * Returns the canonical three-state string in storage, bypassing the
+	 * legacy boolean translation filter.
+	 *
+	 * Plugin internals compare against `'approved'` / `'pending'` /
+	 * `'unapproved'`, so they need to see the raw value rather than the
+	 * boolean the public read filter surfaces to third parties.
+	 *
+	 * @since 14
+	 *
+	 * @param int $user_id User ID.
+	 * @return string The stored status, or '' when no meta row exists.
+	 */
+	public static function read_status_raw( $user_id ) {
+		self::$skip_translate = true;
+		try {
+			$value = get_metadata_raw( 'user', $user_id, 'wp-approve-user', true );
+		} finally {
+			self::$skip_translate = false;
+		}
+
+		return null === $value ? '' : $value;
+	}
+
+	/**
+	 * Translates `wp-approve-user` reads back to the legacy boolean API.
+	 *
+	 * Pre-V12 the meta stored `true` (approved) or `false`/missing
+	 * (pending). Third-party integrations — Restrict Content Pro is the
+	 * known consumer — still read with `! get_user_meta( $id, 'wp-approve-user', true )`,
+	 * which only works when the stored value is falsy for non-approved
+	 * users. Since V12 the meta holds truthy strings for every state, so
+	 * those consumers see every user as approved.
+	 *
+	 * This filter is the read-side counterpart to [[sanitize_status_meta]]:
+	 * `'approved'` → `true`, `'pending'`/`'unapproved'` → `false`. Plugin
+	 * internals call [[read_status_raw]] instead, which trips the
+	 * [[$skip_translate]] guard so they keep seeing the canonical string.
+	 *
+	 * Returns the array form WP core's `get_metadata()` / `get_metadata_raw()`
+	 * expect when short-circuiting: it unwraps `$check[0]` for `$single`
+	 * callers and keeps the array intact for non-single callers.
+	 *
+	 * @since 14
+	 *
+	 * @param mixed  $value     The pre-filter value (always `null` here).
+	 * @param int    $object_id User ID being read.
+	 * @param string $meta_key  Meta key being read.
+	 * @param bool   $single    Whether to return a single value.
+	 * @return mixed Translated value or the original `$value` to fall through.
+	 */
+	public static function translate_status_read( $value, $object_id, $meta_key, $single ) {
+		if ( 'wp-approve-user' !== $meta_key || self::$skip_translate ) {
+			return $value;
+		}
+
+		self::$skip_translate = true;
+		try {
+			$raw = get_metadata_raw( 'user', $object_id, 'wp-approve-user', true );
+		} finally {
+			self::$skip_translate = false;
+		}
+
+		if ( 'approved' === $raw ) {
+			return array( true );
+		}
+
+		if ( 'pending' === $raw || 'unapproved' === $raw ) {
+			return array( false );
+		}
+
+		return $value;
 	}
 
 	/**
@@ -362,7 +452,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			$site_id = isset( $_REQUEST['id'] ) ? intval( $_REQUEST['id'] ) : 0;
 			$url     = 'site-users-network' === get_current_screen()->id ? add_query_arg( array( 'id' => $site_id ), 'site-users.php' ) : 'users.php';
 
-			$status = get_user_meta( $user_object->ID, 'wp-approve-user', true );
+			$status = self::read_status_raw( $user_object->ID );
 
 			if ( 'approved' !== $status ) {
 				$unapprove_url = wp_nonce_url(
@@ -423,7 +513,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 			return $userdata;
 		}
 
-		$status          = get_user_meta( $userdata->ID, 'wp-approve-user', true );
+		$status          = self::read_status_raw( $userdata->ID );
 		$has_status_meta = metadata_exists( 'user', $userdata->ID, 'wp-approve-user' );
 
 		/*
@@ -495,7 +585,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @param int $user_id ID of the newly registered user.
 	 */
 	public function auto_approve_user( $user_id ) {
-		if ( 'pending' !== get_user_meta( $user_id, 'wp-approve-user', true ) ) {
+		if ( 'pending' !== self::read_status_raw( $user_id ) ) {
 			return;
 		}
 
@@ -664,7 +754,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @return array Filtered email arguments.
 	 */
 	public function wp_new_user_notification_email_admin( $email, $user, $blogname ) {
-		if ( 'pending' !== get_user_meta( $user->ID, 'wp-approve-user', true ) ) {
+		if ( 'pending' !== self::read_status_raw( $user->ID ) ) {
 			return $email;
 		}
 
@@ -695,7 +785,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @param int $user_id ID of the newly registered user.
 	 */
 	public function register_new_user( $user_id ) {
-		if ( 'pending' === get_user_meta( $user_id, 'wp-approve-user', true ) ) {
+		if ( 'pending' === self::read_status_raw( $user_id ) ) {
 			remove_action( 'register_new_user', 'wp_send_new_user_notifications' );
 			add_action( 'register_new_user', 'wp_new_user_notification' );
 		}
@@ -1088,7 +1178,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 */
 	public function delete_user( $user_id ) {
 		$is_new_registration = get_user_meta( $user_id, 'wp-approve-user-new-registration', true );
-		$is_unapproved       = 'unapproved' === get_user_meta( $user_id, 'wp-approve-user', true );
+		$is_unapproved       = 'unapproved' === self::read_status_raw( $user_id );
 
 		if ( $is_new_registration && $is_unapproved && $this->options['wpau-send-unapprove-email'] ) {
 			$user     = new WP_User( $user_id );
