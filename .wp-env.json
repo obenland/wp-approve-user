@@ -2,9 +2,11 @@
 	"core": null,
 	"phpVersion": "8.4",
 	"plugins": [
-		".",
 		"https://downloads.wordpress.org/plugin/debug-log-manager.2.3.3.zip"
 	],
+	"mappings": {
+		"wp-content/plugins/wp-approve-user": "."
+	},
 	"testsEnvironment": false,
 	"config": {
 		"WP_DEBUG": true,
@@ -12,6 +14,6 @@
 		"SCRIPT_DEBUG": true
 	},
 	"lifecycleScripts": {
-		"afterStart": "npx wp-env run cli wp option update users_can_register 1"
+		"afterStart": "bash -c 'set -e; npx wp-env run cli wp plugin activate wp-approve-user; npx wp-env run cli wp option update users_can_register 1'"
 	}
 }

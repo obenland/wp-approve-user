@@ -2,9 +2,11 @@
 	"core": null,
 	"phpVersion": "8.4",
 	"plugins": [
-		".",
 		"https://downloads.wordpress.org/plugin/debug-log-manager.2.3.3.zip"
 	],
+	"mappings": {
+		"wp-content/plugins/wp-approve-user": "."
+	},
 	"port": 8889,
 	"testsEnvironment": false,
 	"config": {
