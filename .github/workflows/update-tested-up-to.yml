@@ -140,6 +140,7 @@ jobs:
               id: pr
               uses: peter-evans/create-pull-request@v8
               with:
+                  token: ${{ secrets.WORKFLOW_PAT }}
                   sign-commits: true
                   base: trunk
                   commit-message: 'Bump Tested up to ${{ needs.check.outputs.version }}'
@@ -155,7 +156,7 @@ jobs:
               if: steps.pr.outputs.pull-request-number
               shell: bash
               env:
-                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  GH_TOKEN: ${{ secrets.WORKFLOW_PAT }}
                   PR: ${{ steps.pr.outputs.pull-request-number }}
               run: |
                   set -euo pipefail
