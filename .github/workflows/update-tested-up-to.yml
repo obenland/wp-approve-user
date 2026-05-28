@@ -103,7 +103,7 @@ jobs:
               run: npm ci
 
             - name: Start WordPress (latest stable)
-              run: npm run wp-env start
+              run: npm run start:tests
 
             - name: Run PHP unit tests (single site) against latest WordPress
               run: npm run test-php

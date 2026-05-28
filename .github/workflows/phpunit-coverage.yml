@@ -61,7 +61,7 @@ jobs:
               run: npm ci
 
             - name: Install WordPress with Xdebug enabled
-              run: npm run wp-env start -- --xdebug=coverage
+              run: npm run start:tests -- --xdebug=coverage
 
             - name: Run PHPUnit with Coverage
               id: phpunit
