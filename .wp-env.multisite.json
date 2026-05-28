@@ -2,21 +2,21 @@
 	"core": null,
 	"phpVersion": "8.4",
 	"plugins": [
-		".",
 		"https://downloads.wordpress.org/plugin/debug-log-manager.2.3.3.zip"
 	],
 	"port": 8890,
-	"testsPort": 8891,
 	"multisite": true,
+	"testsEnvironment": false,
 	"config": {
 		"WP_DEBUG": true,
 		"WP_DEBUG_LOG": true,
 		"SCRIPT_DEBUG": true
 	},
 	"mappings": {
-		"wp-content/mu-plugins": "./tests/fixtures/mu-plugins"
+		"wp-content/mu-plugins": "./tests/fixtures/mu-plugins",
+		"wp-content/plugins/wp-approve-user": "."
 	},
 	"lifecycleScripts": {
-		"afterStart": "bash -c 'set -e; npx wp-env --config=.wp-env.multisite.json run cli wp site option update registration user; npx wp-env --config=.wp-env.multisite.json run cli wp option add users_can_register 0 || true; npx wp-env --config=.wp-env.multisite.json run cli wp plugin activate wp-approve-user --network; npx wp-env --config=.wp-env.multisite.json run tests-cli wp site option update registration user; npx wp-env --config=.wp-env.multisite.json run tests-cli wp option add users_can_register 0 || true; npx wp-env --config=.wp-env.multisite.json run tests-cli wp plugin activate wp-approve-user --network'"
+		"afterStart": "bash -c 'set -e; npx wp-env --config=.wp-env.multisite.json run cli wp site option update registration user; npx wp-env --config=.wp-env.multisite.json run cli wp option add users_can_register 0 || true; npx wp-env --config=.wp-env.multisite.json run cli wp plugin activate wp-approve-user --network'"
 	}
 }

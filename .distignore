@@ -22,6 +22,7 @@
 .phpunit.result.cache
 .prettierignore
 .wp-env.json
+.wp-env.tests.json
 .wp-env.multisite.json
 .wp-env.override.json
 CLAUDE.md

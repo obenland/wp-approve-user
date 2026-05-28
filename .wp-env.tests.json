@@ -7,6 +7,7 @@
 	"mappings": {
 		"wp-content/plugins/wp-approve-user": "."
 	},
+	"port": 8889,
 	"testsEnvironment": false,
 	"config": {
 		"WP_DEBUG": true,
@@ -14,6 +15,6 @@
 		"SCRIPT_DEBUG": true
 	},
 	"lifecycleScripts": {
-		"afterStart": "bash -c 'set -e; npx wp-env run cli wp plugin activate wp-approve-user; npx wp-env run cli wp option update users_can_register 1'"
+		"afterStart": "npx wp-env run cli --config .wp-env.tests.json wp option update users_can_register 1"
 	}
 }
