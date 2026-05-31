@@ -40,7 +40,7 @@ class WPAU_Settings {
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		}
 		add_action( 'admin_init', array( $this, 'register_sections_and_fields' ) );
-		add_action( 'load-settings_page_' . self::SLUG, array( $this, 'maybe_dismiss_from_address_hint' ) );
+		add_action( 'load-settings_page_' . self::SLUG, array( $this, 'on_settings_page_load' ) );
 		add_action( 'admin_print_styles-settings_page_' . self::SLUG, array( $this, 'print_styles' ) );
 	}
 
@@ -244,18 +244,35 @@ class WPAU_Settings {
 			esc_html_x( 'To take advantage of dynamic data, you can use the following placeholders: %s. Username will be the user login in most cases.', 'Placeholders', 'wp-approve-user' ),
 			sprintf( '<code>%s</code>', implode( '</code>, <code>', $tags ) ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		);
+	}
 
-		$this->from_address_hint();
+	/**
+	 * Settings-page load handler.
+	 *
+	 * Runs only on the Approve User settings screen (the `load-{$page_hook}`
+	 * hook fires there for both single-site and network admin). Processes a
+	 * pending dismiss request, then queues the From-address hint onto
+	 * `all_admin_notices` so it renders through the standard admin-notices
+	 * pipeline — and only on this page, since that's where we registered it.
+	 *
+	 * @since 14
+	 */
+	public function on_settings_page_load() {
+		$this->maybe_dismiss_from_address_hint();
+
+		add_action( 'all_admin_notices', array( $this, 'from_address_hint' ) );
 	}
 
 	/**
 	 * Prints a dismissible hint pointing at the "Change From Address" plugin.
 	 *
-	 * The plugin lets admins customize the *body* of the approval emails but
-	 * always sends them from the site's default address. Admins who want to
+	 * Hooked onto `all_admin_notices` from on_settings_page_load(), so it renders
+	 * through the standard admin-notices pipeline at the top of the settings
+	 * page. The plugin lets admins customize the *body* of the approval emails
+	 * but always sends them from the site's default address; admins who want to
 	 * change the sender name/address need a companion plugin, so we surface one
-	 * here with an inline install/activate action and a dismiss link. The hint
-	 * hides itself once the companion plugin is active or the admin dismisses it.
+	 * here with an install/activate action and a dismiss link. The hint hides
+	 * itself once the companion plugin is active or the admin dismisses it.
 	 *
 	 * @since 14
 	 */
@@ -270,7 +287,7 @@ class WPAU_Settings {
 			'wpau_dismiss_from_address_hint'
 		);
 		?>
-		<div class="notice notice-info inline wpau-from-address-hint">
+		<div class="notice notice-info wpau-from-address-hint">
 			<p>
 				<?php
 				printf(
@@ -308,20 +325,9 @@ class WPAU_Settings {
 			return false;
 		}
 
-		return ! $this->is_from_address_plugin_active();
-	}
-
-	/**
-	 * Whether the companion "Change From Address" plugin is active.
-	 *
-	 * @since 14
-	 *
-	 * @return bool
-	 */
-	protected function is_from_address_plugin_active() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-		return is_plugin_active( 'change-from-address/change-from-address.php' );
+		return ! is_plugin_active( 'change-from-address/change-from-address.php' );
 	}
 
 	/**

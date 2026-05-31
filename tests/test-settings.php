@@ -69,7 +69,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		$this->assertNotFalse(
 			has_action(
 				'load-settings_page_wp-approve-user',
-				array( $settings, 'maybe_dismiss_from_address_hint' )
+				array( $settings, 'on_settings_page_load' )
 			)
 		);
 		$this->assertNotFalse(
@@ -700,18 +700,17 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * The email-section description embeds the From-address hint.
+	 * Loading the settings page queues the hint onto the admin-notices pipeline.
 	 *
-	 * @covers ::section_description_cb
+	 * @covers ::on_settings_page_load
 	 */
-	public function test_section_description_cb_includes_from_address_hint() {
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
+	public function test_on_settings_page_load_queues_admin_notice() {
+		$settings = new WPAU_Settings();
+		$settings->on_settings_page_load();
 
-		ob_start();
-		( new WPAU_Settings() )->section_description_cb();
-		$html = ob_get_clean();
-
-		$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+		$this->assertNotFalse(
+			has_action( 'all_admin_notices', array( $settings, 'from_address_hint' ) )
+		);
 	}
 
 	/**
@@ -775,8 +774,11 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	/**
 	 * The hint hides itself once the companion plugin is active.
 	 *
+	 * The WP test harness short-circuits get_option( 'active_plugins' ) via a
+	 * pre_option_active_plugins filter, so we hook the same filter at a later
+	 * priority to make is_plugin_active() report the companion plugin as active.
+	 *
 	 * @covers ::should_show_from_address_hint
-	 * @covers ::is_from_address_plugin_active
 	 */
 	public function test_should_show_false_when_companion_plugin_active() {
 		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
@@ -784,12 +786,12 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		$filter = static function () {
 			return array( 'change-from-address/change-from-address.php' );
 		};
-		add_filter( 'option_active_plugins', $filter );
+		add_filter( 'pre_option_active_plugins', $filter, 99 );
 
 		try {
 			$this->assertFalse( ( new WPAU_Settings() )->should_show_from_address_hint() );
 		} finally {
-			remove_filter( 'option_active_plugins', $filter );
+			remove_filter( 'pre_option_active_plugins', $filter, 99 );
 		}
 	}
 
