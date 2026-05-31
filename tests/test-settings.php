@@ -597,7 +597,9 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Print_styles enqueues the settings-page stylesheet + auto-approval script.
+	 * Print_styles enqueues the stylesheet, the auto-approval script, and —
+	 * since the hint shows by default for an admin — the from-address-hint
+	 * dismissal script.
 	 *
 	 * @covers ::print_styles
 	 */
@@ -606,6 +608,24 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( wp_style_is( 'wp-approve-user', 'enqueued' ) );
 		$this->assertTrue( wp_script_is( 'wpau-auto-approval-rules', 'enqueued' ) );
+		$this->assertTrue( wp_script_is( 'wpau-from-address-hint', 'enqueued' ) );
+
+		wp_dequeue_style( 'wp-approve-user' );
+		wp_dequeue_script( 'wpau-auto-approval-rules' );
+		wp_dequeue_script( 'wpau-from-address-hint' );
+	}
+
+	/**
+	 * Print_styles skips the from-address-hint script when the hint is hidden.
+	 *
+	 * @covers ::print_styles
+	 */
+	public function test_print_styles_skips_hint_script_when_dismissed() {
+		update_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		( new WPAU_Settings() )->print_styles();
+
+		$this->assertFalse( wp_script_is( 'wpau-from-address-hint', 'enqueued' ) );
 
 		wp_dequeue_style( 'wp-approve-user' );
 		wp_dequeue_script( 'wpau-auto-approval-rules' );
@@ -653,11 +673,19 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 * @covers ::from_address_plugin_action
 	 */
 	public function test_from_address_plugin_action_offers_install_when_not_installed() {
-		$action = ( new WPAU_Settings() )->from_address_plugin_action();
+		// Pin get_plugins() to an empty set so the assertion doesn't depend on
+		// the real plugin scan or a cache another test may have seeded.
+		wp_cache_set( 'plugins', array( '' => array() ), 'plugins' );
 
-		$this->assertStringStartsWith( self_admin_url(), $action['url'] );
-		$this->assertStringContainsString( 'action=install-plugin', $action['url'] );
-		$this->assertStringContainsString( 'change-from-address', $action['url'] );
+		try {
+			$action = ( new WPAU_Settings() )->from_address_plugin_action();
+
+			$this->assertStringStartsWith( self_admin_url(), $action['url'] );
+			$this->assertStringContainsString( 'action=install-plugin', $action['url'] );
+			$this->assertStringContainsString( 'change-from-address', $action['url'] );
+		} finally {
+			wp_cache_delete( 'plugins', 'plugins' );
+		}
 	}
 
 	/**
@@ -671,6 +699,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		$html = ob_get_clean();
 
 		$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+		$this->assertStringContainsString( 'is-dismissible', $html );
 		$this->assertStringContainsString( 'Change From Address', $html );
 		$this->assertStringContainsString( 'wpau_dismiss_from_address_hint', $html );
 		$this->assertStringContainsString( 'wpau-dismiss-from-address-hint', $html );

@@ -168,7 +168,8 @@ class WPAU_Settings {
 	 *
 	 * Fires on `admin_print_styles-settings_page_wp-approve-user` — the screen
 	 * hook WordPress derives from add_submenu_page() above — so the assets
-	 * only load on this one page.
+	 * only load on this one page. The from-address-hint script is enqueued
+	 * only when the hint is actually shown.
 	 *
 	 * @since 13
 	 */
@@ -190,6 +191,16 @@ class WPAU_Settings {
 			$plugin_data['Version'],
 			true
 		);
+
+		if ( $this->should_show_from_address_hint() ) {
+			wp_enqueue_script(
+				'wpau-from-address-hint',
+				plugins_url( "/js/from-address-hint{$suffix}.js", __FILE__ ),
+				array( 'common' ),
+				$plugin_data['Version'],
+				true
+			);
+		}
 	}
 
 	/**
@@ -274,6 +285,11 @@ class WPAU_Settings {
 	 * here with an install/activate action and a dismiss link. The hint hides
 	 * itself once the companion plugin is active or the admin dismisses it.
 	 *
+	 * The notice is marked `dismissible`, so core renders its × button; the
+	 * from-address-hint script (enqueued in print_styles()) hides the no-JS
+	 * text link and persists the × dismissal via the same nonced URL. Without
+	 * JavaScript the text link remains the dismiss affordance.
+	 *
 	 * @since 14
 	 */
 	public function from_address_hint() {
@@ -306,6 +322,7 @@ class WPAU_Settings {
 			$message,
 			array(
 				'type'               => 'info',
+				'dismissible'        => true,
 				'additional_classes' => array( 'wpau-from-address-hint' ),
 				'paragraph_wrap'     => false,
 			)
