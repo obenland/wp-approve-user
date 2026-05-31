@@ -50,6 +50,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 */
 	public function tear_down() {
 		delete_option( 'wp-approve-user' );
+		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
 		Obenland_Wp_Approve_User::$instance = null;
 		parent::tear_down();
 	}
@@ -616,8 +617,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 * @covers ::should_show_from_address_hint
 	 */
 	public function test_should_show_from_address_hint_defaults_to_visible() {
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
-
 		$this->assertTrue( ( new WPAU_Settings() )->should_show_from_address_hint() );
 	}
 
@@ -629,11 +628,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	public function test_should_show_false_when_dismissed() {
 		update_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', 1 );
 
-		try {
-			$this->assertFalse( ( new WPAU_Settings() )->should_show_from_address_hint() );
-		} finally {
-			delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
-		}
+		$this->assertFalse( ( new WPAU_Settings() )->should_show_from_address_hint() );
 	}
 
 	/**
@@ -670,8 +665,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 * @covers ::from_address_hint
 	 */
 	public function test_from_address_hint_renders_action_and_dismiss() {
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
-
 		ob_start();
 		( new WPAU_Settings() )->from_address_hint();
 		$html = ob_get_clean();
@@ -695,8 +688,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		$html = ob_get_clean();
 
 		$this->assertSame( '', trim( $html ) );
-
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
 	}
 
 	/**
@@ -720,7 +711,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 */
 	public function test_maybe_dismiss_ignores_unrelated_requests() {
 		unset( $_GET['wpau_dismiss_from_address_hint'] );
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
 
 		// Should return without touching meta or redirecting.
 		( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
@@ -737,8 +727,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 * @covers ::maybe_dismiss_from_address_hint
 	 */
 	public function test_maybe_dismiss_records_meta_and_redirects() {
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
-
 		$_GET['wpau_dismiss_from_address_hint'] = '1';
 		$nonce                                  = wp_create_nonce( 'wpau_dismiss_from_address_hint' );
 		$_GET['_wpnonce']                       = $nonce;
@@ -767,8 +755,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 			'1',
 			get_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', true )
 		);
-
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
 	}
 
 	/**
@@ -781,8 +767,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 * @covers ::should_show_from_address_hint
 	 */
 	public function test_should_show_false_when_companion_plugin_active() {
-		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
-
 		$filter = static function () {
 			return array( 'change-from-address/change-from-address.php' );
 		};
