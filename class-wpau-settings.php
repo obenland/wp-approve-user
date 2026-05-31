@@ -289,7 +289,7 @@ class WPAU_Settings {
 
 		$intro = sprintf(
 			/* translators: %s: Name of the companion plugin, “Change From Address”. */
-			esc_html__( 'Approval emails are sent from your site’s default address. Want them to come from a custom name or address instead? The free %s plugin lets you set the sender for every email WordPress sends.', 'wp-approve-user' ),
+			esc_html__( 'To send emails from a custom name or address, you can use the %s plugin.', 'wp-approve-user' ),
 			'<strong>' . esc_html__( 'Change From Address', 'wp-approve-user' ) . '</strong>'
 		);
 
