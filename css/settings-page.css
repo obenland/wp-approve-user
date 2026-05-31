@@ -95,3 +95,11 @@ label.image-radio-option input {
 .wpau-remove-auto-approve-rule:hover {
 	color: #8a1f20;
 }
+
+.wpau-from-address-hint {
+	margin: 1em 0;
+}
+
+.wpau-from-address-hint .wpau-dismiss-from-address-hint {
+	margin-left: 8px;
+}

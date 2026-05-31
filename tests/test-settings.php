@@ -603,4 +603,142 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		wp_dequeue_style( 'wp-approve-user' );
 		wp_dequeue_script( 'wpau-auto-approval-rules' );
 	}
+
+	/**
+	 * The From-address hint shows by default for an admin who hasn't dismissed it.
+	 *
+	 * @covers ::should_show_from_address_hint
+	 */
+	public function test_should_show_from_address_hint_defaults_to_visible() {
+		delete_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META );
+
+		$this->assertTrue( ( new WPAU_Settings() )->should_show_from_address_hint() );
+	}
+
+	/**
+	 * Dismissing the hint hides it for that user.
+	 *
+	 * @covers ::should_show_from_address_hint
+	 * @covers ::dismiss_from_address_hint
+	 */
+	public function test_dismiss_from_address_hint_hides_it() {
+		$settings = new WPAU_Settings();
+
+		$settings->dismiss_from_address_hint();
+
+		$this->assertSame(
+			'1',
+			get_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META, true )
+		);
+		$this->assertFalse( $settings->should_show_from_address_hint() );
+
+		delete_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META );
+	}
+
+	/**
+	 * An admin who can install plugins is offered the install action.
+	 *
+	 * @covers ::from_address_plugin_action
+	 */
+	public function test_from_address_plugin_action_offers_install_for_capable_user() {
+		$action = ( new WPAU_Settings() )->from_address_plugin_action();
+
+		$this->assertArrayHasKey( 'url', $action );
+		$this->assertArrayHasKey( 'label', $action );
+		// The companion plugin isn't installed in the test environment, so an
+		// admin/super-admin should get the install-plugin link.
+		$this->assertStringContainsString( 'action=install-plugin', $action['url'] );
+		$this->assertStringContainsString( 'change-from-address', $action['url'] );
+		$this->assertArrayNotHasKey( 'external', $action );
+	}
+
+	/**
+	 * A user without install/activate caps falls back to the WordPress.org link.
+	 *
+	 * @covers ::from_address_plugin_action
+	 */
+	public function test_from_address_plugin_action_falls_back_to_wporg() {
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber );
+
+		try {
+			$action = ( new WPAU_Settings() )->from_address_plugin_action();
+
+			$this->assertTrue( ! empty( $action['external'] ) );
+			$this->assertSame(
+				'https://wordpress.org/plugins/change-from-address/',
+				$action['url']
+			);
+		} finally {
+			wp_set_current_user( self::$admin->ID );
+		}
+	}
+
+	/**
+	 * From_address_hint renders the notice, an action button, and a dismiss link.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_renders_action_and_dismiss() {
+		delete_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META );
+
+		ob_start();
+		( new WPAU_Settings() )->from_address_hint();
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+		$this->assertStringContainsString( 'Change From Address', $html );
+		$this->assertStringContainsString( 'wpau_dismiss_from_address_hint', $html );
+		$this->assertStringContainsString( 'wpau-dismiss-from-address-hint', $html );
+	}
+
+	/**
+	 * From_address_hint renders nothing once dismissed.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_is_silent_when_dismissed() {
+		update_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META, 1 );
+
+		ob_start();
+		( new WPAU_Settings() )->from_address_hint();
+		$html = ob_get_clean();
+
+		$this->assertSame( '', trim( $html ) );
+
+		delete_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META );
+	}
+
+	/**
+	 * The email-section description embeds the From-address hint.
+	 *
+	 * @covers ::section_description_cb
+	 */
+	public function test_section_description_cb_includes_from_address_hint() {
+		delete_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META );
+
+		ob_start();
+		( new WPAU_Settings() )->section_description_cb();
+		$html = ob_get_clean();
+
+		$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+	}
+
+	/**
+	 * Maybe_dismiss_from_address_hint ignores requests without the dismiss flag.
+	 *
+	 * @covers ::maybe_dismiss_from_address_hint
+	 */
+	public function test_maybe_dismiss_ignores_unrelated_requests() {
+		unset( $_GET['wpau_dismiss_from_address_hint'] );
+		delete_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META );
+
+		// Should return without touching meta or redirecting.
+		( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
+
+		$this->assertSame(
+			'',
+			get_user_meta( self::$admin->ID, WPAU_Settings::FROM_ADDRESS_HINT_META, true )
+		);
+	}
 }
