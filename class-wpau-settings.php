@@ -286,27 +286,30 @@ class WPAU_Settings {
 			add_query_arg( 'wpau_dismiss_from_address_hint', '1' ),
 			'wpau_dismiss_from_address_hint'
 		);
-		?>
-		<div class="notice notice-info wpau-from-address-hint">
-			<p>
-				<?php
-				printf(
-					/* translators: %s: Name of the companion plugin, “Change From Address”. */
-					esc_html__( 'Approval emails are sent from your site’s default address. Want them to come from a custom name or address instead? The free %s plugin lets you set the sender for every email WordPress sends.', 'wp-approve-user' ),
-					'<strong>' . esc_html__( 'Change From Address', 'wp-approve-user' ) . '</strong>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				);
-				?>
-			</p>
-			<p>
-				<a href="<?php echo esc_url( $action['url'] ); ?>" class="button button-secondary">
-					<?php echo esc_html( $action['label'] ); ?>
-				</a>
-				<a href="<?php echo esc_url( $dismiss_url ); ?>" class="button-link wpau-dismiss-from-address-hint">
-					<?php esc_html_e( 'Dismiss', 'wp-approve-user' ); ?>
-				</a>
-			</p>
-		</div>
-		<?php
+
+		$intro = sprintf(
+			/* translators: %s: Name of the companion plugin, “Change From Address”. */
+			esc_html__( 'Approval emails are sent from your site’s default address. Want them to come from a custom name or address instead? The free %s plugin lets you set the sender for every email WordPress sends.', 'wp-approve-user' ),
+			'<strong>' . esc_html__( 'Change From Address', 'wp-approve-user' ) . '</strong>'
+		);
+
+		$message  = '<p>' . $intro . '</p>';
+		$message .= sprintf(
+			'<p><a href="%1$s" class="button button-secondary">%2$s</a> <a href="%3$s" class="button-link wpau-dismiss-from-address-hint">%4$s</a></p>',
+			esc_url( $action['url'] ),
+			esc_html( $action['label'] ),
+			esc_url( $dismiss_url ),
+			esc_html__( 'Dismiss', 'wp-approve-user' )
+		);
+
+		wp_admin_notice(
+			$message,
+			array(
+				'type'               => 'info',
+				'additional_classes' => array( 'wpau-from-address-hint' ),
+				'paragraph_wrap'     => false,
+			)
+		);
 	}
 
 	/**
@@ -314,7 +317,8 @@ class WPAU_Settings {
 	 *
 	 * @since 14
 	 *
-	 * @return bool True when the hint is neither dismissed nor redundant.
+	 * @return bool True when the current user can install plugins and the hint
+	 *              is neither dismissed nor redundant.
 	 */
 	public function should_show_from_address_hint() {
 		if ( ! current_user_can( 'install_plugins' ) ) {
@@ -335,7 +339,7 @@ class WPAU_Settings {
 	 *
 	 * The hint only renders for users who can install plugins (see
 	 * should_show_from_address_hint()), so the action is simply to activate the
-	 * companion plugin when it's already installed, or install it otherwise.
+	 * companion plugin when it's already installed or install it otherwise.
 	 *
 	 * @since 14
 	 *
@@ -371,7 +375,8 @@ class WPAU_Settings {
 	 * Fires on `load-settings_page_wp-approve-user` — the dismiss link points
 	 * back at this settings page, so this is the only request that needs to
 	 * handle it. Verifies the nonce, records the dismissal, then redirects to a
-	 * clean URL.
+	 * clean URL. If the meta write fails we skip the redirect and surface an
+	 * error notice instead, so a failed dismissal isn't disguised as success.
 	 *
 	 * @since 14
 	 */
@@ -382,7 +387,18 @@ class WPAU_Settings {
 
 		check_admin_referer( 'wpau_dismiss_from_address_hint' );
 
-		update_user_meta( get_current_user_id(), 'wp-approve-user-from-address-hint-dismissed', 1 );
+		if ( ! update_user_meta( get_current_user_id(), 'wp-approve-user-from-address-hint-dismissed', 1 ) ) {
+			add_action(
+				'all_admin_notices',
+				static function () {
+					wp_admin_notice(
+						esc_html__( 'Could not save your dismissal. Please try again.', 'wp-approve-user' ),
+						array( 'type' => 'error' )
+					);
+				}
+			);
+			return;
+		}
 
 		wp_safe_redirect( remove_query_arg( array( 'wpau_dismiss_from_address_hint', '_wpnonce' ) ) );
 		// @codeCoverageIgnoreStart

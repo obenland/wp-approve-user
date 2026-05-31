@@ -8,7 +8,7 @@
  * Author URI:  http://en.wp.obenland.it/#utm_source=wordpress&utm_medium=plugin&utm_campaign=wp-approve-user
  * Text Domain: wp-approve-user
  * Domain Path: /lang
- * Requires at least: 4.7
+ * Requires at least: 6.4
  * Requires PHP: 7.4
  * License:     GPLv2
  *

@@ -1,6 +1,7 @@
 /.claude/
 /.playwright-mcp
 /.phpunit.result.cache
+/.wp-env.override.json
 /coverage.xml
 /node_modules/
 /playwright-report/

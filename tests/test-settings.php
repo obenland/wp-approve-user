@@ -655,6 +655,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	public function test_from_address_plugin_action_offers_install_when_not_installed() {
 		$action = ( new WPAU_Settings() )->from_address_plugin_action();
 
+		$this->assertStringStartsWith( self_admin_url(), $action['url'] );
 		$this->assertStringContainsString( 'action=install-plugin', $action['url'] );
 		$this->assertStringContainsString( 'change-from-address', $action['url'] );
 	}
@@ -798,10 +799,67 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		try {
 			$action = ( new WPAU_Settings() )->from_address_plugin_action();
 
+			$this->assertStringStartsWith( self_admin_url(), $action['url'] );
 			$this->assertStringContainsString( 'action=activate', $action['url'] );
 			$this->assertStringContainsString( 'change-from-address', $action['url'] );
 		} finally {
 			wp_cache_delete( 'plugins', 'plugins' );
+		}
+	}
+
+	/**
+	 * In network admin the action link points at the network plugins screen.
+	 *
+	 * The URL is built with self_admin_url(), which resolves to
+	 * network_admin_url() under network admin — that's where a super admin
+	 * installs and activates plugins. Only meaningful on multisite.
+	 *
+	 * @covers ::from_address_plugin_action
+	 */
+	public function test_from_address_plugin_action_uses_network_admin_url_in_network_context() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Network admin context only applies on multisite.' );
+		}
+
+		set_current_screen( 'dashboard-network' );
+
+		try {
+			$action = ( new WPAU_Settings() )->from_address_plugin_action();
+
+			$this->assertStringStartsWith( network_admin_url(), $action['url'] );
+		} finally {
+			set_current_screen( 'front' );
+		}
+	}
+
+	/**
+	 * A dismiss request with an invalid nonce is rejected and writes no meta.
+	 *
+	 * Guards the CSRF protection on the dismiss handler: a future change that
+	 * weakened or dropped check_admin_referer() would slip past every other
+	 * test, since they all supply a valid nonce.
+	 *
+	 * @covers ::maybe_dismiss_from_address_hint
+	 */
+	public function test_maybe_dismiss_rejects_invalid_nonce() {
+		$_GET['wpau_dismiss_from_address_hint'] = '1';
+		$_GET['_wpnonce']                       = 'bogus';
+		$_REQUEST['_wpnonce']                   = 'bogus';
+
+		try {
+			( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
+			$this->fail( 'Expected check_admin_referer() to halt the request.' );
+		} catch ( WPDieException $e ) {
+			$this->assertSame(
+				'',
+				get_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', true )
+			);
+		} finally {
+			unset(
+				$_GET['wpau_dismiss_from_address_hint'],
+				$_GET['_wpnonce'],
+				$_REQUEST['_wpnonce']
+			);
 		}
 	}
 }
