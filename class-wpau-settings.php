@@ -29,34 +29,6 @@ class WPAU_Settings {
 	const SLUG = 'wp-approve-user';
 
 	/**
-	 * Slug of the companion "Change From Address" plugin on WordPress.org.
-	 *
-	 * The settings page surfaces a hint pointing admins at this plugin when they
-	 * want to customize the sender of the approval emails — wp-approve-user only
-	 * owns the email body, not the From: header.
-	 *
-	 * @since 14
-	 */
-	const FROM_ADDRESS_PLUGIN_SLUG = 'change-from-address';
-
-	/**
-	 * Plugin file (folder/file) of the companion "Change From Address" plugin.
-	 *
-	 * @since 14
-	 */
-	const FROM_ADDRESS_PLUGIN_FILE = 'change-from-address/change-from-address.php';
-
-	/**
-	 * User-meta key recording that the From-address hint has been dismissed.
-	 *
-	 * Per-user so one admin dismissing it doesn't hide it for everyone. Cleared
-	 * by uninstall.php alongside the other plugin-owned user meta.
-	 *
-	 * @since 14
-	 */
-	const FROM_ADDRESS_HINT_META = 'wp-approve-user-from-address-hint-dismissed';
-
-	/**
 	 * Registers menu, Settings API, and page-style hooks.
 	 *
 	 * @since 13
@@ -68,7 +40,7 @@ class WPAU_Settings {
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		}
 		add_action( 'admin_init', array( $this, 'register_sections_and_fields' ) );
-		add_action( 'admin_init', array( $this, 'maybe_dismiss_from_address_hint' ) );
+		add_action( 'load-settings_page_' . self::SLUG, array( $this, 'maybe_dismiss_from_address_hint' ) );
 		add_action( 'admin_print_styles-settings_page_' . self::SLUG, array( $this, 'print_styles' ) );
 	}
 
@@ -302,20 +274,14 @@ class WPAU_Settings {
 			<p>
 				<?php
 				printf(
-					/* translators: %s: Name of the companion plugin, "Change From Address". */
-					esc_html__( 'Approval emails are sent from your site\'s default address. Want them to come from a custom name or address instead? The free %s plugin lets you set the sender for every email WordPress sends.', 'wp-approve-user' ),
+					/* translators: %s: Name of the companion plugin, “Change From Address”. */
+					esc_html__( 'Approval emails are sent from your site’s default address. Want them to come from a custom name or address instead? The free %s plugin lets you set the sender for every email WordPress sends.', 'wp-approve-user' ),
 					'<strong>' . esc_html__( 'Change From Address', 'wp-approve-user' ) . '</strong>' // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				);
 				?>
 			</p>
 			<p>
-				<a
-					href="<?php echo esc_url( $action['url'] ); ?>"
-					class="button button-secondary"
-					<?php if ( ! empty( $action['external'] ) ) : ?>
-						target="_blank" rel="noopener noreferrer"
-					<?php endif; ?>
-				>
+				<a href="<?php echo esc_url( $action['url'] ); ?>" class="button button-secondary">
 					<?php echo esc_html( $action['label'] ); ?>
 				</a>
 				<a href="<?php echo esc_url( $dismiss_url ); ?>" class="button-link wpau-dismiss-from-address-hint">
@@ -334,7 +300,11 @@ class WPAU_Settings {
 	 * @return bool True when the hint is neither dismissed nor redundant.
 	 */
 	public function should_show_from_address_hint() {
-		if ( get_user_meta( get_current_user_id(), self::FROM_ADDRESS_HINT_META, true ) ) {
+		if ( ! current_user_can( 'install_plugins' ) ) {
+			return false;
+		}
+
+		if ( get_user_meta( get_current_user_id(), 'wp-approve-user-from-address-hint-dismissed', true ) ) {
 			return false;
 		}
 
@@ -349,64 +319,53 @@ class WPAU_Settings {
 	 * @return bool
 	 */
 	protected function is_from_address_plugin_active() {
-		if ( ! function_exists( 'is_plugin_active' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-		return is_plugin_active( self::FROM_ADDRESS_PLUGIN_FILE );
+		return is_plugin_active( 'change-from-address/change-from-address.php' );
 	}
 
 	/**
 	 * Builds the primary action link for the From-address hint.
 	 *
-	 * Prefers the action the current user can actually take: activate the
-	 * companion plugin if it's installed, install it from WordPress.org if not,
-	 * and otherwise fall back to the plugin's WordPress.org page (e.g. for users
-	 * without install/activate capabilities, or on locked-down installs).
+	 * The hint only renders for users who can install plugins (see
+	 * should_show_from_address_hint()), so the action is simply to activate the
+	 * companion plugin when it's already installed, or install it otherwise.
 	 *
 	 * @since 14
 	 *
-	 * @return array{url:string,label:string,external?:bool} Action descriptor.
+	 * @return array{url:string,label:string} Action descriptor.
 	 */
 	public function from_address_plugin_action() {
-		if ( ! function_exists( 'get_plugins' ) ) {
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-		}
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
-		$installed = array_key_exists( self::FROM_ADDRESS_PLUGIN_FILE, get_plugins() );
+		$plugin_file = 'change-from-address/change-from-address.php';
 
-		if ( $installed && current_user_can( 'activate_plugins' ) ) {
+		if ( array_key_exists( $plugin_file, get_plugins() ) ) {
 			return array(
 				'url'   => wp_nonce_url(
-					self_admin_url( 'plugins.php?action=activate&plugin=' . self::FROM_ADDRESS_PLUGIN_FILE ),
-					'activate-plugin_' . self::FROM_ADDRESS_PLUGIN_FILE
+					self_admin_url( 'plugins.php?action=activate&plugin=' . $plugin_file ),
+					'activate-plugin_' . $plugin_file
 				),
 				'label' => __( 'Activate Change From Address', 'wp-approve-user' ),
 			);
 		}
 
-		if ( ! $installed && current_user_can( 'install_plugins' ) ) {
-			return array(
-				'url'   => wp_nonce_url(
-					self_admin_url( 'update.php?action=install-plugin&plugin=' . self::FROM_ADDRESS_PLUGIN_SLUG ),
-					'install-plugin_' . self::FROM_ADDRESS_PLUGIN_SLUG
-				),
-				'label' => __( 'Install Change From Address', 'wp-approve-user' ),
-			);
-		}
-
 		return array(
-			'url'      => 'https://wordpress.org/plugins/' . self::FROM_ADDRESS_PLUGIN_SLUG . '/',
-			'label'    => __( 'Get Change From Address', 'wp-approve-user' ),
-			'external' => true,
+			'url'   => wp_nonce_url(
+				self_admin_url( 'update.php?action=install-plugin&plugin=change-from-address' ),
+				'install-plugin_change-from-address'
+			),
+			'label' => __( 'Install Change From Address', 'wp-approve-user' ),
 		);
 	}
 
 	/**
 	 * Handles the nonced dismiss link for the From-address hint.
 	 *
-	 * Fires on admin_init so the dismissal survives the redirect back to a clean
-	 * settings URL. Verifies the nonce, records the dismissal, then redirects.
+	 * Fires on `load-settings_page_wp-approve-user` — the dismiss link points
+	 * back at this settings page, so this is the only request that needs to
+	 * handle it. Verifies the nonce, records the dismissal, then redirects to a
+	 * clean URL.
 	 *
 	 * @since 14
 	 */
@@ -417,22 +376,12 @@ class WPAU_Settings {
 
 		check_admin_referer( 'wpau_dismiss_from_address_hint' );
 
-		$this->dismiss_from_address_hint();
+		update_user_meta( get_current_user_id(), 'wp-approve-user-from-address-hint-dismissed', 1 );
 
 		wp_safe_redirect( remove_query_arg( array( 'wpau_dismiss_from_address_hint', '_wpnonce' ) ) );
+		// @codeCoverageIgnoreStart
 		exit;
-	}
-
-	/**
-	 * Records that the current user dismissed the From-address hint.
-	 *
-	 * Split out from the request handler so it can be exercised directly without
-	 * the nonce/redirect plumbing.
-	 *
-	 * @since 14
-	 */
-	public function dismiss_from_address_hint() {
-		update_user_meta( get_current_user_id(), self::FROM_ADDRESS_HINT_META, 1 );
+		// @codeCoverageIgnoreEnd
 	}
 
 	/**
