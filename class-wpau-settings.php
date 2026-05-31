@@ -282,8 +282,10 @@ class WPAU_Settings {
 	 * page. The plugin lets admins customize the *body* of the approval emails
 	 * but always sends them from the site's default address; admins who want to
 	 * change the sender name/address need a companion plugin, so we surface one
-	 * here with an install/activate action and a dismiss link. The hint hides
-	 * itself once the companion plugin is active or the admin dismisses it.
+	 * here: the plugin name links to core's plugin-information modal when it
+	 * isn't installed, or to a one-click activate link when it is. The hint
+	 * hides itself once the companion plugin is active or the admin dismisses
+	 * it.
 	 *
 	 * The notice is marked `dismissible`, so core renders its × button; the
 	 * from-address-hint script (enqueued in print_styles()) hides the no-JS
@@ -297,23 +299,36 @@ class WPAU_Settings {
 			return;
 		}
 
-		$action      = $this->from_address_plugin_action();
+		$action = $this->from_address_plugin_action();
+
+		// The plugin-information modal needs Thickbox + plugin-install; enqueue
+		// them here so they load only when the modal link is actually shown.
+		if ( $action['modal'] ) {
+			add_thickbox();
+			wp_enqueue_script( 'plugin-install' );
+		}
+
 		$dismiss_url = wp_nonce_url(
 			add_query_arg( 'wpau_dismiss_from_address_hint', '1' ),
 			'wpau_dismiss_from_address_hint'
 		);
 
+		$plugin_link = sprintf(
+			'<a href="%1$s"%2$s>%3$s</a>',
+			esc_url( $action['url'] ),
+			$action['modal'] ? ' class="thickbox open-plugin-details-modal"' : '',
+			esc_html__( 'Change From Address', 'wp-approve-user' )
+		);
+
 		$intro = sprintf(
-			/* translators: %s: Name of the companion plugin, “Change From Address”. */
+			/* translators: %s: Linked name of the companion plugin, “Change From Address”. */
 			esc_html__( 'To send emails from a custom name or address, you can use the %s plugin.', 'wp-approve-user' ),
-			'<strong>' . esc_html__( 'Change From Address', 'wp-approve-user' ) . '</strong>'
+			$plugin_link
 		);
 
 		$message  = '<p>' . $intro . '</p>';
 		$message .= sprintf(
-			'<p><a href="%1$s" class="button button-secondary">%2$s</a> <a href="%3$s" class="button-link wpau-dismiss-from-address-hint">%4$s</a></p>',
-			esc_url( $action['url'] ),
-			esc_html( $action['label'] ),
+			'<p><a href="%1$s" class="button-link wpau-dismiss-from-address-hint">%2$s</a></p>',
 			esc_url( $dismiss_url ),
 			esc_html__( 'Dismiss', 'wp-approve-user' )
 		);
@@ -352,15 +367,19 @@ class WPAU_Settings {
 	}
 
 	/**
-	 * Builds the primary action link for the From-address hint.
+	 * Builds the target for the linked plugin name in the From-address hint.
 	 *
 	 * The hint only renders for users who can install plugins (see
-	 * should_show_from_address_hint()), so the action is simply to activate the
-	 * companion plugin when it's already installed or install it otherwise.
+	 * should_show_from_address_hint()). When the companion plugin is already
+	 * installed but inactive, the name links straight to a one-click activate
+	 * URL; otherwise it links to core's plugin-information modal (`modal` true),
+	 * where the admin can read the details and install it without leaving the
+	 * page.
 	 *
 	 * @since 14
 	 *
-	 * @return array{url:string,label:string} Action descriptor.
+	 * @return array{url:string,modal:bool} Link descriptor: the URL and whether
+	 *                                      it opens the plugin-information modal.
 	 */
 	public function from_address_plugin_action() {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -373,16 +392,15 @@ class WPAU_Settings {
 					self_admin_url( 'plugins.php?action=activate&plugin=' . $plugin_file ),
 					'activate-plugin_' . $plugin_file
 				),
-				'label' => __( 'Activate Change From Address', 'wp-approve-user' ),
+				'modal' => false,
 			);
 		}
 
 		return array(
-			'url'   => wp_nonce_url(
-				self_admin_url( 'update.php?action=install-plugin&plugin=change-from-address' ),
-				'install-plugin_change-from-address'
+			'url'   => self_admin_url(
+				'plugin-install.php?tab=plugin-information&plugin=change-from-address&TB_iframe=true&width=600&height=550'
 			),
-			'label' => __( 'Install Change From Address', 'wp-approve-user' ),
+			'modal' => true,
 		);
 	}
 

@@ -59,7 +59,7 @@ test.describe.serial( 'WP Approve User — Change From Address hint', () => {
 	test.beforeAll( resetDismissal );
 	test.afterAll( resetDismissal );
 
-	test( 'shows the hint with an action button and a dismiss control', async ( {
+	test( 'links the plugin name to the info modal with a dismiss control', async ( {
 		page,
 	} ) => {
 		await loginAs( page, 'admin', 'password' );
@@ -69,13 +69,13 @@ test.describe.serial( 'WP Approve User — Change From Address hint', () => {
 		await expect( hint ).toBeVisible();
 		await expect( hint ).toContainText( 'Change From Address' );
 
-		// Admin can install plugins, so the primary action points at the
-		// install-plugin route for the change-from-address slug.
-		const action = hint.locator( 'a.button' );
-		await expect( action ).toBeVisible();
-		await expect( action ).toHaveAttribute(
+		// The companion plugin isn't installed, so the plugin name links to
+		// core's plugin-information modal for the change-from-address slug.
+		const modalLink = hint.locator( 'a.open-plugin-details-modal' );
+		await expect( modalLink ).toBeVisible();
+		await expect( modalLink ).toHaveAttribute(
 			'href',
-			/plugin=change-from-address/
+			/tab=plugin-information&.*plugin=change-from-address/
 		);
 
 		// With JavaScript on, core's × button is the dismiss control and the

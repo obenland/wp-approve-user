@@ -668,11 +668,11 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * When the plugin isn't installed, the action is the install link.
+	 * When the plugin isn't installed, the name links to the info modal.
 	 *
 	 * @covers ::from_address_plugin_action
 	 */
-	public function test_from_address_plugin_action_offers_install_when_not_installed() {
+	public function test_from_address_plugin_action_links_to_modal_when_not_installed() {
 		// Pin get_plugins() to an empty set so the assertion doesn't depend on
 		// the real plugin scan or a cache another test may have seeded.
 		wp_cache_set( 'plugins', array( '' => array() ), 'plugins' );
@@ -680,29 +680,77 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		try {
 			$action = ( new WPAU_Settings() )->from_address_plugin_action();
 
+			$this->assertTrue( $action['modal'] );
 			$this->assertStringStartsWith( self_admin_url(), $action['url'] );
-			$this->assertStringContainsString( 'action=install-plugin', $action['url'] );
-			$this->assertStringContainsString( 'change-from-address', $action['url'] );
+			$this->assertStringContainsString( 'tab=plugin-information', $action['url'] );
+			$this->assertStringContainsString( 'plugin=change-from-address', $action['url'] );
 		} finally {
 			wp_cache_delete( 'plugins', 'plugins' );
 		}
 	}
 
 	/**
-	 * From_address_hint renders the notice, an action button, and a dismiss link.
+	 * From_address_hint renders the dismissible notice, the modal-linked plugin
+	 * name (companion plugin not installed), and the no-JS dismiss link, and
+	 * enqueues the Thickbox + plugin-install assets the modal needs.
 	 *
 	 * @covers ::from_address_hint
 	 */
 	public function test_from_address_hint_renders_action_and_dismiss() {
-		ob_start();
-		( new WPAU_Settings() )->from_address_hint();
-		$html = ob_get_clean();
+		// Pin get_plugins() to empty so the name links to the modal.
+		wp_cache_set( 'plugins', array( '' => array() ), 'plugins' );
 
-		$this->assertStringContainsString( 'wpau-from-address-hint', $html );
-		$this->assertStringContainsString( 'is-dismissible', $html );
-		$this->assertStringContainsString( 'Change From Address', $html );
-		$this->assertStringContainsString( 'wpau_dismiss_from_address_hint', $html );
-		$this->assertStringContainsString( 'wpau-dismiss-from-address-hint', $html );
+		try {
+			ob_start();
+			( new WPAU_Settings() )->from_address_hint();
+			$html = ob_get_clean();
+
+			$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+			$this->assertStringContainsString( 'is-dismissible', $html );
+			$this->assertStringContainsString( 'open-plugin-details-modal', $html );
+			$this->assertStringContainsString( 'Change From Address', $html );
+			$this->assertStringContainsString( 'wpau_dismiss_from_address_hint', $html );
+			$this->assertStringContainsString( 'wpau-dismiss-from-address-hint', $html );
+
+			$this->assertTrue( wp_script_is( 'thickbox', 'enqueued' ) );
+			$this->assertTrue( wp_script_is( 'plugin-install', 'enqueued' ) );
+		} finally {
+			wp_cache_delete( 'plugins', 'plugins' );
+			wp_dequeue_script( 'thickbox' );
+			wp_dequeue_script( 'plugin-install' );
+		}
+	}
+
+	/**
+	 * When the companion plugin is installed but inactive, the hint links the
+	 * name to a plain activate URL and skips the modal-only Thickbox assets.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_skips_modal_assets_when_installed() {
+		wp_cache_set(
+			'plugins',
+			array(
+				'' => array(
+					'change-from-address/change-from-address.php' => array( 'Name' => 'Change From Address' ),
+				),
+			),
+			'plugins'
+		);
+
+		try {
+			ob_start();
+			( new WPAU_Settings() )->from_address_hint();
+			$html = ob_get_clean();
+
+			$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+			$this->assertStringNotContainsString( 'open-plugin-details-modal', $html );
+			$this->assertStringContainsString( 'action=activate', $html );
+			$this->assertFalse( wp_script_is( 'thickbox', 'enqueued' ) );
+			$this->assertFalse( wp_script_is( 'plugin-install', 'enqueued' ) );
+		} finally {
+			wp_cache_delete( 'plugins', 'plugins' );
+		}
 	}
 
 	/**
@@ -828,6 +876,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		try {
 			$action = ( new WPAU_Settings() )->from_address_plugin_action();
 
+			$this->assertFalse( $action['modal'] );
 			$this->assertStringStartsWith( self_admin_url(), $action['url'] );
 			$this->assertStringContainsString( 'action=activate', $action['url'] );
 			$this->assertStringContainsString( 'change-from-address', $action['url'] );

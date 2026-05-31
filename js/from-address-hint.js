@@ -20,7 +20,7 @@ document.addEventListener( 'DOMContentLoaded', function () {
 
 	// Core draws the × button, so the text link is only the no-JS fallback.
 	const dismissUrl = fallback.href;
-	fallback.hidden = true;
+	( fallback.closest( 'p' ) || fallback ).hidden = true;
 
 	notice.addEventListener( 'click', function ( event ) {
 		if ( ! event.target.closest( '.notice-dismiss' ) ) {
