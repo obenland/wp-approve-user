@@ -31,7 +31,12 @@ document.addEventListener( 'DOMContentLoaded', function () {
 		if ( navigator.sendBeacon ) {
 			navigator.sendBeacon( dismissUrl );
 		} else {
-			fetch( dismissUrl, { credentials: 'same-origin' } );
+			// keepalive lets the request finish even if the user navigates away
+			// right after clicking ×; this is best-effort, so ignore failures.
+			fetch( dismissUrl, {
+				credentials: 'same-origin',
+				keepalive: true,
+			} ).catch( function () {} );
 		}
 	} );
 } );

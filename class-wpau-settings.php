@@ -389,7 +389,13 @@ class WPAU_Settings {
 		if ( array_key_exists( $plugin_file, get_plugins() ) ) {
 			return array(
 				'url'   => wp_nonce_url(
-					self_admin_url( 'plugins.php?action=activate&plugin=' . $plugin_file ),
+					add_query_arg(
+						array(
+							'action' => 'activate',
+							'plugin' => $plugin_file,
+						),
+						self_admin_url( 'plugins.php' )
+					),
 					'activate-plugin_' . $plugin_file
 				),
 				'modal' => false,

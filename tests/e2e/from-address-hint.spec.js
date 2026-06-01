@@ -5,8 +5,9 @@
  * points admins at the companion "Change From Address" plugin when they want
  * to customize the sender of approval emails. This spec verifies:
  *
- *   - The hint renders with an action button (install or activate) and core's
- *     × dismiss control when the companion plugin isn't active.
+ *   - The hint links the companion plugin's name to core's plugin-information
+ *     modal (or a one-click activate link when it's installed), alongside
+ *     core's × dismiss control, when the companion plugin isn't active.
  *   - Dismissing via the × hides the hint and the dismissal persists across
  *     reloads (recorded in the background by the hint script).
  *
@@ -29,15 +30,9 @@ function resetDismissal() {
 		wp(
 			'user meta delete admin wp-approve-user-from-address-hint-dismissed'
 		);
-	} catch ( err ) {
-		/*
-		 * wp-cli exits non-zero when the meta key doesn't exist — expected on a
-		 * clean run. Anything else (env down, container missing) is worth a
-		 * breadcrumb rather than silence.
-		 */
-		console.warn(
-			`resetDismissal: meta delete returned non-zero (likely "key not set"): ${ err.message }`
-		);
+	} catch {
+		// Best-effort cleanup: wp-cli exits non-zero when the meta key isn't
+		// set, which is the expected case on a clean run.
 	}
 }
 
