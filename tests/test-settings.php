@@ -692,7 +692,10 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	/**
 	 * From_address_hint renders the dismissible notice, the modal-linked plugin
 	 * name (companion plugin not installed), and the no-JS dismiss link, and
-	 * enqueues the Thickbox + plugin-install assets the modal needs.
+	 * enqueues Thickbox for the plugin-information modal.
+	 *
+	 * Thickbox is the reliable signal that the modal branch ran: plugin-install
+	 * is registered only under is_admin() and isn't asserted here.
 	 *
 	 * @covers ::from_address_hint
 	 */
@@ -713,7 +716,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'wpau-dismiss-from-address-hint', $html );
 
 			$this->assertTrue( wp_script_is( 'thickbox', 'enqueued' ) );
-			$this->assertTrue( wp_script_is( 'plugin-install', 'enqueued' ) );
 		} finally {
 			wp_cache_delete( 'plugins', 'plugins' );
 			wp_dequeue_script( 'thickbox' );
@@ -747,7 +749,6 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 			$this->assertStringNotContainsString( 'open-plugin-details-modal', $html );
 			$this->assertStringContainsString( 'action=activate', $html );
 			$this->assertFalse( wp_script_is( 'thickbox', 'enqueued' ) );
-			$this->assertFalse( wp_script_is( 'plugin-install', 'enqueued' ) );
 		} finally {
 			wp_cache_delete( 'plugins', 'plugins' );
 		}
@@ -766,6 +767,33 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		$html = ob_get_clean();
 
 		$this->assertSame( '', trim( $html ) );
+	}
+
+	/**
+	 * From_address_hint renders nothing once the companion plugin is active —
+	 * there's nothing left to nudge the admin toward.
+	 *
+	 * The WP test harness short-circuits get_option( 'active_plugins' ) via a
+	 * pre_option_active_plugins filter, so we hook the same filter at a later
+	 * priority to make is_plugin_active() report the companion plugin as active.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_is_silent_when_companion_plugin_active() {
+		$filter = static function () {
+			return array( 'change-from-address/change-from-address.php' );
+		};
+		add_filter( 'pre_option_active_plugins', $filter, 99 );
+
+		try {
+			ob_start();
+			( new WPAU_Settings() )->from_address_hint();
+			$html = ob_get_clean();
+
+			$this->assertSame( '', trim( $html ) );
+		} finally {
+			remove_filter( 'pre_option_active_plugins', $filter, 99 );
+		}
 	}
 
 	/**

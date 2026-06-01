@@ -322,7 +322,7 @@ class WPAU_Settings {
 
 		$intro = sprintf(
 			/* translators: %s: Linked name of the companion plugin, “Change From Address”. */
-			esc_html__( 'To send emails from a custom name or address, you can use the %s plugin.', 'wp-approve-user' ),
+			esc_html__( 'To send approval emails from a custom name or address, add the %s plugin.', 'wp-approve-user' ),
 			$plugin_link
 		);
 
