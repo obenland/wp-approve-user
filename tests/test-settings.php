@@ -864,6 +864,45 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A repeat dismiss (meta already set) still redirects rather than erroring.
+	 *
+	 * The update_user_meta() return is false when the value is unchanged, so
+	 * the handler must check the persisted value, not the return, before
+	 * deciding the write failed.
+	 *
+	 * @covers ::maybe_dismiss_from_address_hint
+	 */
+	public function test_maybe_dismiss_when_already_dismissed_still_redirects() {
+		update_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		$_GET['wpau_dismiss_from_address_hint'] = '1';
+		$nonce                                  = wp_create_nonce( 'wpau_dismiss_from_address_hint' );
+		$_GET['_wpnonce']                       = $nonce;
+		$_REQUEST['_wpnonce']                   = $nonce;
+
+		$throw = static function ( $location ) {
+			throw new WPAU_Redirect_Exception( esc_url_raw( $location ) );
+		};
+		add_filter( 'wp_redirect', $throw );
+
+		try {
+			// Reaching the redirect (rather than returning early) proves the
+			// handler treated the already-set meta as success, not failure.
+			( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
+			$this->fail( 'Expected a redirect, not an error notice.' );
+		} catch ( WPAU_Redirect_Exception $e ) {
+			$this->assertStringNotContainsString( 'wpau_dismiss_from_address_hint', $e->location );
+		} finally {
+			remove_filter( 'wp_redirect', $throw );
+			unset(
+				$_GET['wpau_dismiss_from_address_hint'],
+				$_GET['_wpnonce'],
+				$_REQUEST['_wpnonce']
+			);
+		}
+	}
+
+	/**
 	 * The hint hides itself once the companion plugin is active.
 	 *
 	 * The WP test harness short-circuits get_option( 'active_plugins' ) via a

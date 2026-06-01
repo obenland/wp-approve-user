@@ -422,7 +422,15 @@ class WPAU_Settings {
 
 		check_admin_referer( 'wpau_dismiss_from_address_hint' );
 
-		if ( ! update_user_meta( get_current_user_id(), 'wp-approve-user-from-address-hint-dismissed', 1 ) ) {
+		$user_id = get_current_user_id();
+		update_user_meta( $user_id, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		/*
+		 * update_user_meta() returns false both on a write failure and when the
+		 * value is already set (a repeat dismiss), so check the persisted state
+		 * instead — only a genuinely unset value means the write failed.
+		 */
+		if ( ! get_user_meta( $user_id, 'wp-approve-user-from-address-hint-dismissed', true ) ) {
 			add_action(
 				'all_admin_notices',
 				static function () {
