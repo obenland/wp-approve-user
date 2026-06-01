@@ -1,0 +1,108 @@
+/**
+ * "Change From Address" hint coverage.
+ *
+ * A dismissible admin notice at the top of the Approve User settings page
+ * points admins at the companion "Change From Address" plugin when they want
+ * to customize the sender of approval emails. This spec verifies:
+ *
+ *   - The hint links the companion plugin's name to core's plugin-information
+ *     modal (or a one-click activate link when it's installed), alongside
+ *     core's × dismiss control, when the companion plugin isn't active.
+ *   - Dismissing via the × hides the hint and the dismissal persists across
+ *     reloads (recorded in the background by the hint script).
+ *
+ * The dismissal is recorded in per-user meta, so the spec resets that meta
+ * before and after to stay independent of run order.
+ */
+const { test, expect } = require( '@playwright/test' );
+const { execSync } = require( 'node:child_process' );
+
+function wp( args ) {
+	return execSync( `npx wp-env run cli wp ${ args }`, {
+		stdio: [ 'ignore', 'pipe', 'inherit' ],
+	} )
+		.toString()
+		.trim();
+}
+
+function resetDismissal() {
+	try {
+		wp(
+			'user meta delete admin wp-approve-user-from-address-hint-dismissed'
+		);
+	} catch {
+		// Best-effort cleanup: wp-cli exits non-zero when the meta key isn't
+		// set, which is the expected case on a clean run.
+	}
+}
+
+async function loginAs( page, username, password ) {
+	await page.goto( '/wp-login.php' );
+	await page.locator( '#user_login' ).fill( username );
+	await page.locator( '#user_pass' ).fill( password );
+	// Wait for the post-login redirect so the auth cookie is set before the
+	// test navigates on; otherwise the next goto can race as logged-out.
+	await Promise.all( [
+		page.waitForURL( '**/wp-admin/**' ),
+		page.locator( '#wp-submit' ).click(),
+	] );
+}
+
+const SETTINGS_URL = '/wp-admin/options-general.php?page=wp-approve-user';
+
+test.describe.serial( 'WP Approve User — Change From Address hint', () => {
+	test.beforeAll( resetDismissal );
+	test.afterAll( resetDismissal );
+
+	test( 'links the plugin name to the info modal with a dismiss control', async ( {
+		page,
+	} ) => {
+		await loginAs( page, 'admin', 'password' );
+		await page.goto( SETTINGS_URL );
+
+		const hint = page.locator( '.wpau-from-address-hint' );
+		await expect( hint ).toBeVisible();
+		await expect( hint ).toContainText( 'Change From Address' );
+
+		// The companion plugin isn't installed, so the plugin name links to
+		// core's plugin-information modal for the change-from-address slug.
+		const modalLink = hint.locator( 'a.open-plugin-details-modal' );
+		await expect( modalLink ).toBeVisible();
+		await expect( modalLink ).toHaveAttribute(
+			'href',
+			/tab=plugin-information&.*plugin=change-from-address/
+		);
+
+		// With JavaScript on, core's × button is the dismiss control and the
+		// no-JS text link is hidden by the hint script.
+		await expect( hint.locator( 'button.notice-dismiss' ) ).toBeVisible();
+		await expect(
+			hint.locator( 'a.wpau-dismiss-from-address-hint' )
+		).toBeHidden();
+	} );
+
+	test( 'dismissing via the × persists across reloads', async ( {
+		page,
+	} ) => {
+		await loginAs( page, 'admin', 'password' );
+		await page.goto( SETTINGS_URL );
+
+		const hint = page.locator( '.wpau-from-address-hint' );
+
+		// The × records the dismissal in the background, then core removes the
+		// notice. Wait for that request so the reload sees the persisted state.
+		const dismissed = page.waitForRequest( ( request ) =>
+			request.url().includes( 'wpau_dismiss_from_address_hint' )
+		);
+		await hint.locator( 'button.notice-dismiss' ).click();
+		await dismissed;
+
+		await expect( hint ).toHaveCount( 0 );
+
+		// And it stays gone on a fresh load.
+		await page.goto( SETTINGS_URL );
+		await expect( page.locator( '.wpau-from-address-hint' ) ).toHaveCount(
+			0
+		);
+	} );
+} );

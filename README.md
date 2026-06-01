@@ -3,7 +3,7 @@
 Contributors: obenland
 Tags: admin, user, login, approve, user management
 Donate link: <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G65Y5CM3HVRNY>
-Requires at least: 4.7
+Requires at least: 6.4
 Tested up to: 7.0
 Requires PHP: 7.4
 Stable tag: 13

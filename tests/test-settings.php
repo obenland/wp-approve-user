@@ -50,6 +50,7 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	 */
 	public function tear_down() {
 		delete_option( 'wp-approve-user' );
+		delete_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed' );
 		Obenland_Wp_Approve_User::$instance = null;
 		parent::tear_down();
 	}
@@ -66,6 +67,12 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 		$menu_hook = is_multisite() ? 'network_admin_menu' : 'admin_menu';
 		$this->assertNotFalse( has_action( $menu_hook, array( $settings, 'register_menu' ) ) );
 		$this->assertNotFalse( has_action( 'admin_init', array( $settings, 'register_sections_and_fields' ) ) );
+		$this->assertNotFalse(
+			has_action(
+				'load-settings_page_wp-approve-user',
+				array( $settings, 'on_settings_page_load' )
+			)
+		);
 		$this->assertNotFalse(
 			has_action(
 				'admin_print_styles-settings_page_wp-approve-user',
@@ -590,7 +597,9 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Print_styles enqueues the settings-page stylesheet + auto-approval script.
+	 * Print_styles enqueues the stylesheet, the auto-approval script, and —
+	 * since the hint shows by default for an admin — the from-address-hint
+	 * dismissal script.
 	 *
 	 * @covers ::print_styles
 	 */
@@ -599,8 +608,403 @@ class WPAU_Settings_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( wp_style_is( 'wp-approve-user', 'enqueued' ) );
 		$this->assertTrue( wp_script_is( 'wpau-auto-approval-rules', 'enqueued' ) );
+		$this->assertTrue( wp_script_is( 'wpau-from-address-hint', 'enqueued' ) );
 
 		wp_dequeue_style( 'wp-approve-user' );
 		wp_dequeue_script( 'wpau-auto-approval-rules' );
+		wp_dequeue_script( 'wpau-from-address-hint' );
+	}
+
+	/**
+	 * Print_styles skips the from-address-hint script when the hint is hidden.
+	 *
+	 * @covers ::print_styles
+	 */
+	public function test_print_styles_skips_hint_script_when_dismissed() {
+		update_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		( new WPAU_Settings() )->print_styles();
+
+		$this->assertFalse( wp_script_is( 'wpau-from-address-hint', 'enqueued' ) );
+
+		wp_dequeue_style( 'wp-approve-user' );
+		wp_dequeue_script( 'wpau-auto-approval-rules' );
+	}
+
+	/**
+	 * The From-address hint shows by default for an admin who hasn't dismissed it.
+	 *
+	 * @covers ::should_show_from_address_hint
+	 */
+	public function test_should_show_from_address_hint_defaults_to_visible() {
+		$this->assertTrue( ( new WPAU_Settings() )->should_show_from_address_hint() );
+	}
+
+	/**
+	 * A dismissed hint stays hidden for that user.
+	 *
+	 * @covers ::should_show_from_address_hint
+	 */
+	public function test_should_show_false_when_dismissed() {
+		update_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		$this->assertFalse( ( new WPAU_Settings() )->should_show_from_address_hint() );
+	}
+
+	/**
+	 * The hint never shows to users who can't install plugins.
+	 *
+	 * @covers ::should_show_from_address_hint
+	 */
+	public function test_should_show_false_for_users_who_cannot_install_plugins() {
+		$subscriber = self::factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $subscriber );
+
+		try {
+			$this->assertFalse( ( new WPAU_Settings() )->should_show_from_address_hint() );
+		} finally {
+			wp_set_current_user( self::$admin->ID );
+		}
+	}
+
+	/**
+	 * When the plugin isn't installed, the name links to the info modal.
+	 *
+	 * @covers ::from_address_plugin_action
+	 */
+	public function test_from_address_plugin_action_links_to_modal_when_not_installed() {
+		// Pin get_plugins() to an empty set so the assertion doesn't depend on
+		// the real plugin scan or a cache another test may have seeded.
+		wp_cache_set( 'plugins', array( '' => array() ), 'plugins' );
+
+		try {
+			$action = ( new WPAU_Settings() )->from_address_plugin_action();
+
+			$this->assertTrue( $action['modal'] );
+			$this->assertStringStartsWith( self_admin_url(), $action['url'] );
+			$this->assertStringContainsString( 'tab=plugin-information', $action['url'] );
+			$this->assertStringContainsString( 'plugin=change-from-address', $action['url'] );
+		} finally {
+			wp_cache_delete( 'plugins', 'plugins' );
+		}
+	}
+
+	/**
+	 * From_address_hint renders the dismissible notice, the modal-linked plugin
+	 * name (companion plugin not installed), and the no-JS dismiss link, and
+	 * enqueues Thickbox for the plugin-information modal.
+	 *
+	 * Thickbox is the reliable signal that the modal branch ran: plugin-install
+	 * is registered only under is_admin() and isn't asserted here.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_renders_action_and_dismiss() {
+		// Pin get_plugins() to empty so the name links to the modal.
+		wp_cache_set( 'plugins', array( '' => array() ), 'plugins' );
+
+		try {
+			ob_start();
+			( new WPAU_Settings() )->from_address_hint();
+			$html = ob_get_clean();
+
+			$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+			$this->assertStringContainsString( 'is-dismissible', $html );
+			$this->assertStringContainsString( 'open-plugin-details-modal', $html );
+			$this->assertStringContainsString( 'Change From Address', $html );
+			$this->assertStringContainsString( 'wpau_dismiss_from_address_hint', $html );
+			$this->assertStringContainsString( 'wpau-dismiss-from-address-hint', $html );
+
+			$this->assertTrue( wp_script_is( 'thickbox', 'enqueued' ) );
+		} finally {
+			wp_cache_delete( 'plugins', 'plugins' );
+			wp_dequeue_script( 'thickbox' );
+			wp_dequeue_script( 'plugin-install' );
+		}
+	}
+
+	/**
+	 * When the companion plugin is installed but inactive, the hint links the
+	 * name to a plain activate URL and skips the modal-only Thickbox assets.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_skips_modal_assets_when_installed() {
+		wp_cache_set(
+			'plugins',
+			array(
+				'' => array(
+					'change-from-address/change-from-address.php' => array( 'Name' => 'Change From Address' ),
+				),
+			),
+			'plugins'
+		);
+
+		try {
+			ob_start();
+			( new WPAU_Settings() )->from_address_hint();
+			$html = ob_get_clean();
+
+			$this->assertStringContainsString( 'wpau-from-address-hint', $html );
+			$this->assertStringNotContainsString( 'open-plugin-details-modal', $html );
+			$this->assertStringContainsString( 'action=activate', $html );
+			$this->assertFalse( wp_script_is( 'thickbox', 'enqueued' ) );
+		} finally {
+			wp_cache_delete( 'plugins', 'plugins' );
+		}
+	}
+
+	/**
+	 * From_address_hint renders nothing once dismissed.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_is_silent_when_dismissed() {
+		update_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		ob_start();
+		( new WPAU_Settings() )->from_address_hint();
+		$html = ob_get_clean();
+
+		$this->assertSame( '', trim( $html ) );
+	}
+
+	/**
+	 * From_address_hint renders nothing once the companion plugin is active —
+	 * there's nothing left to nudge the admin toward.
+	 *
+	 * The WP test harness short-circuits get_option( 'active_plugins' ) via a
+	 * pre_option_active_plugins filter, so we hook the same filter at a later
+	 * priority to make is_plugin_active() report the companion plugin as active.
+	 *
+	 * @covers ::from_address_hint
+	 */
+	public function test_from_address_hint_is_silent_when_companion_plugin_active() {
+		$filter = static function () {
+			return array( 'change-from-address/change-from-address.php' );
+		};
+		add_filter( 'pre_option_active_plugins', $filter, 99 );
+
+		try {
+			ob_start();
+			( new WPAU_Settings() )->from_address_hint();
+			$html = ob_get_clean();
+
+			$this->assertSame( '', trim( $html ) );
+		} finally {
+			remove_filter( 'pre_option_active_plugins', $filter, 99 );
+		}
+	}
+
+	/**
+	 * Loading the settings page queues the hint onto the admin-notices pipeline.
+	 *
+	 * @covers ::on_settings_page_load
+	 */
+	public function test_on_settings_page_load_queues_admin_notice() {
+		$settings = new WPAU_Settings();
+		$settings->on_settings_page_load();
+
+		$this->assertNotFalse(
+			has_action( 'all_admin_notices', array( $settings, 'from_address_hint' ) )
+		);
+	}
+
+	/**
+	 * Maybe_dismiss_from_address_hint ignores requests without the dismiss flag.
+	 *
+	 * @covers ::maybe_dismiss_from_address_hint
+	 */
+	public function test_maybe_dismiss_ignores_unrelated_requests() {
+		unset( $_GET['wpau_dismiss_from_address_hint'] );
+
+		// Should return without touching meta or redirecting.
+		( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
+
+		$this->assertSame(
+			'',
+			get_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', true )
+		);
+	}
+
+	/**
+	 * A valid dismiss request records the meta and redirects to a clean URL.
+	 *
+	 * @covers ::maybe_dismiss_from_address_hint
+	 */
+	public function test_maybe_dismiss_records_meta_and_redirects() {
+		$_GET['wpau_dismiss_from_address_hint'] = '1';
+		$nonce                                  = wp_create_nonce( 'wpau_dismiss_from_address_hint' );
+		$_GET['_wpnonce']                       = $nonce;
+		$_REQUEST['_wpnonce']                   = $nonce;
+
+		$throw = static function ( $location ) {
+			throw new WPAU_Redirect_Exception( esc_url_raw( $location ) );
+		};
+		add_filter( 'wp_redirect', $throw );
+
+		try {
+			( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
+			$this->fail( 'Expected a redirect.' );
+		} catch ( WPAU_Redirect_Exception $e ) {
+			$this->assertStringNotContainsString( 'wpau_dismiss_from_address_hint', $e->location );
+		} finally {
+			remove_filter( 'wp_redirect', $throw );
+			unset(
+				$_GET['wpau_dismiss_from_address_hint'],
+				$_GET['_wpnonce'],
+				$_REQUEST['_wpnonce']
+			);
+		}
+
+		$this->assertSame(
+			'1',
+			get_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', true )
+		);
+	}
+
+	/**
+	 * A repeat dismiss (meta already set) still redirects rather than erroring.
+	 *
+	 * The update_user_meta() return is false when the value is unchanged, so
+	 * the handler must check the persisted value, not the return, before
+	 * deciding the write failed.
+	 *
+	 * @covers ::maybe_dismiss_from_address_hint
+	 */
+	public function test_maybe_dismiss_when_already_dismissed_still_redirects() {
+		update_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		$_GET['wpau_dismiss_from_address_hint'] = '1';
+		$nonce                                  = wp_create_nonce( 'wpau_dismiss_from_address_hint' );
+		$_GET['_wpnonce']                       = $nonce;
+		$_REQUEST['_wpnonce']                   = $nonce;
+
+		$throw = static function ( $location ) {
+			throw new WPAU_Redirect_Exception( esc_url_raw( $location ) );
+		};
+		add_filter( 'wp_redirect', $throw );
+
+		try {
+			// Reaching the redirect (rather than returning early) proves the
+			// handler treated the already-set meta as success, not failure.
+			( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
+			$this->fail( 'Expected a redirect, not an error notice.' );
+		} catch ( WPAU_Redirect_Exception $e ) {
+			$this->assertStringNotContainsString( 'wpau_dismiss_from_address_hint', $e->location );
+		} finally {
+			remove_filter( 'wp_redirect', $throw );
+			unset(
+				$_GET['wpau_dismiss_from_address_hint'],
+				$_GET['_wpnonce'],
+				$_REQUEST['_wpnonce']
+			);
+		}
+	}
+
+	/**
+	 * The hint hides itself once the companion plugin is active.
+	 *
+	 * The WP test harness short-circuits get_option( 'active_plugins' ) via a
+	 * pre_option_active_plugins filter, so we hook the same filter at a later
+	 * priority to make is_plugin_active() report the companion plugin as active.
+	 *
+	 * @covers ::should_show_from_address_hint
+	 */
+	public function test_should_show_false_when_companion_plugin_active() {
+		$filter = static function () {
+			return array( 'change-from-address/change-from-address.php' );
+		};
+		add_filter( 'pre_option_active_plugins', $filter, 99 );
+
+		try {
+			$this->assertFalse( ( new WPAU_Settings() )->should_show_from_address_hint() );
+		} finally {
+			remove_filter( 'pre_option_active_plugins', $filter, 99 );
+		}
+	}
+
+	/**
+	 * When the companion plugin is installed but inactive, offer the activate link.
+	 *
+	 * @covers ::from_address_plugin_action
+	 */
+	public function test_from_address_plugin_action_offers_activate_when_installed() {
+		wp_cache_set(
+			'plugins',
+			array(
+				'' => array(
+					'change-from-address/change-from-address.php' => array( 'Name' => 'Change From Address' ),
+				),
+			),
+			'plugins'
+		);
+
+		try {
+			$action = ( new WPAU_Settings() )->from_address_plugin_action();
+
+			$this->assertFalse( $action['modal'] );
+			$this->assertStringStartsWith( self_admin_url(), $action['url'] );
+			$this->assertStringContainsString( 'action=activate', $action['url'] );
+			$this->assertStringContainsString( 'change-from-address', $action['url'] );
+		} finally {
+			wp_cache_delete( 'plugins', 'plugins' );
+		}
+	}
+
+	/**
+	 * In network admin the action link points at the network plugins screen.
+	 *
+	 * The URL is built with self_admin_url(), which resolves to
+	 * network_admin_url() under network admin — that's where a super admin
+	 * installs and activates plugins. Only meaningful on multisite.
+	 *
+	 * @covers ::from_address_plugin_action
+	 */
+	public function test_from_address_plugin_action_uses_network_admin_url_in_network_context() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Network admin context only applies on multisite.' );
+		}
+
+		set_current_screen( 'dashboard-network' );
+
+		try {
+			$action = ( new WPAU_Settings() )->from_address_plugin_action();
+
+			$this->assertStringStartsWith( network_admin_url(), $action['url'] );
+		} finally {
+			set_current_screen( 'front' );
+		}
+	}
+
+	/**
+	 * A dismiss request with an invalid nonce is rejected and writes no meta.
+	 *
+	 * Guards the CSRF protection on the dismiss handler: a future change that
+	 * weakened or dropped check_admin_referer() would slip past every other
+	 * test, since they all supply a valid nonce.
+	 *
+	 * @covers ::maybe_dismiss_from_address_hint
+	 */
+	public function test_maybe_dismiss_rejects_invalid_nonce() {
+		$_GET['wpau_dismiss_from_address_hint'] = '1';
+		$_GET['_wpnonce']                       = 'bogus';
+		$_REQUEST['_wpnonce']                   = 'bogus';
+
+		try {
+			( new WPAU_Settings() )->maybe_dismiss_from_address_hint();
+			$this->fail( 'Expected check_admin_referer() to halt the request.' );
+		} catch ( WPDieException $e ) {
+			$this->assertSame(
+				'',
+				get_user_meta( self::$admin->ID, 'wp-approve-user-from-address-hint-dismissed', true )
+			);
+		} finally {
+			unset(
+				$_GET['wpau_dismiss_from_address_hint'],
+				$_GET['_wpnonce'],
+				$_REQUEST['_wpnonce']
+			);
+		}
 	}
 }

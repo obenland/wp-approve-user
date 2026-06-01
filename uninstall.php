@@ -16,6 +16,7 @@ delete_metadata( 'user', 0, 'wp-approve-user', '', true );
 delete_metadata( 'user', 0, 'wp-approve-user-mail-sent', '', true );
 delete_metadata( 'user', 0, 'wp-approve-user-new-registration', '', true );
 delete_metadata( 'user', 0, 'wp-approve-user-ip', '', true );
+delete_metadata( 'user', 0, 'wp-approve-user-from-address-hint-dismissed', '', true );
 
 
 /* Goodbye! Thank you for having me! */

@@ -40,6 +40,7 @@ class WPAU_Settings {
 			add_action( 'admin_menu', array( $this, 'register_menu' ) );
 		}
 		add_action( 'admin_init', array( $this, 'register_sections_and_fields' ) );
+		add_action( 'load-settings_page_' . self::SLUG, array( $this, 'on_settings_page_load' ) );
 		add_action( 'admin_print_styles-settings_page_' . self::SLUG, array( $this, 'print_styles' ) );
 	}
 
@@ -167,7 +168,8 @@ class WPAU_Settings {
 	 *
 	 * Fires on `admin_print_styles-settings_page_wp-approve-user` — the screen
 	 * hook WordPress derives from add_submenu_page() above — so the assets
-	 * only load on this one page.
+	 * only load on this one page. The from-address-hint script is enqueued
+	 * only when the hint is actually shown.
 	 *
 	 * @since 13
 	 */
@@ -189,6 +191,16 @@ class WPAU_Settings {
 			$plugin_data['Version'],
 			true
 		);
+
+		if ( $this->should_show_from_address_hint() ) {
+			wp_enqueue_script(
+				'wpau-from-address-hint',
+				plugins_url( "/js/from-address-hint{$suffix}.js", __FILE__ ),
+				array( 'common' ),
+				$plugin_data['Version'],
+				true
+			);
+		}
 	}
 
 	/**
@@ -243,6 +255,204 @@ class WPAU_Settings {
 			esc_html_x( 'To take advantage of dynamic data, you can use the following placeholders: %s. Username will be the user login in most cases.', 'Placeholders', 'wp-approve-user' ),
 			sprintf( '<code>%s</code>', implode( '</code>, <code>', $tags ) ) // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		);
+	}
+
+	/**
+	 * Settings-page load handler.
+	 *
+	 * Runs only on the Approve User settings screen (the `load-{$page_hook}`
+	 * hook fires there for both single-site and network admin). Processes a
+	 * pending dismiss request, then queues the From-address hint onto
+	 * `all_admin_notices` so it renders through the standard admin-notices
+	 * pipeline — and only on this page, since that's where we registered it.
+	 *
+	 * @since 14
+	 */
+	public function on_settings_page_load() {
+		$this->maybe_dismiss_from_address_hint();
+
+		add_action( 'all_admin_notices', array( $this, 'from_address_hint' ) );
+	}
+
+	/**
+	 * Prints a dismissible hint pointing at the "Change From Address" plugin.
+	 *
+	 * Hooked onto `all_admin_notices` from on_settings_page_load(), so it renders
+	 * through the standard admin-notices pipeline at the top of the settings
+	 * page. The plugin lets admins customize the *body* of the approval emails
+	 * but always sends them from the site's default address; admins who want to
+	 * change the sender name/address need a companion plugin, so we surface one
+	 * here: the plugin name links to core's plugin-information modal when it
+	 * isn't installed, or to a one-click activate link when it is. The hint
+	 * hides itself once the companion plugin is active or the admin dismisses
+	 * it.
+	 *
+	 * The notice is marked `dismissible`, so core renders its × button; the
+	 * from-address-hint script (enqueued in print_styles()) hides the no-JS
+	 * text link and persists the × dismissal via the same nonced URL. Without
+	 * JavaScript the text link remains the dismiss affordance.
+	 *
+	 * @since 14
+	 */
+	public function from_address_hint() {
+		if ( ! $this->should_show_from_address_hint() ) {
+			return;
+		}
+
+		$action = $this->from_address_plugin_action();
+
+		// The plugin-information modal needs Thickbox + plugin-install; enqueue
+		// them here so they load only when the modal link is actually shown.
+		if ( $action['modal'] ) {
+			add_thickbox();
+			wp_enqueue_script( 'plugin-install' );
+		}
+
+		$dismiss_url = wp_nonce_url(
+			add_query_arg( 'wpau_dismiss_from_address_hint', '1' ),
+			'wpau_dismiss_from_address_hint'
+		);
+
+		$plugin_link = sprintf(
+			'<a href="%1$s"%2$s>%3$s</a>',
+			esc_url( $action['url'] ),
+			$action['modal'] ? ' class="thickbox open-plugin-details-modal"' : '',
+			esc_html__( 'Change From Address', 'wp-approve-user' )
+		);
+
+		$intro = sprintf(
+			/* translators: %s: Linked name of the companion plugin, “Change From Address”. */
+			esc_html__( 'To send approval emails from a custom name or address, add the %s plugin.', 'wp-approve-user' ),
+			$plugin_link
+		);
+
+		$message  = '<p>' . $intro . '</p>';
+		$message .= sprintf(
+			'<p><a href="%1$s" class="button-link wpau-dismiss-from-address-hint">%2$s</a></p>',
+			esc_url( $dismiss_url ),
+			esc_html__( 'Dismiss', 'wp-approve-user' )
+		);
+
+		wp_admin_notice(
+			$message,
+			array(
+				'type'               => 'info',
+				'dismissible'        => true,
+				'additional_classes' => array( 'wpau-from-address-hint' ),
+				'paragraph_wrap'     => false,
+			)
+		);
+	}
+
+	/**
+	 * Whether the From-address hint should render for the current user.
+	 *
+	 * @since 14
+	 *
+	 * @return bool True when the current user can install plugins and the hint
+	 *              is neither dismissed nor redundant.
+	 */
+	public function should_show_from_address_hint() {
+		if ( ! current_user_can( 'install_plugins' ) ) {
+			return false;
+		}
+
+		if ( get_user_meta( get_current_user_id(), 'wp-approve-user-from-address-hint-dismissed', true ) ) {
+			return false;
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+		return ! is_plugin_active( 'change-from-address/change-from-address.php' );
+	}
+
+	/**
+	 * Builds the target for the linked plugin name in the From-address hint.
+	 *
+	 * The hint only renders for users who can install plugins (see
+	 * should_show_from_address_hint()). When the companion plugin is already
+	 * installed but inactive, the name links straight to a one-click activate
+	 * URL; otherwise it links to core's plugin-information modal (`modal` true),
+	 * where the admin can read the details and install it without leaving the
+	 * page.
+	 *
+	 * @since 14
+	 *
+	 * @return array{url:string,modal:bool} Link descriptor: the URL and whether
+	 *                                      it opens the plugin-information modal.
+	 */
+	public function from_address_plugin_action() {
+		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+
+		$plugin_file = 'change-from-address/change-from-address.php';
+
+		if ( array_key_exists( $plugin_file, get_plugins() ) ) {
+			return array(
+				'url'   => wp_nonce_url(
+					add_query_arg(
+						array(
+							'action' => 'activate',
+							'plugin' => $plugin_file,
+						),
+						self_admin_url( 'plugins.php' )
+					),
+					'activate-plugin_' . $plugin_file
+				),
+				'modal' => false,
+			);
+		}
+
+		return array(
+			'url'   => self_admin_url(
+				'plugin-install.php?tab=plugin-information&plugin=change-from-address&TB_iframe=true&width=600&height=550'
+			),
+			'modal' => true,
+		);
+	}
+
+	/**
+	 * Handles the nonced dismiss link for the From-address hint.
+	 *
+	 * Fires on `load-settings_page_wp-approve-user` — the dismiss link points
+	 * back at this settings page, so this is the only request that needs to
+	 * handle it. Verifies the nonce, records the dismissal, then redirects to a
+	 * clean URL. If the meta write fails we skip the redirect and surface an
+	 * error notice instead, so a failed dismissal isn't disguised as success.
+	 *
+	 * @since 14
+	 */
+	public function maybe_dismiss_from_address_hint() {
+		if ( empty( $_GET['wpau_dismiss_from_address_hint'] ) ) {
+			return;
+		}
+
+		check_admin_referer( 'wpau_dismiss_from_address_hint' );
+
+		$user_id = get_current_user_id();
+		update_user_meta( $user_id, 'wp-approve-user-from-address-hint-dismissed', 1 );
+
+		/*
+		 * update_user_meta() returns false both on a write failure and when the
+		 * value is already set (a repeat dismiss), so check the persisted state
+		 * instead — only a genuinely unset value means the write failed.
+		 */
+		if ( ! get_user_meta( $user_id, 'wp-approve-user-from-address-hint-dismissed', true ) ) {
+			add_action(
+				'all_admin_notices',
+				static function () {
+					wp_admin_notice(
+						esc_html__( 'Could not save your dismissal. Please try again.', 'wp-approve-user' ),
+						array( 'type' => 'error' )
+					);
+				}
+			);
+			return;
+		}
+
+		wp_safe_redirect( remove_query_arg( array( 'wpau_dismiss_from_address_hint', '_wpnonce' ) ) );
+		// @codeCoverageIgnoreStart
+		exit;
+		// @codeCoverageIgnoreEnd
 	}
 
 	/**
