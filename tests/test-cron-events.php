@@ -25,8 +25,8 @@ class WPAU_Cron_Events_Test extends WP_UnitTestCase {
 		wp_clear_scheduled_hook( 'wpau_allowlist_users_cron' );
 		wpau_allowlist_users();
 
-		$this->assertSame( 'approved', get_user_meta( $user_one, 'wp-approve-user', true ) );
-		$this->assertSame( 'approved', get_user_meta( $user_two, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user_one ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user_two ) );
 		$this->assertSame( '1', get_user_meta( $user_one, 'wp-approve-user-mail-sent', true ) );
 		$this->assertFalse( wp_next_scheduled( 'wpau_allowlist_users_cron' ) );
 	}
@@ -77,7 +77,7 @@ class WPAU_Cron_Events_Test extends WP_UnitTestCase {
 		$this->assertSame( $total_users, $scheduled[0]->args[0] );
 
 		// The single user that existed must actually be flagged approved.
-		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) );
 	}
 
@@ -118,7 +118,7 @@ class WPAU_Cron_Events_Test extends WP_UnitTestCase {
 		$all_ids      = get_users( array( 'fields' => 'ID' ) );
 		$before_state = array();
 		foreach ( $all_ids as $id ) {
-			$before_state[ $id ] = get_user_meta( $id, 'wp-approve-user', true );
+			$before_state[ $id ] = Obenland_Wp_Approve_User::read_status_raw( $id );
 		}
 
 		$expected_flipped = get_users(
@@ -133,7 +133,7 @@ class WPAU_Cron_Events_Test extends WP_UnitTestCase {
 		wpau_allowlist_users( 2 );
 
 		foreach ( $expected_flipped as $id ) {
-			$this->assertSame( 'approved', get_user_meta( $id, 'wp-approve-user', true ) );
+			$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $id ) );
 		}
 
 		foreach ( $all_ids as $id ) {
@@ -141,7 +141,7 @@ class WPAU_Cron_Events_Test extends WP_UnitTestCase {
 				continue;
 			}
 			/* Users before the offset are untouched by this run. */
-			$this->assertSame( $before_state[ $id ], get_user_meta( $id, 'wp-approve-user', true ) );
+			$this->assertSame( $before_state[ $id ], Obenland_Wp_Approve_User::read_status_raw( $id ) );
 		}
 
 		wp_clear_scheduled_hook( 'wpau_allowlist_users_cron' );

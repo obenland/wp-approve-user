@@ -63,7 +63,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		wpau_upgrade_all();
 
 		$this->assertSame( $wpau_db_version, (int) get_site_option( 'wpau_db_version' ) );
-		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 	}
 
 	/**
@@ -81,7 +81,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 
 		wpau_upgrade_all();
 
-		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( '1', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 	}
 
 	/**
@@ -126,7 +126,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		remove_filter( 'pre_update_option', $guard );
 		remove_filter( 'pre_site_option_wpau_db_version', $stringify );
 
-		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( '1', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 	}
 
 	/**
@@ -140,7 +140,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 
 		wpau_upgrade_to_12();
 
-		$this->assertSame( 'pending', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 	}
 
 	/**
@@ -161,10 +161,10 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 
 		wpau_upgrade_to_13();
 
-		$this->assertSame( 'approved', get_user_meta( $missing, 'wp-approve-user', true ) );
-		$this->assertSame( 'approved', get_user_meta( $approved, 'wp-approve-user', true ) );
-		$this->assertSame( 'pending', get_user_meta( $pending, 'wp-approve-user', true ) );
-		$this->assertSame( 'unapproved', get_user_meta( $unapproved, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $missing ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $approved ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $pending ) );
+		$this->assertSame( 'unapproved', Obenland_Wp_Approve_User::read_status_raw( $unapproved ) );
 	}
 
 	/**
@@ -193,7 +193,7 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		wpau_upgrade_to_13();
 
 		foreach ( $ids as $id ) {
-			$this->assertSame( 'approved', get_user_meta( $id, 'wp-approve-user', true ) );
+			$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $id ) );
 		}
 	}
 
@@ -215,8 +215,8 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		wpau_upgrade_all();
 
 		$this->assertSame( $wpau_db_version, (int) get_site_option( 'wpau_db_version' ) );
-		$this->assertSame( 'approved', get_user_meta( $legacy, 'wp-approve-user', true ) );
-		$this->assertSame( 'approved', get_user_meta( $missing, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $legacy ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $missing ) );
 	}
 
 	/**
@@ -237,8 +237,8 @@ class WPAU_Upgrade_Test extends WP_UnitTestCase {
 		wpau_upgrade_all();
 
 		// v12 migration did NOT run; true stays as '1'.
-		$this->assertSame( '1', get_user_meta( $legacy, 'wp-approve-user', true ) );
+		$this->assertSame( '1', Obenland_Wp_Approve_User::read_status_raw( $legacy ) );
 		// v13 migration DID run; missing-meta user is now approved.
-		$this->assertSame( 'approved', get_user_meta( $missing, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $missing ) );
 	}
 }

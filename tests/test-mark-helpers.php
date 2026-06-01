@@ -48,7 +48,7 @@ class WPAU_Mark_Helpers_Test extends WP_UnitTestCase {
 			remove_action( 'wpau_approve', $listener );
 		}
 
-		$this->assertSame( 'approved', get_user_meta( self::$user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( self::$user->ID ) );
 		$this->assertSame( array( self::$user->ID ), $fired );
 	}
 
@@ -78,7 +78,7 @@ class WPAU_Mark_Helpers_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertSame( 1, $fired );
-		$this->assertSame( 'approved', get_user_meta( self::$user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( self::$user->ID ) );
 	}
 
 	/**
@@ -103,7 +103,7 @@ class WPAU_Mark_Helpers_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertSame( 1, $fired );
-		$this->assertSame( 'unapproved', get_user_meta( self::$user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'unapproved', Obenland_Wp_Approve_User::read_status_raw( self::$user->ID ) );
 	}
 
 	/**
@@ -130,7 +130,7 @@ class WPAU_Mark_Helpers_Test extends WP_UnitTestCase {
 			remove_action( 'wpau_unapprove', $listener );
 		}
 
-		$this->assertSame( 'unapproved', get_user_meta( self::$user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'unapproved', Obenland_Wp_Approve_User::read_status_raw( self::$user->ID ) );
 		$this->assertEmpty( WP_Session_Tokens::get_instance( self::$user->ID )->get_all() );
 		$this->assertSame( array( self::$user->ID ), $fired );
 	}

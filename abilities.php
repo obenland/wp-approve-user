@@ -163,7 +163,7 @@ function wpau_ability_approve_callback( $input ) {
 	}
 
 	update_user_meta( $user_id, 'wp-approve-user', 'approved' );
-	$status = get_user_meta( $user_id, 'wp-approve-user', true );
+	$status = Obenland_Wp_Approve_User::read_status_raw( $user_id );
 
 	/** This action is documented in class-obenland-wp-approve-user.php */
 	do_action( 'wpau_approve', $user_id );
@@ -209,7 +209,7 @@ function wpau_ability_unapprove_callback( $input ) {
 	}
 
 	update_user_meta( $user_id, 'wp-approve-user', 'unapproved' );
-	$status = get_user_meta( $user_id, 'wp-approve-user', true );
+	$status = Obenland_Wp_Approve_User::read_status_raw( $user_id );
 
 	/*
 	 * Mirror the admin UI's unapprove() behaviour — destroy all active sessions for the

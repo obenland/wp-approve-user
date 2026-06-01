@@ -138,7 +138,7 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( static::$subscriber_id, $result['user_id'] );
 		$this->assertSame( 'approved', $result['status'] );
-		$this->assertSame( 'approved', get_user_meta( static::$subscriber_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( static::$subscriber_id ) );
 		$this->assertSame( array( static::$subscriber_id ), $fired );
 	}
 
@@ -164,7 +164,7 @@ class WPAU_Abilities_Test extends WP_UnitTestCase {
 		$this->assertTrue( $result['success'] );
 		$this->assertSame( static::$subscriber_id, $result['user_id'] );
 		$this->assertSame( 'unapproved', $result['status'] );
-		$this->assertSame( 'unapproved', get_user_meta( static::$subscriber_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'unapproved', Obenland_Wp_Approve_User::read_status_raw( static::$subscriber_id ) );
 		$this->assertSame( array( static::$subscriber_id ), $fired );
 	}
 

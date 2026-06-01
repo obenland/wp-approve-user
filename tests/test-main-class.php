@@ -1034,7 +1034,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'update=wpau-approved', $e->location );
 		}
 
-		$this->assertSame( 'approved', get_user_meta( self::$subscriber->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( self::$subscriber->ID ) );
 	}
 
 	/**
@@ -1082,7 +1082,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'update=wpau-unapproved', $e->location );
 		}
 
-		$this->assertSame( 'unapproved', get_user_meta( self::$subscriber->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'unapproved', Obenland_Wp_Approve_User::read_status_raw( self::$subscriber->ID ) );
 	}
 
 	/**
@@ -1107,7 +1107,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'update=wpau-approved', $e->location );
 		}
 
-		$this->assertSame( 'approved', get_user_meta( self::$subscriber->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( self::$subscriber->ID ) );
 	}
 
 	/**
@@ -1151,7 +1151,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 
 		$this->assertSame(
 			'approved',
-			get_user_meta( self::$subscriber->ID, 'wp-approve-user', true )
+			Obenland_Wp_Approve_User::read_status_raw( self::$subscriber->ID )
 		);
 	}
 

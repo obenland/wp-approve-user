@@ -318,7 +318,7 @@ class WPAU_Dashboard_Widget {
 			wp_send_json_error( array( 'code' => 'out_of_scope' ), 404 );
 		}
 
-		$stale = 'pending' !== get_user_meta( $user_id, 'wp-approve-user', true );
+		$stale = 'pending' !== Obenland_Wp_Approve_User::read_status_raw( $user_id );
 		if ( ! $stale ) {
 			Obenland_Wp_Approve_User::mark_approved( $user_id );
 		}
@@ -353,7 +353,7 @@ class WPAU_Dashboard_Widget {
 			wp_send_json_error( array( 'code' => 'out_of_scope' ), 404 );
 		}
 
-		$stale = 'pending' !== get_user_meta( $user_id, 'wp-approve-user', true );
+		$stale = 'pending' !== Obenland_Wp_Approve_User::read_status_raw( $user_id );
 		if ( ! $stale ) {
 			Obenland_Wp_Approve_User::mark_unapproved( $user_id );
 		}

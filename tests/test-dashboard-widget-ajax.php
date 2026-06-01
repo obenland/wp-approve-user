@@ -110,7 +110,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 			remove_action( 'wpau_approve', $listener );
 		}
 
-		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 		$this->assertSame( array( $user_id ), $fired );
 		$this->assertTrue( $response['success'] );
 		$this->assertSame( $user_id, $response['data']['user_id'] );
@@ -173,7 +173,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 	public function test_ajax_approve_rejects_mismatched_user_nonce() {
 		$target_id     = $this->make_pending( 'target@example.test' );
 		$other_id      = $this->make_pending( 'other@example.test' );
-		$other_pending = get_user_meta( $target_id, 'wp-approve-user', true );
+		$other_pending = Obenland_Wp_Approve_User::read_status_raw( $target_id );
 
 		$_POST['action']  = 'wpau_dashboard_approve';
 		$_POST['user_id'] = $target_id;
@@ -185,7 +185,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 		} finally {
 			$this->assertSame(
 				$other_pending,
-				get_user_meta( $target_id, 'wp-approve-user', true ),
+				Obenland_Wp_Approve_User::read_status_raw( $target_id ),
 				'Target user must not be mutated when the nonce is for a different user.'
 			);
 		}
@@ -219,7 +219,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 			remove_action( 'wpau_unapprove', $listener );
 		}
 
-		$this->assertSame( 'unapproved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'unapproved', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 		$this->assertEmpty( WP_Session_Tokens::get_instance( $user_id )->get_all() );
 		$this->assertSame( array( $user_id ), $fired );
 		$this->assertTrue( $response['success'] );
@@ -249,7 +249,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 			$this->expectException( WPAjaxDieStopException::class );
 			$this->_handleAjax( 'wpau_dashboard_approve' );
 		} finally {
-			$this->assertSame( 'pending', get_user_meta( $user_id, 'wp-approve-user', true ) );
+			$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 			$this->assertSame( 0, $fired );
 		}
 	}
@@ -344,7 +344,7 @@ class WPAU_Dashboard_Widget_Ajax_Test extends WP_Ajax_UnitTestCase {
 			$this->expectException( WPAjaxDieStopException::class );
 			$this->_handleAjax( 'wpau_dashboard_unapprove' );
 		} finally {
-			$this->assertSame( 'pending', get_user_meta( $user_id, 'wp-approve-user', true ) );
+			$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 			$this->assertSame( 0, $fired );
 		}
 	}

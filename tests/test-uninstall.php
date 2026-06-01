@@ -54,7 +54,7 @@ class WPAU_Uninstall_Test extends WP_UnitTestCase {
 		include dirname( __DIR__ ) . '/uninstall.php';
 
 		$this->assertFalse( get_option( 'wp-approve-user' ) );
-		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-mail-sent', true ) );
 		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
 		$this->assertSame( '', get_user_meta( $user_id, 'wp-approve-user-ip', true ) );

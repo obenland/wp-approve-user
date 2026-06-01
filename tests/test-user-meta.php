@@ -63,7 +63,7 @@ class User_Meta extends WP_UnitTestCase {
 
 		$class->user_register( $user_id );
 
-		$this->assertSame( 'approved', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
 	}
 
@@ -80,7 +80,7 @@ class User_Meta extends WP_UnitTestCase {
 
 		$class->user_register( $user_id );
 
-		$this->assertSame( 'pending', get_user_meta( $user_id, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user_id ) );
 		$this->assertSame( '1', get_user_meta( $user_id, 'wp-approve-user-new-registration', true ) );
 	}
 
@@ -97,7 +97,7 @@ class User_Meta extends WP_UnitTestCase {
 
 		$class->user_register( $user->ID );
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		$this->assertSame( '1', get_user_meta( $user->ID, 'wp-approve-user-new-registration', true ) );
 	}
 
@@ -133,7 +133,7 @@ class User_Meta extends WP_UnitTestCase {
 	public function test_wp_authenticate_user_missing_meta_is_treated_as_approved() {
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		// No meta set at all — this is the pre-plugin-install state.
-		$this->assertSame( '', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 
 		$class  = new Obenland_Wp_Approve_User();
 		$result = $class->wp_authenticate_user( $user );
@@ -173,7 +173,7 @@ class User_Meta extends WP_UnitTestCase {
 		// phpcs:enable WordPress.DB
 		wp_cache_delete( $user->ID, 'user_meta' );
 
-		$this->assertSame( '', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( '', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 		$this->assertTrue( metadata_exists( 'user', $user->ID, 'wp-approve-user' ) );
 
 		$class  = new Obenland_Wp_Approve_User();
@@ -215,7 +215,7 @@ class User_Meta extends WP_UnitTestCase {
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		update_user_meta( $user->ID, 'wp-approve-user', true );
 
-		$this->assertSame( 'approved', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -230,7 +230,7 @@ class User_Meta extends WP_UnitTestCase {
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
 		update_user_meta( $user->ID, 'wp-approve-user', false );
 
-		$this->assertSame( 'pending', get_user_meta( $user->ID, 'wp-approve-user', true ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user->ID ) );
 	}
 
 	/**
@@ -252,10 +252,10 @@ class User_Meta extends WP_UnitTestCase {
 		update_user_meta( $zero_int, 'wp-approve-user', 0 );
 		update_user_meta( $zero_str, 'wp-approve-user', '0' );
 
-		$this->assertSame( 'approved', get_user_meta( $one_int, 'wp-approve-user', true ) );
-		$this->assertSame( 'approved', get_user_meta( $one_string, 'wp-approve-user', true ) );
-		$this->assertSame( 'pending', get_user_meta( $zero_int, 'wp-approve-user', true ) );
-		$this->assertSame( 'pending', get_user_meta( $zero_str, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $one_int ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $one_string ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $zero_int ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $zero_str ) );
 	}
 
 	/**
@@ -275,9 +275,9 @@ class User_Meta extends WP_UnitTestCase {
 		update_user_meta( $unapproved, 'wp-approve-user', 'unapproved' );
 		update_user_meta( $pending, 'wp-approve-user', 'pending' );
 
-		$this->assertSame( 'approved', get_user_meta( $approved, 'wp-approve-user', true ) );
-		$this->assertSame( 'unapproved', get_user_meta( $unapproved, 'wp-approve-user', true ) );
-		$this->assertSame( 'pending', get_user_meta( $pending, 'wp-approve-user', true ) );
+		$this->assertSame( 'approved', Obenland_Wp_Approve_User::read_status_raw( $approved ) );
+		$this->assertSame( 'unapproved', Obenland_Wp_Approve_User::read_status_raw( $unapproved ) );
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $pending ) );
 	}
 
 	/**
@@ -293,7 +293,7 @@ class User_Meta extends WP_UnitTestCase {
 		$user = static::factory()->user->create();
 		update_user_meta( $user, 'wp-approve-user', 'banana' );
 
-		$this->assertSame( 'banana', get_user_meta( $user, 'wp-approve-user', true ) );
+		$this->assertSame( 'banana', Obenland_Wp_Approve_User::read_status_raw( $user ) );
 	}
 
 	/**
@@ -352,5 +352,111 @@ class User_Meta extends WP_UnitTestCase {
 
 		$result = $class->wp_authenticate_user( $user );
 		$this->assertSame( $user, $result );
+	}
+
+	/**
+	 * Third-party integrations (most notably Restrict Content Pro) read the
+	 * meta with `! get_user_meta( $id, 'wp-approve-user', true )` to decide
+	 * whether a user is pending. With raw three-state strings every state is
+	 * truthy, so pending/unapproved users sneak past the gate. The read
+	 * filter has to translate canonical strings back to legacy booleans so
+	 * that consumer pattern still works.
+	 *
+	 * @covers ::translate_status_read
+	 */
+	public function test_read_filter_translates_pending_to_false() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+		update_user_meta( $user, 'wp-approve-user', 'pending' );
+
+		$this->assertFalse( get_user_meta( $user, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Unapproved users must also surface as legacy-falsy so RCP's
+	 * `is_pending()` check blocks them from restricted content.
+	 *
+	 * @covers ::translate_status_read
+	 */
+	public function test_read_filter_translates_unapproved_to_false() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+		update_user_meta( $user, 'wp-approve-user', 'unapproved' );
+
+		$this->assertFalse( get_user_meta( $user, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Approved users must surface as legacy-truthy.
+	 *
+	 * @covers ::translate_status_read
+	 */
+	public function test_read_filter_translates_approved_to_true() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+		update_user_meta( $user, 'wp-approve-user', 'approved' );
+
+		$this->assertTrue( get_user_meta( $user, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Users without any meta row must continue to return the empty default
+	 * `get_user_meta()` produces — the filter only translates canonical
+	 * values, it doesn't synthesize state.
+	 *
+	 * @covers ::translate_status_read
+	 */
+	public function test_read_filter_passes_missing_meta_through() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+
+		$this->assertSame( '', get_user_meta( $user, 'wp-approve-user', true ) );
+	}
+
+	/**
+	 * Other meta keys must be untouched by the wp-approve-user read filter.
+	 *
+	 * @covers ::translate_status_read
+	 */
+	public function test_read_filter_ignores_other_meta_keys() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+		update_user_meta( $user, 'wp-approve-user-mail-sent', 'pending' );
+
+		$this->assertSame( 'pending', get_user_meta( $user, 'wp-approve-user-mail-sent', true ) );
+	}
+
+	/**
+	 * The `read_status_raw()` helper must bypass the legacy boolean filter
+	 * so plugin internals keep seeing the canonical three-state string.
+	 *
+	 * @covers ::read_status_raw
+	 */
+	public function test_read_status_raw_returns_canonical_string() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+		update_user_meta( $user, 'wp-approve-user', 'pending' );
+
+		$this->assertSame( 'pending', Obenland_Wp_Approve_User::read_status_raw( $user ) );
+	}
+
+	/**
+	 * The `read_status_raw()` helper returns an empty string when no meta
+	 * row exists, matching `get_user_meta()`'s contract for missing keys.
+	 *
+	 * @covers ::read_status_raw
+	 */
+	public function test_read_status_raw_returns_empty_string_for_missing_meta() {
+		new Obenland_Wp_Approve_User();
+
+		$user = static::factory()->user->create();
+
+		$this->assertSame( '', Obenland_Wp_Approve_User::read_status_raw( $user ) );
 	}
 }
