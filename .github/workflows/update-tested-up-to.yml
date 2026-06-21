@@ -29,7 +29,7 @@ jobs:
             full: ${{ steps.check.outputs.full }}
             previous: ${{ steps.check.outputs.previous }}
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
               with:
                   sparse-checkout: README.md
                   sparse-checkout-cone-mode: false
@@ -80,7 +80,7 @@ jobs:
         env:
             WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Setup Node.js (.nvmrc)
               uses: actions/setup-node@v6
@@ -119,7 +119,7 @@ jobs:
         if: needs.check.outputs.needs_update == 'true' && github.ref == 'refs/heads/trunk'
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Update README.md
               shell: bash
