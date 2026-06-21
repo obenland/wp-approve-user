@@ -25,7 +25,7 @@
 	"devDependencies": {
 		"@playwright/test": "^1.60.0",
 		"@wordpress/env": "11.8.1",
-		"@wordpress/eslint-plugin": "^25.3.0",
+		"@wordpress/eslint-plugin": "^25.4.1",
 		"@wordpress/scripts": "^32.4.0",
 		"patch-package": "^8.0.1"
 	},
