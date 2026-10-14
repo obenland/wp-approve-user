@@ -18,6 +18,7 @@
 .editorconfig
 .eslintignore
 .gitignore
+.markdownlint.json
 .nvmrc
 .phpunit.result.cache
 .prettierignore
