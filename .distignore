@@ -25,6 +25,7 @@
 .wp-env.tests.json
 .wp-env.multisite.json
 .wp-env.override.json
+AGENTS.md
 CLAUDE.md
 CONTRIBUTING.md
 composer.json
