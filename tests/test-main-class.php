@@ -483,6 +483,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * The site admin email user is never gated regardless of approval state.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_returns_admin_email_user() {
 		$instance = new Obenland_Wp_Approve_User();
@@ -501,6 +502,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * Approved users authenticate normally.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_returns_approved_user() {
 		update_user_meta( self::$subscriber->ID, 'wp-approve-user', 'approved' );
@@ -516,6 +518,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * availability gate; the full core authentication path still runs.
 	 *
 	 * @covers ::wp_authenticate_application_password_errors
+	 * @covers ::user_is_approved
 	 * @dataProvider data_application_password_honours_approval_state
 	 *
 	 * @param string $status   Approval meta value.

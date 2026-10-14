@@ -105,6 +105,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * Tests wp_authenticate_user.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user() {
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
@@ -129,6 +130,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * activation cron.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_missing_meta_is_treated_as_approved() {
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
@@ -149,6 +151,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * "meta row present but empty" (still pending).
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_empty_legacy_meta_is_still_blocked() {
 		global $wpdb;
@@ -188,6 +191,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * accidentally unblock users who were explicitly unapproved.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_unapproved_is_still_blocked() {
 		$user = static::factory()->user->create_and_get( array( 'role' => 'subscriber' ) );
@@ -302,6 +306,7 @@ class User_Meta extends WP_UnitTestCase {
 	 *
 	 * @covers ::sanitize_status_meta
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_legacy_boolean_true_unlocks_login_gate() {
 		$class = new Obenland_Wp_Approve_User();
@@ -319,6 +324,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * Tests wp_authenticate_user on single sites.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_simple_site() {
 		$this->skipWithMultisite();
@@ -334,6 +340,7 @@ class User_Meta extends WP_UnitTestCase {
 	 * Tests wp_authenticate_user on multisite.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_multisite() {
 		$this->skipWithoutMultisite();
