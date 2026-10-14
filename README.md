@@ -6,7 +6,7 @@ Donate link: <https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_
 Requires at least: 6.4
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 13
+Stable tag: 14
 License: GPLv2 or later
 License URI: <https://www.gnu.org/licenses/gpl-2.0.html>
 
@@ -80,16 +80,16 @@ Yes! Under Settings > Approve User, you can choose when to send an email and cus
 
 ## Upgrade Notice
 
-### 13
+### 14
 
-Adds a richer Pending User Approvals dashboard widget with inline approve/reject actions and rule-based auto-approval for trusted email domains, suffixes, and IP ranges.
-
-### 12
-
-Migrates user approval data to a three-state system and adds a RESETLINK email placeholder. Back up before upgrading large installs.
+Fixes Application Password authentication ignoring the approval state. Unapproved and pending accounts can no longer use the REST API or XML-RPC.
 
 
 ## Changelog
+
+### 14
+
+* Enforces the approval state for Application Password authentication, so unapproved and pending accounts can no longer use the REST API or XML-RPC.
 
 ### 13
 

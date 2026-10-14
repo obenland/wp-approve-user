@@ -204,6 +204,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		$this->hook( 'user_row_actions' );
 		$this->hook( 'ms_user_row_actions', 'user_row_actions' );
 		$this->hook( 'wp_authenticate_user' );
+		$this->hook( 'wp_authenticate_application_password_errors' );
 		$this->hook( 'user_register', 5, 'capture_registration_ip' );
 		$this->hook( 'user_register' );
 		$this->hook( 'user_register', 20, 'auto_approve_user' );
@@ -411,20 +412,58 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @return WP_User|WP_Error
 	 */
 	public function wp_authenticate_user( $userdata ) {
-		if ( is_wp_error( $userdata ) ) {
+		if ( is_wp_error( $userdata ) || $this->user_is_approved( $userdata ) ) {
 			return $userdata;
 		}
 
-		if ( get_bloginfo( 'admin_email' ) === $userdata->user_email ) {
-			return $userdata;
+		return new WP_Error(
+			'wpau_confirmation_error',
+			esc_html__( 'Your account must be confirmed before you can log in.', 'wp-approve-user' )
+		);
+	}
+
+	/**
+	 * Applies the approval gate to Application Password authentication.
+	 *
+	 * Core authenticates Application Passwords (REST, XML-RPC) on a separate
+	 * path that never runs `wp_authenticate_user`. The hook is an action, so
+	 * the error object is mutated in place.
+	 *
+	 * @since 14
+	 * @access public
+	 *
+	 * @param WP_Error $error Collected authentication errors.
+	 * @param WP_User  $user  User being authenticated.
+	 */
+	public function wp_authenticate_application_password_errors( $error, $user ) {
+		if ( ! $this->user_is_approved( $user ) ) {
+			$error->add(
+				'wpau_confirmation_error',
+				esc_html__( 'Your account must be confirmed before you can log in.', 'wp-approve-user' )
+			);
+		}
+	}
+
+	/**
+	 * Determines whether a user has cleared the approval gate.
+	 *
+	 * @since 14
+	 * @access protected
+	 *
+	 * @param  WP_User $user User to check.
+	 * @return bool
+	 */
+	protected function user_is_approved( $user ) {
+		if ( get_bloginfo( 'admin_email' ) === $user->user_email ) {
+			return true;
 		}
 
-		if ( is_super_admin( $userdata->ID ) ) {
-			return $userdata;
+		if ( is_super_admin( $user->ID ) ) {
+			return true;
 		}
 
-		$status          = get_user_meta( $userdata->ID, 'wp-approve-user', true );
-		$has_status_meta = metadata_exists( 'user', $userdata->ID, 'wp-approve-user' );
+		$status          = get_user_meta( $user->ID, 'wp-approve-user', true );
+		$has_status_meta = metadata_exists( 'user', $user->ID, 'wp-approve-user' );
 
 		/*
 		 * A missing meta row means the user predates the plugin (or its
@@ -432,14 +471,7 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 		 * approved; an existing empty value may represent a legacy
 		 * pre-v12 pending state that hasn't been migrated yet.
 		 */
-		if ( 'approved' === $status || ! $has_status_meta ) {
-			return $userdata;
-		}
-
-		return new WP_Error(
-			'wpau_confirmation_error',
-			wp_kses_post( __( 'Your account must be confirmed before you can log in.', 'wp-approve-user' ) )
-		);
+		return 'approved' === $status || ! $has_status_meta;
 	}
 
 	/**

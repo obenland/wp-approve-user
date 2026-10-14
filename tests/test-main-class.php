@@ -483,6 +483,7 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * The site admin email user is never gated regardless of approval state.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_returns_admin_email_user() {
 		$instance = new Obenland_Wp_Approve_User();
@@ -501,12 +502,63 @@ class WPAU_Main_Class_Test extends WP_UnitTestCase {
 	 * Approved users authenticate normally.
 	 *
 	 * @covers ::wp_authenticate_user
+	 * @covers ::user_is_approved
 	 */
 	public function test_wp_authenticate_user_returns_approved_user() {
 		update_user_meta( self::$subscriber->ID, 'wp-approve-user', 'approved' );
 		$instance = new Obenland_Wp_Approve_User();
 		$result   = $instance->wp_authenticate_user( self::$subscriber );
 		$this->assertSame( self::$subscriber, $result );
+	}
+
+	/**
+	 * Application Password authentication honours the approval state.
+	 *
+	 * The two filters mark the request as an API request and lift the SSL
+	 * availability gate; the full core authentication path still runs.
+	 *
+	 * @covers ::wp_authenticate_application_password_errors
+	 * @covers ::user_is_approved
+	 * @dataProvider data_application_password_honours_approval_state
+	 *
+	 * @param string $status   Approval meta value.
+	 * @param bool   $expected Whether authentication should succeed.
+	 */
+	public function test_application_password_honours_approval_state( $status, $expected ) {
+		add_filter( 'application_password_is_api_request', '__return_true' );
+		add_filter( 'wp_is_application_passwords_available', '__return_true' );
+
+		$user = self::factory()->user->create_and_get( array( 'role' => 'editor' ) );
+		update_user_meta( $user->ID, 'wp-approve-user', $status );
+
+		$created = WP_Application_Passwords::create_new_application_password( $user->ID, array( 'name' => 'test' ) );
+		$this->assertNotWPError( $created );
+
+		$instance = new Obenland_Wp_Approve_User();
+		$instance->plugins_loaded();
+
+		$result = wp_authenticate_application_password( null, $user->user_login, $created[0] );
+
+		if ( $expected ) {
+			$this->assertInstanceOf( 'WP_User', $result );
+			$this->assertSame( $user->ID, $result->ID );
+		} else {
+			$this->assertWPError( $result );
+			$this->assertSame( 'wpau_confirmation_error', $result->get_error_code() );
+		}
+	}
+
+	/**
+	 * Data provider for test_application_password_honours_approval_state.
+	 *
+	 * @return array[]
+	 */
+	public function data_application_password_honours_approval_state() {
+		return array(
+			'approved'   => array( 'approved', true ),
+			'unapproved' => array( 'unapproved', false ),
+			'pending'    => array( 'pending', false ),
+		);
 	}
 
 	/**
