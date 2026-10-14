@@ -6,8 +6,7 @@ on:
     workflow_dispatch:
 
 permissions:
-    contents: write
-    pull-requests: write
+    contents: read
 
 concurrency:
     group: update-tested-up-to
@@ -21,16 +20,15 @@ jobs:
         if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/trunk'
         runs-on: ubuntu-latest
         timeout-minutes: 5
-        permissions:
-            contents: read
         outputs:
             needs_update: ${{ steps.check.outputs.needs_update }}
             version: ${{ steps.check.outputs.version }}
             full: ${{ steps.check.outputs.full }}
             previous: ${{ steps.check.outputs.previous }}
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
+                  persist-credentials: false
                   sparse-checkout: README.md
                   sparse-checkout-cone-mode: false
 
@@ -73,23 +71,23 @@ jobs:
         name: Validate against latest WordPress
         needs: check
         if: needs.check.outputs.needs_update == 'true'
-        permissions:
-            contents: read
         runs-on: ubuntu-latest
         timeout-minutes: 30
         env:
             WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
 
             - name: Setup Node.js (.nvmrc)
-              uses: actions/setup-node@v7
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
                   node-version-file: '.nvmrc'
                   cache: npm
 
             - name: Cache Composer dependencies
-              uses: actions/cache@v6
+              uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
               id: composer-cache
               with:
                   path: vendor
@@ -119,7 +117,9 @@ jobs:
         if: needs.check.outputs.needs_update == 'true' && github.ref == 'refs/heads/trunk'
         runs-on: ubuntu-latest
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
 
             - name: Update README.md
               shell: bash
@@ -138,7 +138,7 @@ jobs:
 
             - name: Create Pull Request
               id: pr
-              uses: peter-evans/create-pull-request@v8
+              uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
               with:
                   token: ${{ secrets.WORKFLOW_PAT }}
                   sign-commits: true
@@ -210,7 +210,7 @@ jobs:
 
             - name: Sync readme to WordPress.org SVN
               if: success() && steps.pr.outputs.pull-request-number
-              uses: 10up/action-wordpress-plugin-asset-update@stable
+              uses: 10up/action-wordpress-plugin-asset-update@2480306f6f693672726d08b5917ea114cb2825f7 # 2.2.0
               env:
                   SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
                   SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}

@@ -35,16 +35,18 @@ jobs:
             WP_ENV_CORE: 'https://wordpress.org/wordpress-latest.zip'
 
         steps:
-            - uses: actions/checkout@v7
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
 
             - name: Setup Node.js (.nvmrc)
-              uses: actions/setup-node@v7
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
               with:
                   node-version-file: '.nvmrc'
                   cache: npm
 
             - name: Cache Composer dependencies
-              uses: actions/cache@v6
+              uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
               id: composer-cache
               with:
                   path: vendor
@@ -77,7 +79,7 @@ jobs:
                   echo "EOF" >> $GITHUB_ENV
 
             - name: Find Comment
-              uses: peter-evans/find-comment@v4
+              uses: peter-evans/find-comment@b30e6a3c0ed37e7c023ccd3f1db5c6c0b0c23aad # v4.0.0
               id: fc
               with:
                   issue-number: ${{ github.event.pull_request.number }}
@@ -85,7 +87,7 @@ jobs:
                   body-includes: PHPUnit Coverage Report
 
             - name: Create or Update Comment
-              uses: peter-evans/create-or-update-comment@v5
+              uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
               with:
                   comment-id: ${{ steps.fc.outputs.comment-id }}
                   issue-number: ${{ github.event.pull_request.number }}
