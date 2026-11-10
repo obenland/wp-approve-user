@@ -179,11 +179,12 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 * @return string The stored status, or '' when no meta row exists.
 	 */
 	public static function read_status_raw( $user_id ) {
+		$previous             = self::$skip_translate;
 		self::$skip_translate = true;
 		try {
 			$value = get_metadata_raw( 'user', $user_id, 'wp-approve-user', true );
 		} finally {
-			self::$skip_translate = false;
+			self::$skip_translate = $previous;
 		}
 
 		return null === $value ? '' : $value;
@@ -210,14 +211,14 @@ class Obenland_Wp_Approve_User extends Obenland_Wp_Plugins_V5 {
 	 *
 	 * @since 14
 	 *
-	 * @param mixed  $value     The pre-filter value (always `null` here).
+	 * @param mixed  $value     The pre-filter value; non-null when an earlier filter short-circuited.
 	 * @param int    $object_id User ID being read.
 	 * @param string $meta_key  Meta key being read.
 	 * @param bool   $single    Whether to return a single value.
 	 * @return mixed Translated value or the original `$value` to fall through.
 	 */
 	public static function translate_status_read( $value, $object_id, $meta_key, $single ) {
-		if ( 'wp-approve-user' !== $meta_key || self::$skip_translate ) {
+		if ( null !== $value || 'wp-approve-user' !== $meta_key || self::$skip_translate ) {
 			return $value;
 		}
 
